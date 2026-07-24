@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.6.3
+Stable tag: 3.6.4
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -171,6 +171,12 @@ The plugin enforces WordPress capability checks on every tool. Read operations r
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.6.4 =
+New AI client setups plus an OAuth flow improvement.
+* Added: Connection setup for OpenClaw and Hermes, each with direct-HTTP and Node-proxy config in App Password and OAuth modes.
+* Changed: OpenClaw config is shown as the mergeable "mcp" block, since openclaw.json usually already has other settings.
+* Changed: OAuth authorization codes now last 5 minutes instead of 60 seconds, so CLI clients that require pasting the code back by hand (like OpenClaw) are not racing a one-minute timer. Codes stay single-use and PKCE-bound.
 
 = 3.6.3 =
 Maintenance re-release. No functional changes from 3.6.2; corrects the distributed package.

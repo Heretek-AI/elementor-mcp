@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.6.2
+Stable tag: 3.6.3
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -171,6 +171,9 @@ The plugin enforces WordPress capability checks on every tool. Read operations r
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.6.3 =
+Maintenance re-release. No functional changes from 3.6.2; corrects the distributed package.
 
 = 3.6.2 =
 Atomic-widget fixes found by auditing every atomic element, UAE Pro support, and a refreshed upgrade banner.

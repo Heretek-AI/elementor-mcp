@@ -2,6 +2,10 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.6.3]
+
+> Maintenance re-release. No functional changes from 3.6.2; this build only corrects the distributed package.
+
 ## [3.6.2]
 
 > Atomic-widget fixes found by auditing every atomic element, UAE Pro support, and a refreshed upgrade banner.

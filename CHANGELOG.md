@@ -7,6 +7,9 @@ All notable changes to MCP Tools for Elementor are documented in this file.
 ### Added
 - **Connection setup for two more AI clients: OpenClaw and Hermes.** The Connection tab now offers tailored config for [OpenClaw](https://docs.openclaw.ai/cli/mcp) (its `~/.openclaw/openclaw.json` `mcp.servers` shape, a `openclaw mcp set` terminal command, and OAuth via `openclaw mcp login`) and [Hermes](https://github.com/NousResearch/hermes-agent) (its `~/.hermes/config.yaml` `mcp_servers` shape), each with both a direct-HTTP and a Node-proxy option, in App Password and OAuth modes.
 
+### Changed
+- **OAuth authorization codes now live 5 minutes instead of 60 seconds.** CLI MCP clients that print the sign-in URL and require pasting the code back manually (e.g. OpenClaw) made the old 60-second window easy to miss. The code stays single-use and PKCE-bound; only the window widened, still well within the OAuth spec's short-lived guidance.
+
 ## [3.6.3]
 
 > Maintenance re-release. No functional changes from 3.6.2; this build only corrects the distributed package.

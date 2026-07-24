@@ -21,7 +21,12 @@ class EMCP_Tools_OAuth_Store {
 
 	const DB_VERSION        = 1;
 	const DB_VERSION_OPTION = 'emcp_tools_oauth_db_version';
-	const CODE_TTL          = 60;               // seconds
+	// Authorization-code lifetime. Kept short per the OAuth spec (RFC 6749
+	// §4.1.2 recommends a maximum of ~10 min), but generous enough for CLI MCP
+	// clients that print the URL and require a manual copy-paste of the code
+	// (e.g. OpenClaw), where 60s was easy to miss. The code stays single-use and
+	// PKCE-bound; only the window widened.
+	const CODE_TTL          = 300;              // seconds (5 minutes)
 	const CODE_PREFIX       = 'emcp_oauth_code_';
 
 	/**

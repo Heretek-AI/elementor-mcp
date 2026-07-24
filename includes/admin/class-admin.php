@@ -2015,6 +2015,25 @@ class EMCP_Tools_Admin {
 			'type' => 'cmd',
 			'cmd'  => 'npx -y mcp-remote %ENDPOINT%',
 		);
+		// OpenClaw CLI — `openclaw mcp set <name> '<json>'` writes straight to
+		// ~/.openclaw/openclaw.json (mcp.servers). Basic-auth via the headers map.
+		$openclaw_cli   = 'openclaw mcp set %NAME% \'{"url":"%ENDPOINT%","transport":"streamable-http","headers":{"Authorization":"Basic %B64%"}}\'';
+		// OpenClaw OAuth: same shape with auth:oauth; `openclaw mcp login` runs the flow.
+		$oauth_openclaw = array(
+			'type'     => 'config',
+			'lang'     => 'json',
+			'paths'    => array( array( 'path' => '~/.openclaw/openclaw.json', 'label' => '' ) ),
+			'template' => "{\n    \"mcp\": {\n        \"servers\": {\n            \"%NAME%\": {\n                \"url\": \"%ENDPOINT%\",\n                \"transport\": \"streamable-http\",\n                \"auth\": \"oauth\"\n            }\n        }\n    }\n}",
+			'note'     => __( 'After saving, run  openclaw mcp login %NAME%  to authorize through your browser.', 'emcp-tools' ),
+		);
+		// Hermes uses ~/.hermes/config.yaml (mcp_servers). OAuth mode is url-only —
+		// the server initiates the browser sign-in on first connect.
+		$oauth_hermes = array(
+			'type'     => 'config',
+			'lang'     => 'yaml',
+			'paths'    => array( array( 'path' => '~/.hermes/config.yaml', 'label' => '' ) ),
+			'template' => "mcp_servers:\n  %NAME%:\n    url: \"%ENDPOINT%\"",
+		);
 
 		// Codex's "Connect to a custom MCP" UI form — a field-by-field mapping so
 		// users know which Connection value goes where. %ENDPOINT%/%B64% are filled
@@ -2082,6 +2101,20 @@ class EMCP_Tools_Admin {
 				'image'   => 'antigravity.png',
 				'methods' => array( 'bundle' => false, 'cli' => null, 'ai_prompt' => false, 'json' => array( 'http' ) ),
 				'oauth'   => $oauth_antigravity,
+			),
+			array(
+				'id'      => 'openclaw',
+				'label'   => __( 'OpenClaw', 'emcp-tools' ),
+				'icon'    => 'editor-code',
+				'methods' => array( 'bundle' => false, 'cli' => $openclaw_cli, 'ai_prompt' => false, 'json' => array( 'openclaw-http', 'openclaw-npx' ) ),
+				'oauth'   => $oauth_openclaw,
+			),
+			array(
+				'id'      => 'hermes',
+				'label'   => __( 'Hermes', 'emcp-tools' ),
+				'icon'    => 'editor-code',
+				'methods' => array( 'bundle' => false, 'cli' => null, 'ai_prompt' => false, 'json' => array( 'hermes-http', 'hermes-npx' ) ),
+				'oauth'   => $oauth_hermes,
 			),
 			array(
 				'id'      => 'mcp-remote',

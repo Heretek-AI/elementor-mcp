@@ -1279,6 +1279,43 @@
 		return { mcpServers: servers };
 	}
 
+	// OpenClaw ~/.openclaw/openclaw.json — shape is { mcp: { servers: { name: … } } },
+	// NOT the top-level mcpServers other clients use.
+	function emcpOpenclawConfig( variant ) {
+		var c = window.emcpConn, n = emcpServerName(), server;
+		if ( variant === 'npx' ) {
+			server = { command: 'npx', args: [ '-y', '@msrbuilds/emcp-proxy@latest' ],
+				env: { WP_URL: c.siteUrl, WP_USERNAME: c.username, WP_APP_PASSWORD: c.appPassword, MCP_PROTOCOL_VERSION: '2024-11-05' } };
+		} else {
+			server = { url: c.endpoint, transport: 'streamable-http', headers: { Authorization: 'Basic ' + c.b64 } };
+		}
+		var obj = { mcp: { servers: {} } };
+		obj.mcp.servers[ n ] = server;
+		return JSON.stringify( obj, null, 4 );
+	}
+
+	// Hermes ~/.hermes/config.yaml — mcp_servers (YAML). Hand-rendered so the output
+	// matches Hermes' documented shape exactly.
+	function emcpHermesConfig( variant ) {
+		var c = window.emcpConn, n = emcpServerName();
+		if ( variant === 'npx' ) {
+			return 'mcp_servers:\n' +
+				'  ' + n + ':\n' +
+				'    command: "npx"\n' +
+				'    args: ["-y", "@msrbuilds/emcp-proxy@latest"]\n' +
+				'    env:\n' +
+				'      WP_URL: "' + c.siteUrl + '"\n' +
+				'      WP_USERNAME: "' + c.username + '"\n' +
+				'      WP_APP_PASSWORD: "' + c.appPassword + '"\n' +
+				'      MCP_PROTOCOL_VERSION: "2024-11-05"';
+		}
+		return 'mcp_servers:\n' +
+			'  ' + n + ':\n' +
+			'    url: "' + c.endpoint + '"\n' +
+			'    headers:\n' +
+			'      Authorization: "Basic ' + c.b64 + '"';
+	}
+
 	// Codex config.toml — streamable HTTP (expects `http_headers`, an inline table).
 	function emcpTomlConfig() {
 		var c = window.emcpConn, n = emcpServerName();
@@ -1398,6 +1435,7 @@
 			out += emcpStep( 'a. Open your config', paths );
 			out += emcpStep( 'b. Add this server', emcpEscapeHtml( 'If your config file already has content, merge this into it instead of replacing it.' ) );
 			out += emcpCopyBlock( '', emcpFill( o.template, name, endpoint ) );
+			if ( o.note ) { out += '<p class="description">' + emcpEscapeHtml( emcpFill( o.note, name, endpoint ) ) + '</p>'; }
 			return out + emcpStep( 'c. Restart and sign in', emcpEscapeHtml( emcpSigninText() ) );
 		}
 
@@ -1472,6 +1510,10 @@
 		( m.json || [] ).forEach( function ( variant ) {
 			if ( variant === 'toml' ) { html += emcpCopyBlock( 'Manual config — direct HTTP (config.toml)', emcpTomlConfig() ); }
 			else if ( variant === 'toml-stdio' ) { html += emcpCopyBlock( 'Manual config — Node proxy / npx (config.toml)', emcpTomlStdioConfig() ); }
+			else if ( variant === 'openclaw-http' ) { html += emcpCopyBlock( 'Manual config — direct HTTP (openclaw.json)', emcpOpenclawConfig( 'http' ) ); }
+			else if ( variant === 'openclaw-npx' ) { html += emcpCopyBlock( 'Manual config — Node proxy / npx (openclaw.json)', emcpOpenclawConfig( 'npx' ) ); }
+			else if ( variant === 'hermes-http' ) { html += emcpCopyBlock( 'Manual config — direct HTTP (config.yaml)', emcpHermesConfig( 'http' ) ); }
+			else if ( variant === 'hermes-npx' ) { html += emcpCopyBlock( 'Manual config — Node proxy / npx (config.yaml)', emcpHermesConfig( 'npx' ) ); }
 			else {
 				var label = variant === 'npx' ? 'Manual config — Node proxy (npx)'
 					: variant === 'http' ? 'Manual config — direct HTTP'

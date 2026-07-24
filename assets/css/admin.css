@@ -1684,6 +1684,26 @@
 	flex-shrink: 0;
 }
 
+/* Two download buttons side by side (folder bundle + Claude Desktop bundle). */
+.emcp-skills-download-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+/* Secondary (Claude Desktop) button: outlined so the folder bundle stays primary. */
+.elementor-mcp-skills-download--alt {
+	color: var(--mcp-primary, #6366f1);
+	background: transparent;
+}
+
+.elementor-mcp-skills-download--alt:hover,
+.elementor-mcp-skills-download--alt:focus {
+	color: #fff;
+	background: var(--mcp-primary, #6366f1);
+	border-color: var(--mcp-primary, #6366f1);
+}
+
 /* Industry skill packs */
 .elementor-mcp-skills-packs {
 	margin: 0 0 22px;

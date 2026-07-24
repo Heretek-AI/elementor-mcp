@@ -2,6 +2,11 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.6.5]
+
+### Added
+- **Claude Desktop skill bundle.** The Skills page now offers a second download built for Claude Desktop, which imports skills one zip at a time. It packages each skill as its own zip inside a single `emcp-skills-claude-desktop.zip`, with nested sub-skills (e.g. `emcp-themes/astra`) flattened to a hyphenated name Claude Desktop accepts. The original folder bundle stays for clients that read a skills folder (Claude Code, Cursor).
+
 ## [3.6.4]
 
 ### Added

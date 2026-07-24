@@ -2020,11 +2020,15 @@ class EMCP_Tools_Admin {
 		$openclaw_cli   = 'openclaw mcp set %NAME% \'{"url":"%ENDPOINT%","transport":"streamable-http","headers":{"Authorization":"Basic %B64%"}}\'';
 		// OpenClaw OAuth: same shape with auth:oauth; `openclaw mcp login` runs the flow.
 		$oauth_openclaw = array(
-			'type'     => 'config',
-			'lang'     => 'json',
-			'paths'    => array( array( 'path' => '~/.openclaw/openclaw.json', 'label' => '' ) ),
-			'template' => "{\n    \"mcp\": {\n        \"servers\": {\n            \"%NAME%\": {\n                \"url\": \"%ENDPOINT%\",\n                \"transport\": \"streamable-http\",\n                \"auth\": \"oauth\"\n            }\n        }\n    }\n}",
-			'note'     => __( 'After saving, run  openclaw mcp login %NAME%  to authorize through your browser.', 'emcp-tools' ),
+			'type'      => 'config',
+			'lang'      => 'json',
+			'paths'     => array( array( 'path' => '~/.openclaw/openclaw.json', 'label' => '' ) ),
+			// The "mcp" property (not a whole object) — openclaw.json usually has
+			// other keys already; add this, or drop the server under an existing
+			// mcp.servers.
+			'template'  => "\"mcp\": {\n    \"servers\": {\n        \"%NAME%\": {\n            \"url\": \"%ENDPOINT%\",\n            \"transport\": \"streamable-http\",\n            \"auth\": \"oauth\"\n        }\n    }\n}",
+			'merge_msg' => __( 'openclaw.json usually already has other settings. Add this "mcp" block, or if you already have one, add the server inside its "servers".', 'emcp-tools' ),
+			'note'      => __( 'After saving, run  openclaw mcp login %NAME%  to authorize through your browser.', 'emcp-tools' ),
 		);
 		// Hermes uses ~/.hermes/config.yaml (mcp_servers). OAuth mode is url-only —
 		// the server initiates the browser sign-in on first connect.

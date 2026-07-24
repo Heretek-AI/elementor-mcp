@@ -1279,8 +1279,10 @@
 		return { mcpServers: servers };
 	}
 
-	// OpenClaw ~/.openclaw/openclaw.json — shape is { mcp: { servers: { name: … } } },
-	// NOT the top-level mcpServers other clients use.
+	// OpenClaw ~/.openclaw/openclaw.json — the server lives under mcp.servers (NOT
+	// the top-level mcpServers other clients use). openclaw.json almost always
+	// already has other top-level keys, so we emit the "mcp" PROPERTY to merge in
+	// rather than a full { … } object that would clobber the file.
 	function emcpOpenclawConfig( variant ) {
 		var c = window.emcpConn, n = emcpServerName(), server;
 		if ( variant === 'npx' ) {
@@ -1289,9 +1291,9 @@
 		} else {
 			server = { url: c.endpoint, transport: 'streamable-http', headers: { Authorization: 'Basic ' + c.b64 } };
 		}
-		var obj = { mcp: { servers: {} } };
-		obj.mcp.servers[ n ] = server;
-		return JSON.stringify( obj, null, 4 );
+		var inner = { servers: {} };
+		inner.servers[ n ] = server;
+		return '"mcp": ' + JSON.stringify( inner, null, 4 );
 	}
 
 	// Hermes ~/.hermes/config.yaml — mcp_servers (YAML). Hand-rendered so the output
@@ -1433,7 +1435,7 @@
 				paths += '<code>' + emcpEscapeHtml( p.path ) + '</code> <span class="emcp-oauth-path-label">' + emcpEscapeHtml( p.label || '' ) + '</span><br />';
 			} );
 			out += emcpStep( 'a. Open your config', paths );
-			out += emcpStep( 'b. Add this server', emcpEscapeHtml( 'If your config file already has content, merge this into it instead of replacing it.' ) );
+			out += emcpStep( 'b. Add this server', emcpEscapeHtml( o.merge_msg || 'If your config file already has content, merge this into it instead of replacing it.' ) );
 			out += emcpCopyBlock( '', emcpFill( o.template, name, endpoint ) );
 			if ( o.note ) { out += '<p class="description">' + emcpEscapeHtml( emcpFill( o.note, name, endpoint ) ) + '</p>'; }
 			return out + emcpStep( 'c. Restart and sign in', emcpEscapeHtml( emcpSigninText() ) );

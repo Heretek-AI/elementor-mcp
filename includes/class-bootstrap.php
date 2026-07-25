@@ -205,6 +205,10 @@ class EMCP_Tools_Bootstrap {
 		// block store, without touching either store's internals.
 		require_once EMCP_TOOLS_DIR . 'includes/sandbox/class-widget-bundle-adapter.php';
 		require_once EMCP_TOOLS_DIR . 'includes/sandbox/class-snippet-bundle-adapter.php';
+		// Sandbox Cloud abilities — export/import any sandbox artifact (block/
+		// widget/snippet) as a portable bundle over the cloud contract. Free tree;
+		// registration is wired by the ability registrar (a later task).
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-sandbox-cloud-abilities.php';
 		// PHP Code Snippets (Sandbox) — free, capability-gated. AI can author +
 		// validate drafts via MCP; only an admin can activate. The loader runs
 		// ACTIVE snippets (hash-verified, fatal-isolated).

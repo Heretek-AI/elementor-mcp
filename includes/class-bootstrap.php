@@ -200,6 +200,11 @@ class EMCP_Tools_Bootstrap {
 		require_once EMCP_TOOLS_DIR . 'includes/sandbox/class-sandbox-bundle.php';
 		require_once EMCP_TOOLS_DIR . 'includes/sandbox/interface-sandbox-artifact.php';
 		require_once EMCP_TOOLS_DIR . 'includes/sandbox/class-sandbox-store.php';
+		// Bundle adapters — present the Widget Builder + PHP Snippet stores as the
+		// same cloud-ready artifact surface (EMCP_Tools_Sandbox_Artifact) as the
+		// block store, without touching either store's internals.
+		require_once EMCP_TOOLS_DIR . 'includes/sandbox/class-widget-bundle-adapter.php';
+		require_once EMCP_TOOLS_DIR . 'includes/sandbox/class-snippet-bundle-adapter.php';
 		// PHP Code Snippets (Sandbox) — free, capability-gated. AI can author +
 		// validate drafts via MCP; only an admin can activate. The loader runs
 		// ACTIVE snippets (hash-verified, fatal-isolated).

@@ -27,6 +27,7 @@ final class EMCP_Tools_Pro_Loader {
 		'includes/class-sandbox-template-compiler.php',
 		'includes/class-block-generator.php',
 		'includes/class-block-store.php',
+		'includes/class-block-loader.php',
 		'includes/class-widget-generator.php',
 		'includes/abilities/class-system-kit-abilities.php',
 		'includes/abilities/class-widget-builder-abilities.php',

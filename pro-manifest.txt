@@ -15,6 +15,7 @@ includes/class-sandbox-template-compiler.php
 includes/class-block-generator.php
 includes/class-block-store.php
 includes/class-block-loader.php
+includes/abilities/class-block-builder-abilities.php
 includes/themer/class-themer-pro.php
 includes/themer/class-themer-pro-matchers.php
 includes/themer/class-themer-pro-conditions.php

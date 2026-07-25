@@ -31,6 +31,7 @@ final class EMCP_Tools_Pro_Loader {
 		'includes/class-widget-generator.php',
 		'includes/abilities/class-system-kit-abilities.php',
 		'includes/abilities/class-widget-builder-abilities.php',
+		'includes/abilities/class-block-builder-abilities.php',
 		'includes/abilities/class-seo-abilities.php',
 		'includes/abilities/class-a11y-abilities.php',
 		'includes/abilities/class-woo-integration.php',

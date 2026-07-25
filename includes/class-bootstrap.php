@@ -198,6 +198,8 @@ class EMCP_Tools_Bootstrap {
 		require_once EMCP_TOOLS_DIR . 'includes/class-widget-loader.php';
 		// Sandbox Bundle — portable cloud-ready format for blocks/widgets/snippets.
 		require_once EMCP_TOOLS_DIR . 'includes/sandbox/class-sandbox-bundle.php';
+		require_once EMCP_TOOLS_DIR . 'includes/sandbox/interface-sandbox-artifact.php';
+		require_once EMCP_TOOLS_DIR . 'includes/sandbox/class-sandbox-store.php';
 		// PHP Code Snippets (Sandbox) — free, capability-gated. AI can author +
 		// validate drafts via MCP; only an admin can activate. The loader runs
 		// ACTIVE snippets (hash-verified, fatal-isolated).

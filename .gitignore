@@ -110,3 +110,10 @@ docs/
 .playwright-mcp/
 /services-final.png
 /services-page.png
+
+# Freemius deploy secrets — NEVER commit. The API Bearer token / secret key go
+# in .freemius.env (gitignored); pro/tools/freemius-deploy.sh auto-loads it.
+# Only .freemius.env.example (no real values) is tracked.
+.freemius.env
+.freemius.env.local
+freemius.env

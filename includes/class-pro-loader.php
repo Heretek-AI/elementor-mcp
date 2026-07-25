@@ -24,6 +24,7 @@ final class EMCP_Tools_Pro_Loader {
 		'includes/class-color-contrast.php',
 		'includes/class-content-extractor.php',
 		'includes/class-seo-meta.php',
+		'includes/class-sandbox-template-compiler.php',
 		'includes/class-widget-generator.php',
 		'includes/abilities/class-system-kit-abilities.php',
 		'includes/abilities/class-widget-builder-abilities.php',

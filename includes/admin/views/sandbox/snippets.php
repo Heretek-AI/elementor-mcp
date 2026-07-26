@@ -19,9 +19,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 
-<p>
-	<a href="<?php echo esc_url( menu_page_url( 'emcp-tools-widgets', false ) ); ?>">
-		<?php esc_html_e( '← Back to Sandbox', 'emcp-tools' ); ?>
+<p class="emcp-sandbox-back">
+	<a href="<?php echo esc_url( menu_page_url( 'emcp-tools-widgets', false ) ); ?>" class="elementor-mcp-header-btn elementor-mcp-header-btn--secondary">
+		<span class="dashicons dashicons-arrow-left-alt2" aria-hidden="true"></span>
+		<?php esc_html_e( 'Back to Sandbox', 'emcp-tools' ); ?>
 	</a>
 </p>
 

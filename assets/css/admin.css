@@ -4421,6 +4421,9 @@ body[data-emcp-auth="app-password"] [data-authfor="oauth"] { display: none; }
 @media screen and (max-width: 782px) {
 	.emcp-sandbox-cards { grid-template-columns: 1fr; }
 }
+/* "Back to Sandbox" outlined button on each pillar page. */
+.emcp-sandbox-back { margin: 0 0 16px; }
+.emcp-sandbox-back .dashicons { font-size: 15px; width: 15px; height: 15px; line-height: 1; }
 
 /* History: delete one / clear all. */
 .emcp-history__clear-wrap { margin: 10px 0 0; }

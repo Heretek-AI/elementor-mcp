@@ -513,6 +513,17 @@ class EMCP_Tools_Ability_Registrar {
 			$skills->register();
 			$this->ability_names = array_merge( $this->ability_names, $skills->get_ability_names() );
 		}
+
+		// Project Memory (Pro; self-guards on license). Not Elementor-dependent;
+		// gated by the Memory module so the admin can switch the runtime exposure
+		// off. is_enabled() runs before the module's init boot.
+		if ( class_exists( 'EMCP_Tools_Memory_Abilities' )
+			&& class_exists( 'EMCP_Tools_Memory_Module' )
+			&& EMCP_Tools_Memory_Module::is_enabled() ) {
+			$memory = new EMCP_Tools_Memory_Abilities();
+			$memory->register();
+			$this->ability_names = array_merge( $this->ability_names, $memory->get_ability_names() );
+		}
 	}
 
 	/**

@@ -73,6 +73,26 @@ class EMCP_Tools_Uninstaller {
 			EMCP_Tools_Block_Store::uninstall_cleanup();
 		}
 
+		// Project Memory: guidance CPT + session/injection options + the rollup cron.
+		if ( ! class_exists( 'EMCP_Tools_Memory_Store' ) && class_exists( 'EMCP_Tools_Pro_Loader' ) ) {
+			$emcp_memory_store = EMCP_Tools_Pro_Loader::path( 'includes/memory/class-memory-store.php' );
+			if ( '' !== $emcp_memory_store ) {
+				require_once $emcp_memory_store;
+			}
+		}
+		if ( class_exists( 'EMCP_Tools_Memory_Store' ) ) {
+			EMCP_Tools_Memory_Store::uninstall_cleanup();
+		}
+		if ( ! class_exists( 'EMCP_Tools_Memory_Summarizer' ) && class_exists( 'EMCP_Tools_Pro_Loader' ) ) {
+			$emcp_memory_sz = EMCP_Tools_Pro_Loader::path( 'includes/memory/class-memory-summarizer.php' );
+			if ( '' !== $emcp_memory_sz ) {
+				require_once $emcp_memory_sz;
+			}
+		}
+		if ( class_exists( 'EMCP_Tools_Memory_Summarizer' ) ) {
+			( new EMCP_Tools_Memory_Summarizer() )->unschedule();
+		}
+
 		// AI Chat: saved conversations + per-user API keys + cached model lists.
 		// The store class ships in the private Pro overlay; on a free install the
 		// file is absent, so resolve it defensively (dual-root) instead of a hard

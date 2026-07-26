@@ -226,6 +226,8 @@ class EMCP_Tools_Admin {
 		add_action( 'wp_ajax_emcp_tools_create_app_password', array( $this, 'ajax_create_app_password' ) );
 		add_action( 'wp_ajax_emcp_tools_toggle_widget', array( $this, 'ajax_toggle_widget' ) );
 		add_action( 'wp_ajax_emcp_tools_delete_widget', array( $this, 'ajax_delete_widget' ) );
+		add_action( 'wp_ajax_emcp_tools_toggle_block', array( $this, 'ajax_toggle_block' ) );
+		add_action( 'wp_ajax_emcp_tools_delete_block', array( $this, 'ajax_delete_block' ) );
 		add_action( 'wp_ajax_emcp_tools_save_php_snippet', array( $this, 'ajax_save_php_snippet' ) );
 		add_action( 'wp_ajax_emcp_tools_toggle_php_snippet', array( $this, 'ajax_toggle_php_snippet' ) );
 		add_action( 'wp_ajax_emcp_tools_delete_php_snippet', array( $this, 'ajax_delete_php_snippet' ) );
@@ -1536,6 +1538,49 @@ class EMCP_Tools_Admin {
 			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'emcp-tools' ) ), 400 );
 		}
 		$res = EMCP_Tools_Widget_Store::delete( $widget_id );
+		if ( is_wp_error( $res ) ) {
+			wp_send_json_error( array( 'message' => $res->get_error_message() ), 400 );
+		}
+		wp_send_json_success( $res );
+	}
+
+	/**
+	 * AJAX: activate/deactivate a generated Gutenberg block from the Blocks tab.
+	 *
+	 * @since 3.8.0
+	 */
+	public function ajax_toggle_block(): void {
+		check_ajax_referer( 'emcp_tools_blocks', 'nonce' );
+		if ( ! class_exists( 'EMCP_Tools_Block_Store' ) || ! EMCP_Tools_Block_Store::user_has_access() ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to do this.', 'emcp-tools' ) ), 403 );
+		}
+		$block_id = isset( $_POST['block_id'] ) ? absint( wp_unslash( $_POST['block_id'] ) ) : 0;
+		$status   = isset( $_POST['status'] ) ? sanitize_key( wp_unslash( $_POST['status'] ) ) : '';
+		if ( ! $block_id || ! in_array( $status, array( 'active', 'draft' ), true ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'emcp-tools' ) ), 400 );
+		}
+		$res = EMCP_Tools_Block_Store::instance()->set_status( $block_id, $status );
+		if ( is_wp_error( $res ) ) {
+			wp_send_json_error( array( 'message' => $res->get_error_message() ), 400 );
+		}
+		wp_send_json_success( $res );
+	}
+
+	/**
+	 * AJAX: delete a generated Gutenberg block from the Blocks tab.
+	 *
+	 * @since 3.8.0
+	 */
+	public function ajax_delete_block(): void {
+		check_ajax_referer( 'emcp_tools_blocks', 'nonce' );
+		if ( ! class_exists( 'EMCP_Tools_Block_Store' ) || ! EMCP_Tools_Block_Store::user_has_access() ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to do this.', 'emcp-tools' ) ), 403 );
+		}
+		$block_id = isset( $_POST['block_id'] ) ? absint( wp_unslash( $_POST['block_id'] ) ) : 0;
+		if ( ! $block_id ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'emcp-tools' ) ), 400 );
+		}
+		$res = EMCP_Tools_Block_Store::instance()->delete( $block_id );
 		if ( is_wp_error( $res ) ) {
 			wp_send_json_error( array( 'message' => $res->get_error_message() ), 400 );
 		}

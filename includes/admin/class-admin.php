@@ -562,7 +562,7 @@ class EMCP_Tools_Admin {
 	 * management UI lives at ?page=emcp-tools-widgets&view=<pillar> — a route
 	 * deliberately not exposed as its own wp-admin menu entry.
 	 *
-	 * @since 3.8.0
+	 * @since 3.7.0
 	 *
 	 * @return string One of 'overview' | 'blocks' | 'widgets' | 'snippets'.
 	 */
@@ -1601,7 +1601,7 @@ class EMCP_Tools_Admin {
 	/**
 	 * AJAX: activate/deactivate a generated Gutenberg block from the Blocks tab.
 	 *
-	 * @since 3.8.0
+	 * @since 3.7.0
 	 */
 	public function ajax_toggle_block(): void {
 		check_ajax_referer( 'emcp_tools_blocks', 'nonce' );
@@ -1623,7 +1623,7 @@ class EMCP_Tools_Admin {
 	/**
 	 * AJAX: delete a generated Gutenberg block from the Blocks tab.
 	 *
-	 * @since 3.8.0
+	 * @since 3.7.0
 	 */
 	public function ajax_delete_block(): void {
 		check_ajax_referer( 'emcp_tools_blocks', 'nonce' );

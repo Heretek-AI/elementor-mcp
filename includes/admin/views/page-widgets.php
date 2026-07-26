@@ -10,7 +10,7 @@
  * only through this file.
  *
  * @package EMCP_Tools
- * @since   3.8.0
+ * @since   3.7.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

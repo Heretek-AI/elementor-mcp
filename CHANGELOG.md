@@ -2,6 +2,12 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.7.0]
+
+### Added
+- **Gutenberg Block authoring in the Sandbox (Pro).** The Sandbox now builds custom Gutenberg blocks alongside Elementor widgets. An AI agent designs a block from a structured spec, the plugin compiles it into a sandboxed dynamic block (block.json + PHP render) under `wp-content/uploads` — never your theme, core, or other plugins — and it stays inactive until you review and activate it. Active blocks appear in the block editor inserter under "EMCP Custom" with a live server-side preview and a Settings panel. The Sandbox parent page is now a three-card overview (Blocks / Widgets / PHP Snippets), each opening its own management screen. Blocks and widgets export and import as portable JSON bundles (MCP tools + admin), and imports always land as a new inactive draft. New `create-custom-block` and companion MCP tools; shared `Sandbox_Template_Compiler`; `EMCP_Tools_Block_Store` + block loader. This is the cloud-ready artifact backbone for a future EMCP Cloud sync.
+- **Agent Project Memory (Pro).** The plugin now remembers your site across agent sessions so a connected AI stops guessing. Approved guidance — guardrails, facts, conventions, instructions — is composed into a "## Project memory" block injected into the agent's discovery context (a new free `emcp_tools_discovery_memory` seam, mirroring the skills seam). Three Pro MCP tools drive it: `recall` (read approved guidance + session history), `remember` (propose one piece of guidance), and `save-session-summary` (store a summary plus a factual digest built from the change ledger). Agent-proposed guidance is stored as a `pending` entry and is **never** injected until you approve it on the new **Memory** admin tab — the hallucination gate. Session history is built automatically: an hourly rollup closes orphaned activity windows into digest-only records, and an opt-in server-side LLM summary (via the AI Chat provider, best-effort, no hard API-key dependency) can summarize them. Behind a **Memory** module kill-switch (on by default); the 3 tools ship disabled-by-default.
+
 ## [3.6.5]
 
 ### Added

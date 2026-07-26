@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.6.5
+Stable tag: 3.7.0
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -171,6 +171,11 @@ The plugin enforces WordPress capability checks on every tool. Read operations r
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.7.0 =
+Custom Gutenberg blocks, plus a memory so your AI stops guessing.
+* Added: Gutenberg Block authoring in the Sandbox (Pro). Your AI agent designs a custom block from a structured spec, the plugin compiles it into a sandboxed dynamic block under wp-content/uploads (never your theme or core), and you review and activate it before it goes live. Active blocks appear in the editor inserter under "EMCP Custom" with a live preview and a Settings panel. The Sandbox page is now split into Blocks, Widgets, and PHP Snippets, each with its own management screen. Blocks and widgets can be exported and imported as portable JSON bundles.
+* Added: Agent Project Memory (Pro). The plugin now remembers your site across agent sessions so a connected AI stops guessing. Approved guidance (guardrails, facts, conventions, instructions) is injected into the agent's context, and three MCP tools let the agent recall what it knows, propose new guidance, and save a session summary. Agent-proposed guidance stays inactive until you approve it on the new Memory tab, which is the hallucination gate. Session history is built automatically from the change ledger.
 
 = 3.6.5 =
 A Claude Desktop friendly skills download.

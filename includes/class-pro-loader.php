@@ -232,5 +232,13 @@ final class EMCP_Tools_Pro_Loader {
 				$registry->register( new EMCP_Tools_AI_Chat_Module() );
 			}
 		}
+
+		$memory_path = self::path( 'includes/modules/class-memory-module.php' );
+		if ( '' !== $memory_path ) {
+			require_once $memory_path;
+			if ( class_exists( 'EMCP_Tools_Memory_Module' ) ) {
+				$registry->register( new EMCP_Tools_Memory_Module() );
+			}
+		}
 	}
 }

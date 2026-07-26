@@ -130,6 +130,14 @@ class EMCP_Tools_Site_Context {
 			$lines[] = $emcp_skills;
 		}
 
+		// Discovery-context project memory (Pro hooks this to inject a
+		// "## Project memory" block of approved guidance; free ships the empty seam).
+		$emcp_memory = (string) apply_filters( 'emcp_tools_discovery_memory', '' );
+		if ( '' !== $emcp_memory ) {
+			$lines[] = '';
+			$lines[] = $emcp_memory;
+		}
+
 		return implode( "\n", $lines );
 	}
 

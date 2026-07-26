@@ -16,6 +16,13 @@ includes/class-block-generator.php
 includes/class-block-store.php
 includes/class-block-loader.php
 includes/abilities/class-block-builder-abilities.php
+includes/memory/class-memory-store.php
+includes/memory/class-memory-digest.php
+includes/memory/class-memory-injector.php
+includes/memory/class-memory-summarizer.php
+includes/abilities/class-memory-abilities.php
+includes/modules/class-memory-module.php
+includes/admin/views/page-memory.php
 includes/themer/class-themer-pro.php
 includes/themer/class-themer-pro-matchers.php
 includes/themer/class-themer-pro-conditions.php

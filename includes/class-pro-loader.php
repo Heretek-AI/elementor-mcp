@@ -28,6 +28,12 @@ final class EMCP_Tools_Pro_Loader {
 		'includes/class-block-generator.php',
 		'includes/class-block-store.php',
 		'includes/class-block-loader.php',
+		// Project Memory (Pro).
+		'includes/memory/class-memory-store.php',
+		'includes/memory/class-memory-digest.php',
+		'includes/memory/class-memory-injector.php',
+		'includes/memory/class-memory-summarizer.php',
+		'includes/abilities/class-memory-abilities.php',
 		'includes/class-widget-generator.php',
 		'includes/abilities/class-system-kit-abilities.php',
 		'includes/abilities/class-widget-builder-abilities.php',

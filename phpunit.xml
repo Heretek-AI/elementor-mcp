@@ -131,6 +131,9 @@
         <testsuite name="Blocks">
             <directory>pro/tests/unit/blocks</directory>
         </testsuite>
+        <testsuite name="Memory">
+            <directory>pro/tests/unit/memory</directory>
+        </testsuite>
     </testsuites>
 
     <source>

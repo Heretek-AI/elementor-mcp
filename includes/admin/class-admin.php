@@ -507,6 +507,22 @@ class EMCP_Tools_Admin {
 	}
 
 	/**
+	 * Which internal Sandbox pillar to render. The Sandbox parent page
+	 * (?page=emcp-tools-widgets) is a 3-card overview; each pillar's full
+	 * management UI lives at ?page=emcp-tools-widgets&view=<pillar> — a route
+	 * deliberately not exposed as its own wp-admin menu entry.
+	 *
+	 * @since 3.8.0
+	 *
+	 * @return string One of 'overview' | 'blocks' | 'widgets' | 'snippets'.
+	 */
+	public static function sandbox_view(): string {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only view switch, no state change.
+		$view = isset( $_GET['view'] ) ? sanitize_key( wp_unslash( $_GET['view'] ) ) : 'overview';
+		return in_array( $view, array( 'overview', 'blocks', 'widgets', 'snippets' ), true ) ? $view : 'overview';
+	}
+
+	/**
 	 * The PHP Snippet (Sandbox) tool slugs. Free, but powerful, so they ship
 	 * disabled-by-default and the admin opts in on the Tools tab.
 	 *

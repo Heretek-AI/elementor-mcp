@@ -22,6 +22,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $emcp_tools_wb_pro = class_exists( 'EMCP_Tools_Widget_Store' ) && EMCP_Tools_Widget_Store::user_has_access();
 $emcp_tools_wb_url = function_exists( 'emcp_tools_upgrade_url' ) ? emcp_tools_upgrade_url() : '#';
+
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only notice render after a redirect, no state change.
+$emcp_tools_wb_imported = isset( $_GET['imported'] ) ? sanitize_text_field( wp_unslash( $_GET['imported'] ) ) : '';
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only notice render after a redirect, no state change.
+$emcp_tools_wb_import_error = isset( $_GET['import_error'] ) ? sanitize_text_field( wp_unslash( $_GET['import_error'] ) ) : '';
 ?>
 
 <p>
@@ -29,6 +34,12 @@ $emcp_tools_wb_url = function_exists( 'emcp_tools_upgrade_url' ) ? emcp_tools_up
 		<?php esc_html_e( '← Back to Sandbox', 'emcp-tools' ); ?>
 	</a>
 </p>
+
+<?php if ( '1' === $emcp_tools_wb_imported ) : ?>
+	<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Bundle imported as a new draft widget.', 'emcp-tools' ); ?></p></div>
+<?php elseif ( '' !== $emcp_tools_wb_import_error ) : ?>
+	<div class="notice notice-error is-dismissible"><p><?php echo esc_html( $emcp_tools_wb_import_error ); ?></p></div>
+<?php endif; ?>
 
 <div class="elementor-mcp-widget-builder">
 
@@ -66,6 +77,19 @@ $emcp_tools_wb_url = function_exists( 'emcp_tools_upgrade_url' ) ? emcp_tools_up
 					<?php esc_html_e( 'These widgets are PHP compiled by this plugin from an AI-supplied spec (the AI never writes raw PHP). Output is escaped by control type. You can deactivate or delete any widget here at any time.', 'emcp-tools' ); ?>
 				</p>
 			</div>
+
+			<details style="margin: 14px 0;">
+				<summary style="cursor:pointer;font-weight:600;"><?php esc_html_e( '+ Import a bundle', 'emcp-tools' ); ?></summary>
+				<form method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top: 12px;">
+					<?php wp_nonce_field( EMCP_Tools_Admin::NONCE_SANDBOX_BUNDLE ); ?>
+					<input type="hidden" name="action" value="<?php echo esc_attr( EMCP_Tools_Admin::ACTION_IMPORT_ARTIFACT ); ?>" />
+					<p>
+						<input type="file" name="bundle" accept="application/json,.json" required />
+						<button type="submit" class="button button-primary"><?php esc_html_e( 'Import bundle', 'emcp-tools' ); ?></button>
+					</p>
+					<p class="description"><?php esc_html_e( 'Import a .json bundle exported from another site (or from Export below). Imports always land as a new inactive draft.', 'emcp-tools' ); ?></p>
+				</form>
+			</details>
 
 			<?php if ( empty( $emcp_tools_wb_list ) ) : ?>
 
@@ -117,6 +141,9 @@ $emcp_tools_wb_url = function_exists( 'emcp_tools_upgrade_url' ) ? emcp_tools_up
 									<button type="button" class="button elementor-mcp-wb-delete">
 										<?php esc_html_e( 'Delete', 'emcp-tools' ); ?>
 									</button>
+									<a class="button" href="<?php echo esc_url( EMCP_Tools_Admin::sandbox_export_url( 'widget', $emcp_tools_wid ) ); ?>">
+										<?php esc_html_e( 'Export', 'emcp-tools' ); ?>
+									</a>
 									<button
 										type="button"
 										class="button"

@@ -237,6 +237,8 @@ class EMCP_Tools_Admin {
 		add_action( 'admin_post_' . self::ACTION_DELETE_CHANGE, array( $this, 'handle_delete_change' ) );
 		add_action( 'admin_post_' . self::ACTION_CLEAR_CHANGES, array( $this, 'handle_clear_changes' ) );
 		add_action( 'admin_post_' . self::ACTION_REVOKE_OAUTH, array( $this, 'handle_revoke_oauth_client' ) );
+		add_action( 'admin_post_' . self::ACTION_EXPORT_ARTIFACT, array( $this, 'handle_export_artifact' ) );
+		add_action( 'admin_post_' . self::ACTION_IMPORT_ARTIFACT, array( $this, 'handle_import_artifact' ) );
 	}
 
 	/** Nonce action for the .mcpb bundle download. */
@@ -253,6 +255,15 @@ class EMCP_Tools_Admin {
 
 	/** admin-post action that clears the whole History ledger. */
 	const ACTION_CLEAR_CHANGES = 'emcp_tools_clear_changes';
+
+	/** Nonce action shared by the sandbox artifact export/import admin-post handlers. */
+	const NONCE_SANDBOX_BUNDLE = 'emcp_tools_sandbox_bundle';
+
+	/** admin-post action that streams a sandbox artifact as a portable JSON bundle download. */
+	const ACTION_EXPORT_ARTIFACT = 'emcp_tools_export_artifact';
+
+	/** admin-post action that imports an uploaded sandbox artifact bundle. */
+	const ACTION_IMPORT_ARTIFACT = 'emcp_tools_import_artifact';
 
 	/**
 	 * admin-post action: revoke all tokens for one OAuth client.
@@ -1734,6 +1745,188 @@ class EMCP_Tools_Admin {
 		}
 		readfile( $tmp );
 		@unlink( $tmp ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+		exit;
+	}
+
+	/**
+	 * Nonce'd admin-post URL that exports one sandbox artifact (block/widget/
+	 * snippet) as a portable JSON bundle download. Mirrors delete_change_url().
+	 *
+	 * @since 3.7.0
+	 *
+	 * @param string $kind One of 'block' | 'widget' | 'snippet'.
+	 * @param int    $id   The artifact's local post ID.
+	 * @return string
+	 */
+	public static function sandbox_export_url( string $kind, int $id ): string {
+		return wp_nonce_url(
+			add_query_arg(
+				array(
+					'action' => self::ACTION_EXPORT_ARTIFACT,
+					'kind'   => $kind,
+					'id'     => $id,
+				),
+				admin_url( 'admin-post.php' )
+			),
+			self::NONCE_SANDBOX_BUNDLE
+		);
+	}
+
+	/**
+	 * admin-post.php callback: stream one sandbox artifact (custom block,
+	 * custom widget, or PHP snippet) as a portable, checksum-verified JSON
+	 * bundle download. GET: kind, id, _wpnonce. Halts execution at the end.
+	 *
+	 * Reuses EMCP_Tools_Sandbox_Cloud_Abilities::resolve_artifact() — the same
+	 * resolver the MCP export-sandbox-artifact tool uses — so a block export
+	 * cleanly fails here (no fatal) on a site without the Pro overlay.
+	 *
+	 * @since 3.7.0
+	 */
+	public function handle_export_artifact(): void {
+		check_admin_referer( self::NONCE_SANDBOX_BUNDLE );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to do that.', 'emcp-tools' ), '', array( 'response' => 403 ) );
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce already verified above via check_admin_referer().
+		$kind = isset( $_GET['kind'] ) ? sanitize_key( wp_unslash( $_GET['kind'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce already verified above via check_admin_referer().
+		$id = isset( $_GET['id'] ) ? absint( wp_unslash( $_GET['id'] ) ) : 0;
+
+		if ( ! in_array( $kind, EMCP_Tools_Sandbox_Bundle::KINDS, true ) ) {
+			wp_die( esc_html__( 'Unsupported sandbox artifact kind.', 'emcp-tools' ), '', array( 'response' => 400 ) );
+		}
+
+		$artifact = ( new EMCP_Tools_Sandbox_Cloud_Abilities() )->resolve_artifact( $kind );
+		if ( null === $artifact ) {
+			wp_die( esc_html__( 'That artifact kind is unavailable on this site (it may require EMCP Tools Pro).', 'emcp-tools' ), '', array( 'response' => 400 ) );
+		}
+
+		$bundle = $artifact->to_bundle( $id );
+		if ( is_wp_error( $bundle ) ) {
+			wp_die( esc_html( $bundle->get_error_message() ), '', array( 'response' => 400 ) );
+		}
+
+		$filename = sanitize_file_name( 'emcp-' . $kind . '-' . $id . '.json' );
+
+		nocache_headers();
+		header( 'Content-Type: application/json; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+		while ( ob_get_level() > 0 ) {
+			ob_end_clean();
+		}
+		echo wp_json_encode( $bundle, JSON_PRETTY_PRINT ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- streamed JSON download body, not HTML.
+		exit;
+	}
+
+	/**
+	 * admin-post.php callback: import an uploaded sandbox artifact bundle
+	 * (custom block, custom widget, or PHP snippet) as a new local draft.
+	 * POST (multipart): the `bundle` file upload, `_wpnonce`. Redirects back
+	 * to the pillar view for the imported kind with a minimal notice query
+	 * arg. Halts execution at the end.
+	 *
+	 * Validates the upload (present, no error, size-capped, .json extension,
+	 * decodes to an array) then defers to EMCP_Tools_Sandbox_Bundle::validate()
+	 * (schema version, kind, checksum) before resolving the artifact and
+	 * calling apply_bundle() — a block import on a non-Pro site resolves to
+	 * null and redirects with a clean notice, never a fatal.
+	 *
+	 * @since 3.7.0
+	 */
+	public function handle_import_artifact(): void {
+		check_admin_referer( self::NONCE_SANDBOX_BUNDLE );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to do that.', 'emcp-tools' ), '', array( 'response' => 403 ) );
+		}
+
+		$back = menu_page_url( 'emcp-tools-widgets', false );
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- $_FILES superglobal; every field is validated below before use.
+		$file = isset( $_FILES['bundle'] ) && is_array( $_FILES['bundle'] ) ? $_FILES['bundle'] : array();
+
+		if ( empty( $file ) || ! isset( $file['error'] ) || UPLOAD_ERR_OK !== $file['error'] ) {
+			wp_safe_redirect( add_query_arg( 'import_error', rawurlencode( __( 'No bundle file was uploaded, or the upload failed.', 'emcp-tools' ) ), $back ) );
+			exit;
+		}
+
+		$max_bytes = 2 * MB_IN_BYTES;
+		if ( ! isset( $file['size'] ) || $file['size'] <= 0 || $file['size'] > $max_bytes ) {
+			wp_safe_redirect( add_query_arg( 'import_error', rawurlencode( __( 'The bundle file is empty or larger than 2 MB.', 'emcp-tools' ) ), $back ) );
+			exit;
+		}
+
+		$name = isset( $file['name'] ) ? sanitize_file_name( wp_unslash( $file['name'] ) ) : '';
+		if ( '.json' !== strtolower( substr( $name, -5 ) ) ) {
+			wp_safe_redirect( add_query_arg( 'import_error', rawurlencode( __( 'The bundle must be a .json file.', 'emcp-tools' ) ), $back ) );
+			exit;
+		}
+
+		$tmp_name = isset( $file['tmp_name'] ) ? wp_unslash( $file['tmp_name'] ) : '';
+		if ( '' === $tmp_name || ! is_uploaded_file( $tmp_name ) ) {
+			wp_safe_redirect( add_query_arg( 'import_error', rawurlencode( __( 'The upload could not be read.', 'emcp-tools' ) ), $back ) );
+			exit;
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- reading a validated PHP-upload tmp file (is_uploaded_file() checked above), not a remote URL.
+		$contents = file_get_contents( $tmp_name );
+		$data     = ( false !== $contents ) ? json_decode( $contents, true ) : null;
+
+		if ( ! is_array( $data ) ) {
+			wp_safe_redirect( add_query_arg( 'import_error', rawurlencode( __( 'The bundle is not valid JSON.', 'emcp-tools' ) ), $back ) );
+			exit;
+		}
+
+		$valid = EMCP_Tools_Sandbox_Bundle::validate( $data );
+		if ( is_wp_error( $valid ) ) {
+			wp_safe_redirect( add_query_arg( 'import_error', rawurlencode( $valid->get_error_message() ), $back ) );
+			exit;
+		}
+
+		$kind     = (string) $data['kind'];
+		$artifact = ( new EMCP_Tools_Sandbox_Cloud_Abilities() )->resolve_artifact( $kind );
+		if ( null === $artifact ) {
+			wp_safe_redirect(
+				add_query_arg(
+					'import_error',
+					rawurlencode(
+						sprintf(
+							/* translators: %s: artifact kind (e.g. "block") */
+							__( 'The "%s" artifact kind requires EMCP Tools Pro.', 'emcp-tools' ),
+							$kind
+						)
+					),
+					$back
+				)
+			);
+			exit;
+		}
+
+		$new_id = $artifact->apply_bundle( $data );
+		if ( is_wp_error( $new_id ) ) {
+			wp_safe_redirect( add_query_arg( 'import_error', rawurlencode( $new_id->get_error_message() ), $back ) );
+			exit;
+		}
+
+		$view_by_kind = array(
+			'block'   => 'blocks',
+			'widget'  => 'widgets',
+			'snippet' => 'snippets',
+		);
+		$view         = isset( $view_by_kind[ $kind ] ) ? $view_by_kind[ $kind ] : 'overview';
+
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'view'     => $view,
+					'imported' => '1',
+				),
+				$back
+			)
+		);
 		exit;
 	}
 

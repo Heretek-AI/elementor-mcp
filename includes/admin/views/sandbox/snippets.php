@@ -26,6 +26,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 </p>
 
 <?php
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only notice render after a redirect, no state change.
+$emcp_tools_sn_imported = isset( $_GET['imported'] ) ? sanitize_text_field( wp_unslash( $_GET['imported'] ) ) : '';
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only notice render after a redirect, no state change.
+$emcp_tools_sn_import_error = isset( $_GET['import_error'] ) ? sanitize_text_field( wp_unslash( $_GET['import_error'] ) ) : '';
+?>
+<?php if ( '1' === $emcp_tools_sn_imported ) : ?>
+	<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Bundle imported as a new draft snippet.', 'emcp-tools' ); ?></p></div>
+<?php elseif ( '' !== $emcp_tools_sn_import_error ) : ?>
+	<div class="notice notice-error is-dismissible"><p><?php echo esc_html( $emcp_tools_sn_import_error ); ?></p></div>
+<?php endif; ?>
+
+<?php
 // ===== PHP Snippets (free, capability-gated) =====
 $emcp_tools_sn_can   = class_exists( 'EMCP_Tools_PHP_Snippet_Store' ) && EMCP_Tools_PHP_Snippet_Store::can_edit();
 $emcp_tools_sn_list  = class_exists( 'EMCP_Tools_PHP_Snippet_Store' ) ? EMCP_Tools_PHP_Snippet_Store::list_snippets( 'any' ) : array();
@@ -58,6 +70,19 @@ $emcp_tools_sn_nonce = wp_create_nonce( 'emcp_tools_php_snippets' );
 		</div>
 
 	<?php else : ?>
+
+		<details style="margin: 14px 0;">
+			<summary style="cursor:pointer;font-weight:600;"><?php esc_html_e( '+ Import a bundle', 'emcp-tools' ); ?></summary>
+			<form method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top: 12px;">
+				<?php wp_nonce_field( EMCP_Tools_Admin::NONCE_SANDBOX_BUNDLE ); ?>
+				<input type="hidden" name="action" value="<?php echo esc_attr( EMCP_Tools_Admin::ACTION_IMPORT_ARTIFACT ); ?>" />
+				<p>
+					<input type="file" name="bundle" accept="application/json,.json" required />
+					<button type="submit" class="button button-primary"><?php esc_html_e( 'Import bundle', 'emcp-tools' ); ?></button>
+				</p>
+				<p class="description"><?php esc_html_e( 'Import a .json bundle exported from another site (or from Export below). Imports always land as a new inactive draft.', 'emcp-tools' ); ?></p>
+			</form>
+		</details>
 
 		<details class="elementor-mcp-sn-add" style="margin: 14px 0;">
 			<summary style="cursor:pointer;font-weight:600;"><?php esc_html_e( '+ Add a snippet', 'emcp-tools' ); ?></summary>
@@ -181,6 +206,9 @@ $emcp_tools_sn_nonce = wp_create_nonce( 'emcp_tools_php_snippets' );
 								</button>
 								<button type="button" class="button elementor-mcp-sn-edit"><?php esc_html_e( 'Edit', 'emcp-tools' ); ?></button>
 								<button type="button" class="button elementor-mcp-sn-delete"><?php esc_html_e( 'Delete', 'emcp-tools' ); ?></button>
+								<a class="button" href="<?php echo esc_url( EMCP_Tools_Admin::sandbox_export_url( 'snippet', $emcp_tools_sid ) ); ?>">
+									<?php esc_html_e( 'Export', 'emcp-tools' ); ?>
+								</a>
 								<button
 									type="button"
 									class="button"

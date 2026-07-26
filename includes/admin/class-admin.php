@@ -118,6 +118,17 @@ class EMCP_Tools_Admin {
 	}
 
 	/**
+	 * Whether the Project Memory submenu tab should show (module active + Pro).
+	 *
+	 * @since 3.7.0
+	 *
+	 * @return bool
+	 */
+	public function memory_tab_visible(): bool {
+		return $this->module_tab_visible( 'memory' );
+	}
+
+	/**
 	 * Dashicon class for a tab id, used by the in-header nav. Falls back to a
 	 * generic marker for unknown ids.
 	 *
@@ -133,6 +144,7 @@ class EMCP_Tools_Admin {
 			'connection' => 'dashicons-admin-links',
 			'ai-chat'    => 'dashicons-format-chat',
 			'context'    => 'dashicons-info-outline',
+			'memory'     => 'dashicons-database',
 			'prompts'    => 'dashicons-lightbulb',
 			'templates'  => 'dashicons-layout',
 			'brand-kits' => 'dashicons-art',
@@ -152,6 +164,7 @@ class EMCP_Tools_Admin {
 				self::PAGE_SLUG . '-connection' => __( 'Connection', 'emcp-tools' ),
 				self::PAGE_SLUG . '-ai-chat'    => __( 'AI Chat', 'emcp-tools' ),
 				self::PAGE_SLUG . '-context'    => __( 'Context', 'emcp-tools' ),
+				self::PAGE_SLUG . '-memory'     => __( 'Memory', 'emcp-tools' ),
 				self::PAGE_SLUG . '-prompts'    => __( 'Prompts', 'emcp-tools' ),
 				self::PAGE_SLUG . '-templates'  => __( 'Templates', 'emcp-tools' ),
 				self::PAGE_SLUG . '-brand-kits' => __( 'Brand Kits', 'emcp-tools' ),
@@ -162,6 +175,9 @@ class EMCP_Tools_Admin {
 			);
 			if ( ! $this->ai_chat_tab_visible() ) {
 				unset( $this->submenus[ self::PAGE_SLUG . '-ai-chat' ] );
+			}
+			if ( ! $this->memory_tab_visible() ) {
+				unset( $this->submenus[ self::PAGE_SLUG . '-memory' ] );
 			}
 			// Module-backed tabs: drop each when its module is off/unavailable.
 			foreach ( array( 'prompts', 'templates', 'brand-kits' ) as $emcp_mod_id ) {
@@ -195,6 +211,8 @@ class EMCP_Tools_Admin {
 				return 'ai-chat';
 			case self::PAGE_SLUG . '-context':
 				return 'context';
+			case self::PAGE_SLUG . '-memory':
+				return 'memory';
 			case self::PAGE_SLUG . '-prompts':
 				return 'prompts';
 			case self::PAGE_SLUG . '-templates':
@@ -2153,6 +2171,11 @@ class EMCP_Tools_Admin {
 					}
 				} elseif ( 'context' === $active_tab ) {
 					include EMCP_TOOLS_DIR . 'includes/admin/views/page-context.php';
+				} elseif ( 'memory' === $active_tab && $this->memory_tab_visible() ) {
+					$emcp_mem_view = EMCP_Tools_Pro_Loader::path( 'includes/admin/views/page-memory.php' );
+					if ( '' !== $emcp_mem_view ) {
+						include $emcp_mem_view;
+					}
 				} elseif ( 'prompts' === $active_tab && $this->module_tab_visible( 'prompts' ) ) {
 					include EMCP_TOOLS_DIR . 'includes/admin/views/page-prompts.php';
 				} elseif ( 'templates' === $active_tab && $this->module_tab_visible( 'templates' ) ) {

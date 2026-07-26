@@ -2,11 +2,10 @@
 /**
  * Sandbox overview — the parent Sandbox page.
  *
- * Three flat cards (Blocks / Widgets / PHP Snippets), each a summary + an
- * "Open →" link into that pillar's full management screen
- * (?page=emcp-tools-widgets&view=blocks|widgets|snippets). No gradients, no
- * new visual language: reuses the existing dashboard usage-card classes
- * (.emcp-dash-ucard*) and the tier badge classes (.elementor-mcp-badge*).
+ * Three flat navigation cards (Blocks / Widgets / PHP Snippets). Each card is a
+ * single click target into that pillar's full management screen
+ * (?page=emcp-tools-widgets&view=blocks|widgets|snippets), with a compact count
+ * line and a hover affordance. No gradients.
  *
  * @package EMCP_Tools
  * @since   3.8.0
@@ -16,48 +15,87 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$emcp_sb_base_url = menu_page_url( 'emcp-tools-widgets', false );
+$emcp_sb_base_url    = menu_page_url( 'emcp-tools-widgets', false );
+$emcp_sb_upgrade_url = function_exists( 'emcp_tools_upgrade_url' ) ? emcp_tools_upgrade_url() : '#';
+
+/**
+ * Splits a store's list into an [active, draft] count pair.
+ *
+ * @param array $list Rows each carrying a 'status' key.
+ * @return array{0:int,1:int}
+ */
+$emcp_sb_counts = static function ( array $list ): array {
+	$active = 0;
+	$draft  = 0;
+	foreach ( $list as $row ) {
+		if ( 'active' === ( $row['status'] ?? '' ) ) {
+			++$active;
+		} else {
+			++$draft;
+		}
+	}
+	return array( $active, $draft );
+};
 
 // ----- Blocks (Pro) -----
 $emcp_sb_blocks_ok = class_exists( 'EMCP_Tools_Block_Store' ) && EMCP_Tools_Block_Store::user_has_access();
-$emcp_sb_blocks    = $emcp_sb_blocks_ok ? EMCP_Tools_Block_Store::instance()->list_blocks( 'any' ) : array();
-$emcp_sb_bl_active = 0;
-$emcp_sb_bl_draft  = 0;
-foreach ( $emcp_sb_blocks as $emcp_sb_b ) {
-	if ( 'active' === ( $emcp_sb_b['status'] ?? '' ) ) {
-		++$emcp_sb_bl_active;
-	} else {
-		++$emcp_sb_bl_draft;
-	}
-}
+list( $emcp_sb_bl_active, $emcp_sb_bl_draft ) = $emcp_sb_counts(
+	$emcp_sb_blocks_ok ? EMCP_Tools_Block_Store::instance()->list_blocks( 'any' ) : array()
+);
 
 // ----- Widgets (Pro) -----
 $emcp_sb_widgets_ok = class_exists( 'EMCP_Tools_Widget_Store' ) && EMCP_Tools_Widget_Store::user_has_access();
-$emcp_sb_widgets    = $emcp_sb_widgets_ok ? EMCP_Tools_Widget_Store::list_widgets( 'any' ) : array();
-$emcp_sb_wd_active  = 0;
-$emcp_sb_wd_draft   = 0;
-foreach ( $emcp_sb_widgets as $emcp_sb_w ) {
-	if ( 'active' === ( $emcp_sb_w['status'] ?? '' ) ) {
-		++$emcp_sb_wd_active;
-	} else {
-		++$emcp_sb_wd_draft;
-	}
-}
+list( $emcp_sb_wd_active, $emcp_sb_wd_draft ) = $emcp_sb_counts(
+	$emcp_sb_widgets_ok ? EMCP_Tools_Widget_Store::list_widgets( 'any' ) : array()
+);
 
 // ----- PHP Snippets (Free, capability-gated) -----
-$emcp_sb_snip_ok     = class_exists( 'EMCP_Tools_PHP_Snippet_Store' ) && EMCP_Tools_PHP_Snippet_Store::can_edit();
-$emcp_sb_snippets    = class_exists( 'EMCP_Tools_PHP_Snippet_Store' ) ? EMCP_Tools_PHP_Snippet_Store::list_snippets( 'any' ) : array();
-$emcp_sb_sn_active   = 0;
-$emcp_sb_sn_draft    = 0;
-foreach ( $emcp_sb_snippets as $emcp_sb_s ) {
-	if ( 'active' === ( $emcp_sb_s['status'] ?? '' ) ) {
-		++$emcp_sb_sn_active;
-	} else {
-		++$emcp_sb_sn_draft;
-	}
-}
+$emcp_sb_snip_ok = class_exists( 'EMCP_Tools_PHP_Snippet_Store' ) && EMCP_Tools_PHP_Snippet_Store::can_edit();
+list( $emcp_sb_sn_active, $emcp_sb_sn_draft ) = $emcp_sb_counts(
+	class_exists( 'EMCP_Tools_PHP_Snippet_Store' ) ? EMCP_Tools_PHP_Snippet_Store::list_snippets( 'any' ) : array()
+);
 
-$emcp_sb_upgrade_url = function_exists( 'emcp_tools_upgrade_url' ) ? emcp_tools_upgrade_url() : '#';
+$emcp_sb_cards = array(
+	array(
+		'view'        => 'blocks',
+		'label'       => __( 'Blocks', 'emcp-tools' ),
+		'badge'       => 'pro',
+		'badge_label' => __( 'PRO', 'emcp-tools' ),
+		'icon'        => 'dashicons-block-default',
+		'ico_mod'     => 'usage',
+		'desc'        => __( 'AI-generated custom Gutenberg blocks, compiled from a spec and reviewed here before they go live.', 'emcp-tools' ),
+		'available'   => $emcp_sb_blocks_ok,
+		'active'      => $emcp_sb_bl_active,
+		'draft'       => $emcp_sb_bl_draft,
+		'note'        => __( 'Requires Pro', 'emcp-tools' ),
+	),
+	array(
+		'view'        => 'widgets',
+		'label'       => __( 'Widgets', 'emcp-tools' ),
+		'badge'       => 'pro',
+		'badge_label' => __( 'PRO', 'emcp-tools' ),
+		'icon'        => 'dashicons-screenoptions',
+		'ico_mod'     => 'tools',
+		'desc'        => __( 'AI-generated custom Elementor widgets, sandboxed and shown in the panel under "Custom (EMCP)".', 'emcp-tools' ),
+		'available'   => $emcp_sb_widgets_ok,
+		'active'      => $emcp_sb_wd_active,
+		'draft'       => $emcp_sb_wd_draft,
+		'note'        => __( 'Requires Pro', 'emcp-tools' ),
+	),
+	array(
+		'view'        => 'snippets',
+		'label'       => __( 'PHP Snippets', 'emcp-tools' ),
+		'badge'       => 'free',
+		'badge_label' => __( 'FREE', 'emcp-tools' ),
+		'icon'        => 'dashicons-editor-code',
+		'ico_mod'     => 'sandbox',
+		'desc'        => __( 'Small PHP snippets an AI agent can draft, run as a shortcode or on a hook, that stay inactive until you review and activate them.', 'emcp-tools' ),
+		'available'   => $emcp_sb_snip_ok,
+		'active'      => $emcp_sb_sn_active,
+		'draft'       => $emcp_sb_sn_draft,
+		'note'        => __( 'Needs permission', 'emcp-tools' ),
+	),
+);
 ?>
 
 <div class="emcp-sandbox-overview">
@@ -66,117 +104,37 @@ $emcp_sb_upgrade_url = function_exists( 'emcp_tools_upgrade_url' ) ? emcp_tools_
 		<?php esc_html_e( 'Code your AI agent generated through the MCP tools lives here, isolated under wp-content/uploads, never in your theme, core, or other plugins.', 'emcp-tools' ); ?>
 	</p>
 
-	<div class="emcp-dash-usage-grid">
+	<div class="emcp-sandbox-cards">
+		<?php foreach ( $emcp_sb_cards as $emcp_c ) : ?>
+			<a class="emcp-sb-card" href="<?php echo esc_url( $emcp_sb_base_url . '&view=' . $emcp_c['view'] ); ?>">
+				<span class="emcp-sb-card-top">
+					<span class="emcp-sb-card-ico emcp-dash-ucard-ico--<?php echo esc_attr( $emcp_c['ico_mod'] ); ?>">
+						<span class="dashicons <?php echo esc_attr( $emcp_c['icon'] ); ?>" aria-hidden="true"></span>
+					</span>
+					<span class="emcp-sb-card-titles">
+						<span class="emcp-sb-card-title"><?php echo esc_html( $emcp_c['label'] ); ?></span>
+						<span class="elementor-mcp-badge elementor-mcp-badge--<?php echo esc_attr( $emcp_c['badge'] ); ?>"><?php echo esc_html( $emcp_c['badge_label'] ); ?></span>
+					</span>
+					<span class="emcp-sb-card-arrow" aria-hidden="true">&rarr;</span>
+				</span>
 
-		<!-- Blocks -->
-		<div class="emcp-dash-ucard">
-			<span class="emcp-dash-ucard-head">
-				<span class="emcp-dash-ucard-ico emcp-dash-ucard-ico--usage"><span class="dashicons dashicons-block-default" aria-hidden="true"></span></span>
-				<span class="emcp-dash-ucard-title">
-					<?php esc_html_e( 'Blocks', 'emcp-tools' ); ?>
-					<span class="elementor-mcp-badge elementor-mcp-badge--pro"><?php esc_html_e( 'PRO', 'emcp-tools' ); ?></span>
-				</span>
-			</span>
-			<p class="emcp-dash-ucard-sub">
-				<?php esc_html_e( 'AI-generated custom Gutenberg blocks, compiled from a spec and reviewed here before they go live.', 'emcp-tools' ); ?>
-			</p>
-			<?php if ( $emcp_sb_blocks_ok ) : ?>
-				<span class="emcp-dash-ucard-num"><?php echo esc_html( number_format_i18n( $emcp_sb_bl_active + $emcp_sb_bl_draft ) ); ?></span>
-				<span class="emcp-dash-ucard-foot">
-					<?php
-					printf(
-						/* translators: 1: active block count, 2: draft block count */
-						esc_html__( '%1$s active · %2$s drafts', 'emcp-tools' ),
-						esc_html( number_format_i18n( $emcp_sb_bl_active ) ),
-						esc_html( number_format_i18n( $emcp_sb_bl_draft ) )
-					);
-					?>
-				</span>
-			<?php else : ?>
-				<p class="emcp-dash-ucard-sub">
-					<?php esc_html_e( 'Requires Pro.', 'emcp-tools' ); ?>
-					<a href="<?php echo esc_url( $emcp_sb_upgrade_url ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Upgrade to Pro', 'emcp-tools' ); ?></a>
-				</p>
-			<?php endif; ?>
-			<p class="emcp-sandbox-overview-open">
-				<a class="button emcp-sandbox-open-btn" href="<?php echo esc_url( $emcp_sb_base_url . '&view=blocks' ); ?>">
-					<?php esc_html_e( 'Open →', 'emcp-tools' ); ?>
-				</a>
-			</p>
-		</div>
+				<span class="emcp-sb-card-desc"><?php echo esc_html( $emcp_c['desc'] ); ?></span>
 
-		<!-- Widgets -->
-		<div class="emcp-dash-ucard">
-			<span class="emcp-dash-ucard-head">
-				<span class="emcp-dash-ucard-ico emcp-dash-ucard-ico--tools"><span class="dashicons dashicons-screenoptions" aria-hidden="true"></span></span>
-				<span class="emcp-dash-ucard-title">
-					<?php esc_html_e( 'Widgets', 'emcp-tools' ); ?>
-					<span class="elementor-mcp-badge elementor-mcp-badge--pro"><?php esc_html_e( 'PRO', 'emcp-tools' ); ?></span>
+				<span class="emcp-sb-card-meta">
+					<?php if ( $emcp_c['available'] ) : ?>
+						<span class="emcp-sb-card-meta-active"><?php echo esc_html( number_format_i18n( $emcp_c['active'] ) ); ?></span>
+						<?php esc_html_e( 'active', 'emcp-tools' ); ?>
+						<span class="emcp-sb-card-dot">&middot;</span>
+						<span class="emcp-sb-card-meta-draft"><?php echo esc_html( number_format_i18n( $emcp_c['draft'] ) ); ?></span>
+						<?php esc_html_e( 'drafts', 'emcp-tools' ); ?>
+					<?php else : ?>
+						<span class="emcp-sb-card-locked">
+							<span class="dashicons dashicons-lock" aria-hidden="true"></span>
+							<?php echo esc_html( $emcp_c['note'] ); ?>
+						</span>
+					<?php endif; ?>
 				</span>
-			</span>
-			<p class="emcp-dash-ucard-sub">
-				<?php esc_html_e( 'AI-generated custom Elementor widgets, sandboxed and shown in the panel under "Custom (EMCP)".', 'emcp-tools' ); ?>
-			</p>
-			<?php if ( $emcp_sb_widgets_ok ) : ?>
-				<span class="emcp-dash-ucard-num"><?php echo esc_html( number_format_i18n( $emcp_sb_wd_active + $emcp_sb_wd_draft ) ); ?></span>
-				<span class="emcp-dash-ucard-foot">
-					<?php
-					printf(
-						/* translators: 1: active widget count, 2: draft widget count */
-						esc_html__( '%1$s active · %2$s drafts', 'emcp-tools' ),
-						esc_html( number_format_i18n( $emcp_sb_wd_active ) ),
-						esc_html( number_format_i18n( $emcp_sb_wd_draft ) )
-					);
-					?>
-				</span>
-			<?php else : ?>
-				<p class="emcp-dash-ucard-sub">
-					<?php esc_html_e( 'Requires Pro.', 'emcp-tools' ); ?>
-					<a href="<?php echo esc_url( $emcp_sb_upgrade_url ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Upgrade to Pro', 'emcp-tools' ); ?></a>
-				</p>
-			<?php endif; ?>
-			<p class="emcp-sandbox-overview-open">
-				<a class="button emcp-sandbox-open-btn" href="<?php echo esc_url( $emcp_sb_base_url . '&view=widgets' ); ?>">
-					<?php esc_html_e( 'Open →', 'emcp-tools' ); ?>
-				</a>
-			</p>
-		</div>
-
-		<!-- PHP Snippets -->
-		<div class="emcp-dash-ucard">
-			<span class="emcp-dash-ucard-head">
-				<span class="emcp-dash-ucard-ico emcp-dash-ucard-ico--sandbox"><span class="dashicons dashicons-editor-code" aria-hidden="true"></span></span>
-				<span class="emcp-dash-ucard-title">
-					<?php esc_html_e( 'PHP Snippets', 'emcp-tools' ); ?>
-					<span class="elementor-mcp-badge elementor-mcp-badge--free"><?php esc_html_e( 'FREE', 'emcp-tools' ); ?></span>
-				</span>
-			</span>
-			<p class="emcp-dash-ucard-sub">
-				<?php esc_html_e( 'Small PHP snippets an AI agent can draft, run as a shortcode or on a hook, that stay inactive until you review and activate them.', 'emcp-tools' ); ?>
-			</p>
-			<?php if ( $emcp_sb_snip_ok ) : ?>
-				<span class="emcp-dash-ucard-num"><?php echo esc_html( number_format_i18n( $emcp_sb_sn_active + $emcp_sb_sn_draft ) ); ?></span>
-				<span class="emcp-dash-ucard-foot">
-					<?php
-					printf(
-						/* translators: 1: active snippet count, 2: draft snippet count */
-						esc_html__( '%1$s active · %2$s drafts', 'emcp-tools' ),
-						esc_html( number_format_i18n( $emcp_sb_sn_active ) ),
-						esc_html( number_format_i18n( $emcp_sb_sn_draft ) )
-					);
-					?>
-				</span>
-			<?php else : ?>
-				<p class="emcp-dash-ucard-sub">
-					<?php esc_html_e( 'Managing PHP snippets requires the manage_options and unfiltered_html capabilities.', 'emcp-tools' ); ?>
-				</p>
-			<?php endif; ?>
-			<p class="emcp-sandbox-overview-open">
-				<a class="button emcp-sandbox-open-btn" href="<?php echo esc_url( $emcp_sb_base_url . '&view=snippets' ); ?>">
-					<?php esc_html_e( 'Open →', 'emcp-tools' ); ?>
-				</a>
-			</p>
-		</div>
-
+			</a>
+		<?php endforeach; ?>
 	</div>
 </div>

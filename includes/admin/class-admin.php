@@ -457,7 +457,7 @@ class EMCP_Tools_Admin {
 	 *
 	 * @since 1.8.0
 	 */
-	const DEFAULTS_VERSION = 24;
+	const DEFAULTS_VERSION = 25;
 
 	/**
 	 * SEO/A11y Pro MCP tool slugs that ship disabled-by-default (v2 defaults).
@@ -516,6 +516,22 @@ class EMCP_Tools_Admin {
 			'emcp-tools/list-custom-blocks',
 			'emcp-tools/set-block-status',
 			'emcp-tools/delete-custom-block',
+		);
+	}
+
+	/**
+	 * Project Memory Pro MCP tool slugs that ship disabled-by-default (v25). The
+	 * always-on value (approved-guidance injection) works with these tools off.
+	 *
+	 * @since 3.7.0
+	 *
+	 * @return string[]
+	 */
+	public static function memory_tool_slugs(): array {
+		return array(
+			'emcp-tools/recall',
+			'emcp-tools/remember',
+			'emcp-tools/save-session-summary',
 		);
 	}
 
@@ -907,6 +923,12 @@ class EMCP_Tools_Admin {
 		// block code; same posture as the Widget Builder + PHP Snippets).
 		if ( $applied < 24 ) {
 			$add = array_merge( $add, self::block_tool_slugs() );
+		}
+
+		// v25 — Project Memory Pro MCP tools ship disabled-by-default. The always-on
+		// value (approved-guidance injection) works with the tools off.
+		if ( $applied < 25 ) {
+			$add = array_merge( $add, self::memory_tool_slugs() );
 		}
 
 		$merged = array_values( array_unique( array_merge( $existing, $add ) ) );
@@ -2835,6 +2857,7 @@ class EMCP_Tools_Admin {
 				self::seo_a11y_tool_slugs(),
 				self::widget_builder_tool_slugs(),
 				self::block_tool_slugs(),
+				self::memory_tool_slugs(),
 				array( 'emcp-tools/resize-media' )
 			);
 			foreach ( $catalog as $emcp_group ) {
@@ -4289,6 +4312,31 @@ class EMCP_Tools_Admin {
 					'label'       => __( 'Import Sandbox Artifact', 'emcp-tools' ),
 					'description' => __( 'Imports a sandbox artifact bundle produced by export-sandbox-artifact.', 'emcp-tools' ),
 					'badges'      => array(),
+				),
+			),
+		);
+
+		// Project Memory (Pro) — recall/remember/save-session-summary. Disabled by
+		// default; the approved-guidance injection works with these off.
+		$tools['memory'] = array(
+			'platform' => 'wordpress',
+			'pro'      => true,
+			'label'    => __( 'Project Memory (Pro)', 'emcp-tools' ),
+			'tools'    => array(
+				'emcp-tools/recall' => array(
+					'label'       => __( 'Recall Project Memory', 'emcp-tools' ),
+					'description' => __( 'Read approved guidance + recent session summaries so the agent does not re-guess site context.', 'emcp-tools' ),
+					'badges'      => array( 'pro', 'read-only' ),
+				),
+				'emcp-tools/remember' => array(
+					'label'       => __( 'Remember Guidance', 'emcp-tools' ),
+					'description' => __( 'Propose one guardrail/fact/convention/instruction. Stored pending until a human approves it.', 'emcp-tools' ),
+					'badges'      => array( 'pro' ),
+				),
+				'emcp-tools/save-session-summary' => array(
+					'label'       => __( 'Save Session Summary', 'emcp-tools' ),
+					'description' => __( 'Record a session summary; the plugin attaches a factual digest of the actual changes.', 'emcp-tools' ),
+					'badges'      => array( 'pro' ),
 				),
 			),
 		);

@@ -444,7 +444,7 @@ class EMCP_Tools_Admin {
 	 *
 	 * @since 1.8.0
 	 */
-	const DEFAULTS_VERSION = 23;
+	const DEFAULTS_VERSION = 24;
 
 	/**
 	 * SEO/A11y Pro MCP tool slugs that ship disabled-by-default (v2 defaults).
@@ -483,6 +483,26 @@ class EMCP_Tools_Admin {
 			'emcp-tools/list-custom-widgets',
 			'emcp-tools/set-widget-status',
 			'emcp-tools/delete-custom-widget',
+		);
+	}
+
+	/**
+	 * Block Builder Pro MCP tool slugs that ship disabled-by-default (v24).
+	 *
+	 * @since 3.7.0
+	 *
+	 * @return string[]
+	 */
+	public static function block_tool_slugs(): array {
+		return array(
+			'emcp-tools/list-block-control-types',
+			'emcp-tools/validate-block-spec',
+			'emcp-tools/create-custom-block',
+			'emcp-tools/update-custom-block',
+			'emcp-tools/get-custom-block',
+			'emcp-tools/list-custom-blocks',
+			'emcp-tools/set-block-status',
+			'emcp-tools/delete-custom-block',
 		);
 	}
 
@@ -852,6 +872,12 @@ class EMCP_Tools_Admin {
 		// so there is nothing of theirs to disable.
 		if ( $applied < 23 ) {
 			$add[] = 'emcp-tools/uae-write';
+		}
+
+		// v24 — Block Builder Pro MCP tools ship disabled-by-default (author executable
+		// block code; same posture as the Widget Builder + PHP Snippets).
+		if ( $applied < 24 ) {
+			$add = array_merge( $add, self::block_tool_slugs() );
 		}
 
 		$merged = array_values( array_unique( array_merge( $existing, $add ) ) );
@@ -2554,6 +2580,7 @@ class EMCP_Tools_Admin {
 				self::theme_tool_slugs(),
 				self::seo_a11y_tool_slugs(),
 				self::widget_builder_tool_slugs(),
+				self::block_tool_slugs(),
 				array( 'emcp-tools/resize-media' )
 			);
 			foreach ( $catalog as $emcp_group ) {
@@ -3990,6 +4017,28 @@ class EMCP_Tools_Admin {
 			),
 		);
 
+		// Sandbox Cloud (export/import) — free, always-on. Lets a sandbox artifact
+		// (custom widget/block/snippet) be exported as a portable bundle and
+		// imported on another site, so authored sandbox code isn't stuck to one
+		// install. Both read/write in nature but low-risk (data movement, not
+		// arbitrary execution) — enabled-by-default, unlike the sandboxes themselves.
+		$tools['sandbox_cloud'] = array(
+			'platform' => 'wordpress',
+			'label' => __( 'Sandbox Cloud (Export / Import)', 'emcp-tools' ),
+			'tools' => array(
+				'emcp-tools/export-sandbox-artifact' => array(
+					'label'       => __( 'Export Sandbox Artifact', 'emcp-tools' ),
+					'description' => __( 'Exports a custom widget/block/snippet as a portable bundle.', 'emcp-tools' ),
+					'badges'      => array( 'read-only' ),
+				),
+				'emcp-tools/import-sandbox-artifact' => array(
+					'label'       => __( 'Import Sandbox Artifact', 'emcp-tools' ),
+					'description' => __( 'Imports a sandbox artifact bundle produced by export-sandbox-artifact.', 'emcp-tools' ),
+					'badges'      => array(),
+				),
+			),
+		);
+
 		// Themer PHP Templates — free, capability-gated + master-switch-gated;
 		// disabled by default. AI authors DRAFTS; a human attaches one in a
 		// template metabox (the execution gate). Registered only when the Themer
@@ -4132,6 +4181,54 @@ class EMCP_Tools_Admin {
 					'emcp-tools/delete-custom-widget' => array(
 						'label'       => __( 'Delete Custom Widget', 'emcp-tools' ),
 						'description' => __( 'Permanently deletes a custom widget and its sandbox file.', 'emcp-tools' ),
+						'badges'      => array( 'pro', 'destructive' ),
+					),
+				),
+			);
+
+			$tools['block_builder'] = array(
+				'platform' => 'gutenberg',
+				'pro'      => true,
+				'label' => __( 'Block Builder (Pro)', 'emcp-tools' ),
+				'tools' => array(
+					'emcp-tools/list-block-control-types' => array(
+						'label'       => __( 'List Block Control Types', 'emcp-tools' ),
+						'description' => __( 'Returns the attribute types and template syntax for building block specs.', 'emcp-tools' ),
+						'badges'      => array( 'pro', 'read-only' ),
+					),
+					'emcp-tools/validate-block-spec'      => array(
+						'label'       => __( 'Validate Block Spec', 'emcp-tools' ),
+						'description' => __( 'Validates a block spec and dry-runs the generator without saving.', 'emcp-tools' ),
+						'badges'      => array( 'pro', 'read-only' ),
+					),
+					'emcp-tools/create-custom-block'      => array(
+						'label'       => __( 'Create Custom Block', 'emcp-tools' ),
+						'description' => __( 'Generates a custom Gutenberg block from a spec into an isolated sandbox and activates it.', 'emcp-tools' ),
+						'badges'      => array( 'pro' ),
+					),
+					'emcp-tools/update-custom-block'      => array(
+						'label'       => __( 'Update Custom Block', 'emcp-tools' ),
+						'description' => __( 'Replaces a custom block\'s spec and regenerates its code.', 'emcp-tools' ),
+						'badges'      => array( 'pro' ),
+					),
+					'emcp-tools/get-custom-block'          => array(
+						'label'       => __( 'Get Custom Block', 'emcp-tools' ),
+						'description' => __( 'Returns a custom block\'s spec, generated code, status, and last error.', 'emcp-tools' ),
+						'badges'      => array( 'pro', 'read-only' ),
+					),
+					'emcp-tools/list-custom-blocks'        => array(
+						'label'       => __( 'List Custom Blocks', 'emcp-tools' ),
+						'description' => __( 'Lists all generated custom blocks with their status.', 'emcp-tools' ),
+						'badges'      => array( 'pro', 'read-only' ),
+					),
+					'emcp-tools/set-block-status'          => array(
+						'label'       => __( 'Set Block Status', 'emcp-tools' ),
+						'description' => __( 'Activates or deactivates a custom block.', 'emcp-tools' ),
+						'badges'      => array( 'pro' ),
+					),
+					'emcp-tools/delete-custom-block'       => array(
+						'label'       => __( 'Delete Custom Block', 'emcp-tools' ),
+						'description' => __( 'Permanently deletes a custom block and its sandbox file.', 'emcp-tools' ),
 						'badges'      => array( 'pro', 'destructive' ),
 					),
 				),

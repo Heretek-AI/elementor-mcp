@@ -99,7 +99,7 @@ $emcp_sb_upgrade_url = function_exists( 'emcp_tools_upgrade_url' ) ? emcp_tools_
 				</p>
 			<?php endif; ?>
 			<p class="emcp-sandbox-overview-open">
-				<a class="button button-primary" href="<?php echo esc_url( $emcp_sb_base_url . '&view=blocks' ); ?>">
+				<a class="button emcp-sandbox-open-btn" href="<?php echo esc_url( $emcp_sb_base_url . '&view=blocks' ); ?>">
 					<?php esc_html_e( 'Open →', 'emcp-tools' ); ?>
 				</a>
 			</p>
@@ -108,7 +108,7 @@ $emcp_sb_upgrade_url = function_exists( 'emcp_tools_upgrade_url' ) ? emcp_tools_
 		<!-- Widgets -->
 		<div class="emcp-dash-ucard">
 			<span class="emcp-dash-ucard-head">
-				<span class="emcp-dash-ucard-ico emcp-dash-ucard-ico--tools"><span class="dashicons dashicons-admin-widgets" aria-hidden="true"></span></span>
+				<span class="emcp-dash-ucard-ico emcp-dash-ucard-ico--tools"><span class="dashicons dashicons-screenoptions" aria-hidden="true"></span></span>
 				<span class="emcp-dash-ucard-title">
 					<?php esc_html_e( 'Widgets', 'emcp-tools' ); ?>
 					<span class="elementor-mcp-badge elementor-mcp-badge--pro"><?php esc_html_e( 'PRO', 'emcp-tools' ); ?></span>
@@ -136,7 +136,7 @@ $emcp_sb_upgrade_url = function_exists( 'emcp_tools_upgrade_url' ) ? emcp_tools_
 				</p>
 			<?php endif; ?>
 			<p class="emcp-sandbox-overview-open">
-				<a class="button button-primary" href="<?php echo esc_url( $emcp_sb_base_url . '&view=widgets' ); ?>">
+				<a class="button emcp-sandbox-open-btn" href="<?php echo esc_url( $emcp_sb_base_url . '&view=widgets' ); ?>">
 					<?php esc_html_e( 'Open →', 'emcp-tools' ); ?>
 				</a>
 			</p>
@@ -172,7 +172,7 @@ $emcp_sb_upgrade_url = function_exists( 'emcp_tools_upgrade_url' ) ? emcp_tools_
 				</p>
 			<?php endif; ?>
 			<p class="emcp-sandbox-overview-open">
-				<a class="button button-primary" href="<?php echo esc_url( $emcp_sb_base_url . '&view=snippets' ); ?>">
+				<a class="button emcp-sandbox-open-btn" href="<?php echo esc_url( $emcp_sb_base_url . '&view=snippets' ); ?>">
 					<?php esc_html_e( 'Open →', 'emcp-tools' ); ?>
 				</a>
 			</p>

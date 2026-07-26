@@ -52,6 +52,19 @@ abstract class EMCP_Tools_Sandbox_Store implements EMCP_Tools_Sandbox_Artifact {
 	}
 	protected function subdir_path(): string { return $this->sandbox_base() . '/' . $this->sandbox_subdir(); }
 	public function artifact_dir( int $id ): string { return $this->subdir_path() . '/' . $id; }
+	/**
+	 * Public URL to an artifact's directory (no trailing slash). Needed to
+	 * enqueue an artifact's own assets (e.g. a block's editor script/style),
+	 * whose URLs WordPress's block.json `file:` resolver cannot compute for a
+	 * sandbox living under uploads rather than in a plugin/theme.
+	 *
+	 * @param int $id Artifact post ID.
+	 * @return string
+	 */
+	public function artifact_url( int $id ): string {
+		$u = wp_upload_dir();
+		return trailingslashit( $u['baseurl'] ) . self::SANDBOX_DIR . '/' . $this->sandbox_subdir() . '/' . $id;
+	}
 	public function manifest_path(): string { return $this->sandbox_base() . '/' . $this->manifest_filename(); }
 
 	protected function write_file( string $path, string $contents ): bool {

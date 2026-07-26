@@ -246,6 +246,9 @@ class EMCP_Tools_Admin {
 		add_action( 'wp_ajax_emcp_tools_delete_widget', array( $this, 'ajax_delete_widget' ) );
 		add_action( 'wp_ajax_emcp_tools_toggle_block', array( $this, 'ajax_toggle_block' ) );
 		add_action( 'wp_ajax_emcp_tools_delete_block', array( $this, 'ajax_delete_block' ) );
+		add_action( 'wp_ajax_emcp_tools_memory_set_status', array( $this, 'ajax_memory_set_status' ) );
+		add_action( 'wp_ajax_emcp_tools_memory_save_guidance', array( $this, 'ajax_memory_save_guidance' ) );
+		add_action( 'wp_ajax_emcp_tools_memory_save_settings', array( $this, 'ajax_memory_save_settings' ) );
 		add_action( 'wp_ajax_emcp_tools_save_php_snippet', array( $this, 'ajax_save_php_snippet' ) );
 		add_action( 'wp_ajax_emcp_tools_toggle_php_snippet', array( $this, 'ajax_toggle_php_snippet' ) );
 		add_action( 'wp_ajax_emcp_tools_delete_php_snippet', array( $this, 'ajax_delete_php_snippet' ) );
@@ -1636,6 +1639,81 @@ class EMCP_Tools_Admin {
 			wp_send_json_error( array( 'message' => $res->get_error_message() ), 400 );
 		}
 		wp_send_json_success( $res );
+	}
+
+	/**
+	 * Guards a Memory AJAX request (nonce + Pro/cap). wp_die/returns on failure.
+	 *
+	 * @since 3.7.0
+	 */
+	private function memory_ajax_guard(): void {
+		check_ajax_referer( 'emcp_tools_memory', 'nonce' );
+		if ( ! class_exists( 'EMCP_Tools_Memory_Store' ) || ! EMCP_Tools_Memory_Store::user_has_access() ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to do this.', 'emcp-tools' ) ), 403 );
+		}
+	}
+
+	/**
+	 * AJAX: approve/reject/toggle a guidance entry from the Memory tab.
+	 *
+	 * @since 3.7.0
+	 */
+	public function ajax_memory_set_status(): void {
+		$this->memory_ajax_guard();
+		$id     = isset( $_POST['id'] ) ? absint( wp_unslash( $_POST['id'] ) ) : 0;
+		$status = isset( $_POST['status'] ) ? sanitize_key( wp_unslash( $_POST['status'] ) ) : '';
+		if ( ! $id || ! in_array( $status, array( 'publish', 'pending', 'draft', 'trash' ), true ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'emcp-tools' ) ), 400 );
+		}
+		$ok = EMCP_Tools_Memory_Store::instance()->set_guidance_status( $id, $status );
+		$ok ? wp_send_json_success( array( 'id' => $id, 'status' => $status ) )
+			: wp_send_json_error( array( 'message' => __( 'Not found.', 'emcp-tools' ) ), 400 );
+	}
+
+	/**
+	 * AJAX: create (admin, approved) or edit a guidance entry from the Memory tab.
+	 *
+	 * @since 3.7.0
+	 */
+	public function ajax_memory_save_guidance(): void {
+		$this->memory_ajax_guard();
+		$store = EMCP_Tools_Memory_Store::instance();
+		$id    = isset( $_POST['id'] ) ? absint( wp_unslash( $_POST['id'] ) ) : 0;
+		$type  = isset( $_POST['type'] ) ? sanitize_key( wp_unslash( $_POST['type'] ) ) : '';
+		$body  = isset( $_POST['body'] ) ? sanitize_textarea_field( wp_unslash( $_POST['body'] ) ) : '';
+		if ( ! in_array( $type, EMCP_Tools_Memory_Store::TYPES, true ) || '' === trim( $body ) ) {
+			wp_send_json_error( array( 'message' => __( 'A type and non-empty guidance are required.', 'emcp-tools' ) ), 400 );
+		}
+		if ( $id > 0 ) {
+			$store->update_guidance( $id, array( 'type' => $type, 'body' => $body, 'title' => wp_trim_words( $body, 8, '' ) ) );
+			wp_send_json_success( array( 'id' => $id ) );
+		}
+		$new = $store->add_guidance( array(
+			'title'  => wp_trim_words( $body, 8, '' ),
+			'body'   => $body,
+			'type'   => $type,
+			'source' => 'admin',
+			'status' => 'publish',
+		) );
+		is_wp_error( $new )
+			? wp_send_json_error( array( 'message' => $new->get_error_message() ), 400 )
+			: wp_send_json_success( array( 'id' => (int) $new ) );
+	}
+
+	/**
+	 * AJAX: persist Memory settings (auto-summarize, require-approval).
+	 *
+	 * @since 3.7.0
+	 */
+	public function ajax_memory_save_settings(): void {
+		$this->memory_ajax_guard();
+		if ( isset( $_POST['auto_summarize'] ) ) {
+			update_option( 'emcp_tools_memory_auto_summarize', '1' === sanitize_text_field( wp_unslash( $_POST['auto_summarize'] ) ) ? '1' : '0' );
+		}
+		if ( isset( $_POST['require_approval'] ) ) {
+			update_option( 'emcp_tools_memory_require_approval', '1' === sanitize_text_field( wp_unslash( $_POST['require_approval'] ) ) ? '1' : '0' );
+		}
+		wp_send_json_success( array( 'saved' => true ) );
 	}
 
 	/**

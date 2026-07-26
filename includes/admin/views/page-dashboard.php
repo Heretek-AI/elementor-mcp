@@ -209,11 +209,19 @@ $emcp_videos = array(
 	arsort( $emcp_action_ct );
 	$emcp_top_actions = array_slice( $emcp_action_ct, 0, 4, true );
 
-	// Sandbox items (PHP snippet CPT): active = publish, drafts = draft.
-	$emcp_snip        = function_exists( 'wp_count_posts' ) ? wp_count_posts( 'emcp_php_snippet' ) : null;
-	$emcp_snip_active = ( $emcp_snip && isset( $emcp_snip->publish ) ) ? (int) $emcp_snip->publish : 0;
-	$emcp_snip_draft  = ( $emcp_snip && isset( $emcp_snip->draft ) ) ? (int) $emcp_snip->draft : 0;
-	$emcp_snip_total  = $emcp_snip_active + $emcp_snip_draft;
+	// Sandbox items across all three pillars (blocks + widgets + snippets):
+	// active = publish, drafts = draft. Blocks/widgets are Pro CPTs; on a free
+	// site they simply do not exist and wp_count_posts() returns zeros.
+	$emcp_snip_active = 0;
+	$emcp_snip_draft  = 0;
+	if ( function_exists( 'wp_count_posts' ) ) {
+		foreach ( array( 'emcp_block', 'emcp_widget', 'emcp_php_snippet' ) as $emcp_sb_cpt ) {
+			$emcp_ct = wp_count_posts( $emcp_sb_cpt );
+			$emcp_snip_active += ( $emcp_ct && isset( $emcp_ct->publish ) ) ? (int) $emcp_ct->publish : 0;
+			$emcp_snip_draft  += ( $emcp_ct && isset( $emcp_ct->draft ) ) ? (int) $emcp_ct->draft : 0;
+		}
+	}
+	$emcp_snip_total = $emcp_snip_active + $emcp_snip_draft;
 
 	$emcp_url_prompts = admin_url( 'admin.php?page=' . $emcp_page . '-prompts' );
 	$emcp_url_history = admin_url( 'admin.php?page=' . $emcp_page . '-history' );
@@ -305,11 +313,11 @@ $emcp_videos = array(
 					<span class="emcp-dash-ucard-title"><?php esc_html_e( 'Sandbox', 'emcp-tools' ); ?></span>
 				</span>
 				<span class="emcp-dash-ucard-num"><?php echo esc_html( number_format_i18n( $emcp_snip_total ) ); ?></span>
-				<span class="emcp-dash-ucard-sub"><?php esc_html_e( 'PHP snippets', 'emcp-tools' ); ?></span>
+				<span class="emcp-dash-ucard-sub"><?php esc_html_e( 'Blocks, widgets & snippets', 'emcp-tools' ); ?></span>
 				<span class="emcp-dash-ucard-foot">
 					<?php
 					printf(
-						/* translators: 1: active snippet count, 2: draft snippet count */
+						/* translators: 1: active sandbox-item count, 2: draft sandbox-item count */
 						esc_html__( '%1$s active · %2$s drafts', 'emcp-tools' ),
 						esc_html( number_format_i18n( $emcp_snip_active ) ),
 						esc_html( number_format_i18n( $emcp_snip_draft ) )

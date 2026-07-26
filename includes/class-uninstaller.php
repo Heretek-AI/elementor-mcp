@@ -58,6 +58,21 @@ class EMCP_Tools_Uninstaller {
 			EMCP_Tools_PHP_Snippet_Store::uninstall_cleanup();
 		}
 
+		// Block Builder: generated block source + registry must NOT survive
+		// uninstall either. The store class ships in the private Pro overlay; on
+		// a free install the file is absent, so resolve it defensively
+		// (dual-root, same pattern as AI Chat below) instead of a hard require
+		// that would fatal uninstall.
+		if ( ! class_exists( 'EMCP_Tools_Block_Store' ) && class_exists( 'EMCP_Tools_Pro_Loader' ) ) {
+			$emcp_block_store = EMCP_Tools_Pro_Loader::path( 'includes/class-block-store.php' );
+			if ( '' !== $emcp_block_store ) {
+				require_once $emcp_block_store;
+			}
+		}
+		if ( class_exists( 'EMCP_Tools_Block_Store' ) ) {
+			EMCP_Tools_Block_Store::uninstall_cleanup();
+		}
+
 		// AI Chat: saved conversations + per-user API keys + cached model lists.
 		// The store class ships in the private Pro overlay; on a free install the
 		// file is absent, so resolve it defensively (dual-root) instead of a hard

@@ -307,6 +307,13 @@ class EMCP_Tools_Bootstrap {
 		( new EMCP_Tools_Widget_Loader() )->register_hooks();
 		add_action( 'init', array( 'EMCP_Tools_PHP_Snippet_Store', 'register_post_type' ) );
 		( new EMCP_Tools_PHP_Snippet_Loader() )->register_hooks();
+		// Block Builder (Pro overlay). Registers the emcp_block CPT + Gutenberg
+		// block-category/init hooks only when the Pro class is present; the
+		// loader self-gates on license internally.
+		if ( class_exists( 'EMCP_Tools_Block_Store' ) ) {
+			add_action( 'init', array( 'EMCP_Tools_Block_Store', 'register_post_type' ) );
+			( new EMCP_Tools_Block_Loader() )->register_hooks();
+		}
 		// Background refresh of the Pro Prompts / Brand Kits libraries — registered
 		// unconditionally (cron runs in a non-admin context) so an expired 24h
 		// cache self-heals without the user clicking "Sync Library".

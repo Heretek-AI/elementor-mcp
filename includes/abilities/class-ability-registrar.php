@@ -384,6 +384,19 @@ class EMCP_Tools_Ability_Registrar {
 			$this->ability_names = array_merge( $this->ability_names, $php_snippets->get_ability_names() );
 		}
 
+		// Block Builder (Pro; self-guards on license). Gutenberg, not Elementor-gated.
+		if ( class_exists( 'EMCP_Tools_Block_Builder_Abilities' ) ) {
+			$block_builder = new EMCP_Tools_Block_Builder_Abilities();
+			$block_builder->register();
+			$this->ability_names = array_merge( $this->ability_names, $block_builder->get_ability_names() );
+		}
+		// Sandbox cloud export/import (free; operates over the bundle contract).
+		if ( class_exists( 'EMCP_Tools_Sandbox_Cloud_Abilities' ) ) {
+			$cloud = new EMCP_Tools_Sandbox_Cloud_Abilities();
+			$cloud->register();
+			$this->ability_names = array_merge( $this->ability_names, $cloud->get_ability_names() );
+		}
+
 		// Stock-image provider tools (search-images + sideload-image) — pure WP core
 		// (a stock-provider search + a Media Library sideload), no Elementor needed,
 		// so they register on any site. add-stock-image (adds a widget) is gated below.

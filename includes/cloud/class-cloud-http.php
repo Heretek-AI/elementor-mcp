@@ -34,7 +34,8 @@ class EMCP_Tools_Cloud_Http {
 		}
 		$args['timeout']   = self::TIMEOUT;
 		$args['sslverify'] = true;
-		$res = wp_remote_post( $url, $args );
+		$method            = strtoupper( (string) ( $args['method'] ?? 'POST' ) );
+		$res               = ( 'POST' === $method ) ? wp_remote_post( $url, $args ) : wp_remote_request( $url, $args );
 		if ( is_wp_error( $res ) ) {
 			return $res;
 		}
@@ -78,5 +79,18 @@ class EMCP_Tools_Cloud_Http {
 				'body'    => $fields,
 			)
 		);
+	}
+
+	/**
+	 * Generic request with an explicit HTTP method (GET/PUT/DELETE). JSON body.
+	 *
+	 * @param string $method  HTTP method.
+	 * @param string $url      Endpoint.
+	 * @param array  $args     wp_remote args (headers, body).
+	 * @return array|\WP_Error
+	 */
+	public static function request( string $method, string $url, array $args ) {
+		$args['method'] = strtoupper( $method );
+		return self::send( $url, $args );
 	}
 }

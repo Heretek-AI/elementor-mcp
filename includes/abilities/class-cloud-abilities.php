@@ -25,6 +25,8 @@ class EMCP_Tools_Cloud_Abilities {
 			'emcp-tools/cloud-list',
 			'emcp-tools/cloud-pull',
 			'emcp-tools/cloud-config-sync',
+			'emcp-tools/cloud-marketplace-list',
+			'emcp-tools/cloud-marketplace-install',
 		);
 	}
 
@@ -126,6 +128,56 @@ class EMCP_Tools_Cloud_Abilities {
 				'meta'                => array( 'annotations' => array( 'readonly' => false, 'destructive' => false ), 'show_in_rest' => true ),
 			)
 		);
+		emcp_tools_register_ability(
+			'emcp-tools/cloud-marketplace-list',
+			array(
+				'label'               => __( 'Cloud Marketplace List', 'emcp-tools' ),
+				'description'         => __( 'Browse published EMCP Cloud marketplace listings (blocks, widgets, snippets).', 'emcp-tools' ),
+				'category'            => 'emcp-tools',
+				'execute_callback'    => array( $this, 'execute_marketplace_list' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'input_schema'        => array( 'type' => 'object', 'properties' => array( 'category' => array( 'type' => 'string' ) ) ),
+				'output_schema'       => array( 'type' => 'object' ),
+				'meta'                => array( 'annotations' => array( 'readonly' => true, 'destructive' => false ), 'show_in_rest' => true ),
+			)
+		);
+		emcp_tools_register_ability(
+			'emcp-tools/cloud-marketplace-install',
+			array(
+				'label'               => __( 'Cloud Marketplace Install', 'emcp-tools' ),
+				'description'         => __( 'Install a marketplace listing by slug. It is imported into this site as a new inactive draft.', 'emcp-tools' ),
+				'category'            => 'emcp-tools',
+				'execute_callback'    => array( $this, 'execute_marketplace_install' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'input_schema'        => array(
+					'type'       => 'object',
+					'properties' => array( 'slug' => array( 'type' => 'string' ) ),
+					'required'   => array( 'slug' ),
+				),
+				'output_schema'       => array( 'type' => 'object' ),
+				'meta'                => array( 'annotations' => array( 'readonly' => false, 'destructive' => false ), 'show_in_rest' => true ),
+			)
+		);
+	}
+
+	/**
+	 * @param array $input { category? }.
+	 * @return array|WP_Error
+	 */
+	public function execute_marketplace_list( $input ) {
+		$category = isset( $input['category'] ) ? sanitize_key( (string) $input['category'] ) : '';
+		$r        = EMCP_Tools_Cloud_Sync::marketplace_list( $category );
+		return is_wp_error( $r ) ? $r : (array) $r;
+	}
+
+	/**
+	 * @param array $input { slug }.
+	 * @return array|WP_Error
+	 */
+	public function execute_marketplace_install( $input ) {
+		$slug = isset( $input['slug'] ) ? sanitize_title( (string) $input['slug'] ) : '';
+		$r    = EMCP_Tools_Cloud_Sync::marketplace_install( $slug );
+		return is_wp_error( $r ) ? $r : (array) $r;
 	}
 
 	/**

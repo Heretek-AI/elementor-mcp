@@ -128,4 +128,67 @@ class EMCP_Tools_Cloud_Sync {
 			'/api/cloud/v1/config/' . rawurlencode( $type ) . '?site_uuid=' . rawurlencode( EMCP_Tools_Cloud::site_uuid() )
 		);
 	}
+
+	/**
+	 * Browse published marketplace listings (public; no connection required, but
+	 * we still route through the client for a consistent base URL).
+	 *
+	 * @param string $category Optional category filter.
+	 * @return array|\WP_Error
+	 */
+	public static function marketplace_list( string $category = '' ) {
+		return EMCP_Tools_Cloud_Client::get(
+			'/api/cloud/v1/marketplace' . ( '' !== $category ? '?category=' . rawurlencode( $category ) : '' )
+		);
+	}
+
+	/**
+	 * Publish one of your cloud artifacts as a marketplace listing (pending
+	 * moderation).
+	 *
+	 * @param string $artifact_uuid Cloud artifact uuid.
+	 * @param string $title         Listing title.
+	 * @param string $summary       Short description.
+	 * @param string $category      Category.
+	 * @return array|\WP_Error
+	 */
+	public static function marketplace_publish( string $artifact_uuid, string $title, string $summary = '', string $category = '' ) {
+		if ( ! EMCP_Tools_Cloud::is_connected() ) {
+			return self::not_connected();
+		}
+		return EMCP_Tools_Cloud_Client::put(
+			'/api/cloud/v1/marketplace',
+			array( 'artifact_uuid' => $artifact_uuid, 'title' => $title, 'summary' => $summary, 'category' => $category )
+		);
+	}
+
+	/**
+	 * Install a marketplace listing into this site (imports as a new draft).
+	 *
+	 * @param string $slug Listing slug.
+	 * @return array|\WP_Error
+	 */
+	public static function marketplace_install( string $slug ) {
+		if ( ! EMCP_Tools_Cloud::is_connected() ) {
+			return self::not_connected();
+		}
+		$res = EMCP_Tools_Cloud_Client::request(
+			'POST',
+			'/api/cloud/v1/marketplace/' . rawurlencode( $slug ) . '/install',
+			array( 'site_uuid' => EMCP_Tools_Cloud::site_uuid() )
+		);
+		if ( is_wp_error( $res ) ) {
+			return $res;
+		}
+		$bundle = json_decode( (string) ( $res['bundle'] ?? '' ), true );
+		if ( ! is_array( $bundle ) ) {
+			return new \WP_Error( 'bad_bundle', __( 'The listing bundle could not be read.', 'emcp-tools' ) );
+		}
+		$art = self::abilities()->resolve_artifact( (string) ( $res['kind'] ?? $bundle['kind'] ?? '' ) );
+		if ( ! $art ) {
+			return new \WP_Error( 'unknown_kind', __( 'Unknown artifact kind.', 'emcp-tools' ) );
+		}
+		$new_id = $art->apply_bundle( $bundle );
+		return is_wp_error( $new_id ) ? $new_id : array( 'id' => (int) $new_id );
+	}
 }

@@ -44,6 +44,18 @@ class EMCP_Tools_Layout_Abilities {
 	}
 
 	/**
+	 * Whether an elType is a container the layout tools operate on. Accepts the
+	 * legacy `container` plus the Elementor 4.0+ atomic containers `e-flexbox`
+	 * and `e-div-block` (see issue #104 / same class as #72).
+	 *
+	 * @param string $el_type The element's elType.
+	 * @return bool
+	 */
+	private static function is_container_type( string $el_type ): bool {
+		return in_array( $el_type, array( 'container', 'e-flexbox', 'e-div-block' ), true );
+	}
+
+	/**
 	 * Returns the ability names registered by this class.
 	 *
 	 * @since 1.0.0
@@ -323,7 +335,7 @@ class EMCP_Tools_Layout_Abilities {
 			return new \WP_Error( 'element_not_found', __( 'Element not found.', 'emcp-tools' ) );
 		}
 
-		if ( 'container' !== ( $element['elType'] ?? '' ) ) {
+		if ( ! self::is_container_type( $element['elType'] ?? '' ) ) {
 			return new \WP_Error( 'not_container', __( 'Element is not a container. Use update-widget for widgets.', 'emcp-tools' ) );
 		}
 
@@ -709,7 +721,7 @@ class EMCP_Tools_Layout_Abilities {
 			return new \WP_Error( 'element_not_found', __( 'Container not found.', 'emcp-tools' ) );
 		}
 
-		if ( 'container' !== ( $container['elType'] ?? '' ) ) {
+		if ( ! self::is_container_type( $container['elType'] ?? '' ) ) {
 			return new \WP_Error( 'not_container', __( 'Element is not a container.', 'emcp-tools' ) );
 		}
 

@@ -112,6 +112,7 @@ class EMCP_Tools_Bootstrap {
 		require_once EMCP_TOOLS_DIR . 'includes/cloud/class-cloud-http.php';
 		require_once EMCP_TOOLS_DIR . 'includes/cloud/class-cloud-connect.php';
 		require_once EMCP_TOOLS_DIR . 'includes/cloud/class-cloud-client.php';
+		require_once EMCP_TOOLS_DIR . 'includes/cloud/class-cloud-sync.php';
 		require_once EMCP_TOOLS_DIR . 'includes/oauth/class-oauth-store.php';
 		require_once EMCP_TOOLS_DIR . 'includes/oauth/class-oauth-metadata.php';
 		require_once EMCP_TOOLS_DIR . 'includes/oauth/class-oauth-clients.php';
@@ -213,6 +214,7 @@ class EMCP_Tools_Bootstrap {
 		// widget/snippet) as a portable bundle over the cloud contract. Free tree;
 		// registration is wired by the ability registrar (a later task).
 		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-sandbox-cloud-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-cloud-abilities.php';
 		// PHP Code Snippets (Sandbox) — free, capability-gated. AI can author +
 		// validate drafts via MCP; only an admin can activate. The loader runs
 		// ACTIVE snippets (hash-verified, fatal-isolated).

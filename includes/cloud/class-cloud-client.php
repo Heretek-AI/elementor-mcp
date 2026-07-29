@@ -32,27 +32,26 @@ class EMCP_Tools_Cloud_Client {
 	}
 
 	/**
-	 * Authenticated JSON request to the Cloud API.
+	 * Authenticated Cloud API call (real verb, JSON, bearer). Astro's form-CSRF
+	 * guard exempts JSON, so no Origin header is needed here (unlike the token
+	 * endpoint). Returns the decoded JSON, or a WP_Error.
 	 *
-	 * @param string $method HTTP method (informational; JSON POST/GET).
-	 * @param string $path   Path beginning with '/'.
-	 * @param array  $body   JSON body for writes.
+	 * @param string     $method HTTP method.
+	 * @param string     $path   Path beginning with '/'.
+	 * @param array|null $body   JSON body for writes; null for GET/DELETE.
 	 * @return array|\WP_Error
 	 */
-	public static function request( string $method, string $path, array $body = array() ) {
+	private static function authed( string $method, string $path, ?array $body ) {
 		$token = self::valid_access_token();
 		if ( '' === $token ) {
 			return new \WP_Error( 'not_connected', __( 'This site is not connected to EMCP Cloud.', 'emcp-tools' ) );
 		}
-		$res = EMCP_Tools_Cloud_Http::post_json(
-			EMCP_Tools_Cloud::base_url() . $path,
-			$body,
-			array(
-				'Authorization' => 'Bearer ' . $token,
-				'X-EMCP-Method' => strtoupper( $method ),
-				'Origin'        => EMCP_Tools_Cloud::base_url(),
-			)
-		);
+		$args = array( 'headers' => array( 'Authorization' => 'Bearer ' . $token, 'Accept' => 'application/json' ) );
+		if ( null !== $body ) {
+			$args['headers']['Content-Type'] = 'application/json';
+			$args['body']                    = wp_json_encode( $body );
+		}
+		$res = EMCP_Tools_Cloud_Http::request( $method, EMCP_Tools_Cloud::base_url() . $path, $args );
 		if ( is_wp_error( $res ) ) {
 			return $res;
 		}
@@ -60,5 +59,42 @@ class EMCP_Tools_Cloud_Client {
 			return new \WP_Error( 'cloud_http_' . $res['code'], (string) ( $res['json']['error'] ?? 'cloud_error' ), array( 'status' => $res['code'] ) );
 		}
 		return $res['json'];
+	}
+
+	/**
+	 * @param string $path Path.
+	 * @return array|\WP_Error
+	 */
+	public static function get( string $path ) {
+		return self::authed( 'GET', $path, null );
+	}
+
+	/**
+	 * @param string $path Path.
+	 * @param array  $body JSON body.
+	 * @return array|\WP_Error
+	 */
+	public static function put( string $path, array $body ) {
+		return self::authed( 'PUT', $path, $body );
+	}
+
+	/**
+	 * @param string $path Path.
+	 * @return array|\WP_Error
+	 */
+	public static function delete( string $path ) {
+		return self::authed( 'DELETE', $path, null );
+	}
+
+	/**
+	 * Back-compat generic request (used by the sync layer + MCP tools).
+	 *
+	 * @param string $method HTTP method.
+	 * @param string $path   Path.
+	 * @param array  $body   JSON body for writes.
+	 * @return array|\WP_Error
+	 */
+	public static function request( string $method, string $path, array $body = array() ) {
+		return self::authed( strtoupper( $method ), $path, empty( $body ) ? null : $body );
 	}
 }

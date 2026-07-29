@@ -397,6 +397,14 @@ class EMCP_Tools_Ability_Registrar {
 			$this->ability_names = array_merge( $this->ability_names, $cloud->get_ability_names() );
 		}
 
+		// EMCP Cloud sync tools — only when the site is connected to a cloud account.
+		if ( class_exists( 'EMCP_Tools_Cloud_Abilities' ) && class_exists( 'EMCP_Tools_Cloud_Module' )
+			&& EMCP_Tools_Cloud_Module::is_enabled() && EMCP_Tools_Cloud::is_connected() ) {
+			$cloud_sync = new EMCP_Tools_Cloud_Abilities();
+			$cloud_sync->register();
+			$this->ability_names = array_merge( $this->ability_names, $cloud_sync->get_ability_names() );
+		}
+
 		// Stock-image provider tools (search-images + sideload-image) — pure WP core
 		// (a stock-provider search + a Media Library sideload), no Elementor needed,
 		// so they register on any site. add-stock-image (adds a widget) is gated below.

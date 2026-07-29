@@ -31,6 +31,10 @@ class EMCP_Tools_Uninstaller {
 		delete_option( 'emcp_tools_disabled_tools' );
 		delete_option( 'emcp_tools_low_tool_mode' );
 		delete_option( 'emcp_tools_defaults_applied' );
+		delete_option( 'emcp_tools_cloud_connection' );
+		delete_option( 'emcp_tools_site_uuid' );
+		delete_option( 'emcp_tools_cloud_base_url' );
+		delete_transient( 'emcp_tools_cloud_pending' );
 		delete_transient( 'emcp_tools_pro_prompts_bundle' );
 		delete_transient( 'emcp_tools_pro_templates_bundle' );
 		delete_transient( 'emcp_tools_pro_brand_kits_bundle' );

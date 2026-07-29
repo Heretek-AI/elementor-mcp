@@ -227,6 +227,36 @@ $emcp_tools_server_enabled = class_exists( 'EMCP_Tools_Plugin' )
 			</div>
 		</form>
 
+		<?php // ===== EMCP Cloud connect/disconnect ===== ?>
+		<?php if ( class_exists( 'EMCP_Tools_Cloud_Module' ) && EMCP_Tools_Cloud_Module::is_enabled() ) :
+			$emcp_cloud_status = EMCP_Tools_Cloud::status(); ?>
+			<div class="elementor-mcp-section">
+				<h2><?php esc_html_e( 'EMCP Cloud', 'emcp-tools' ); ?></h2>
+				<div class="emcp-conn-cards">
+					<div class="emcp-conn-card">
+						<h2 class="emcp-conn-card-title"><?php esc_html_e( 'Cloud account', 'emcp-tools' ); ?></h2>
+						<?php if ( $emcp_cloud_status['connected'] ) : ?>
+							<p class="elementor-mcp-activate-note">
+								<?php esc_html_e( 'This site is connected to your EMCP Cloud account.', 'emcp-tools' ); ?>
+								<?php if ( ! $emcp_cloud_status['healthy'] ) : ?>
+									<strong><?php esc_html_e( 'Reconnect needed.', 'emcp-tools' ); ?></strong>
+								<?php endif; ?>
+							</p>
+							<p>
+								<a href="<?php echo esc_url( EMCP_Tools_Cloud_Connect::disconnect_url() ); ?>" class="button"><?php esc_html_e( 'Disconnect', 'emcp-tools' ); ?></a>
+								<?php if ( ! $emcp_cloud_status['healthy'] ) : ?>
+									<a href="<?php echo esc_url( EMCP_Tools_Cloud_Connect::connect_url() ); ?>" class="button button-primary"><?php esc_html_e( 'Reconnect', 'emcp-tools' ); ?></a>
+								<?php endif; ?>
+							</p>
+						<?php else : ?>
+							<p class="elementor-mcp-activate-note"><?php esc_html_e( 'Connect this site to your EMCP Cloud account to back up and sync your work.', 'emcp-tools' ); ?></p>
+							<p><a href="<?php echo esc_url( EMCP_Tools_Cloud_Connect::connect_url() ); ?>" class="button button-primary"><?php esc_html_e( 'Connect to EMCP Cloud', 'emcp-tools' ); ?></a></p>
+						<?php endif; ?>
+					</div>
+				</div>
+			</div>
+		<?php endif; ?>
+
 		<?php // ===== Choose authentication method ===== ?>
 		<?php $emcp_oauth_ok = class_exists( 'EMCP_Tools_OAuth_Server' ) && EMCP_Tools_OAuth_Server::is_enabled(); ?>
 		<div class="elementor-mcp-section">

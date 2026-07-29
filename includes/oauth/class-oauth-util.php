@@ -54,6 +54,27 @@ class EMCP_Tools_OAuth_Util {
 	}
 
 	/**
+	 * Generate a PKCE code_verifier (RFC 7636). 32 random bytes -> 43-char
+	 * base64url, within the 43..128 length bound.
+	 *
+	 * @return string
+	 */
+	public static function generate_code_verifier(): string {
+		return self::generate_token();
+	}
+
+	/**
+	 * Compute the S256 code_challenge for a verifier. Byte-identical to the
+	 * computation in verify_pkce(), so client + server agree.
+	 *
+	 * @param string $verifier The code_verifier.
+	 * @return string base64url( sha256( verifier ) ).
+	 */
+	public static function code_challenge_s256( string $verifier ): string {
+		return self::base64url_encode( hash( 'sha256', $verifier, true ) );
+	}
+
+	/**
 	 * Generate a public client id (`emcp_` + 24 hex chars).
 	 *
 	 * @return string

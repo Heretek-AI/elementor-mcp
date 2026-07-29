@@ -134,6 +134,9 @@
         <testsuite name="Memory">
             <directory>pro/tests/unit/memory</directory>
         </testsuite>
+        <testsuite name="Cloud">
+            <directory>pro/tests/unit/Cloud</directory>
+        </testsuite>
     </testsuites>
 
     <source>

@@ -217,6 +217,19 @@ class EMCP_Tools_Cloud_Connect {
 		$verifier = EMCP_Tools_OAuth_Util::generate_code_verifier();
 		$csrf     = EMCP_Tools_OAuth_Util::generate_token();
 		set_transient( self::PENDING_TRANSIENT, array( 'verifier' => $verifier, 'csrf' => $csrf, 'client_id' => $client_id ), 600 );
+		// The authorize URL is on the Cloud host, not this site. wp_safe_redirect()
+		// blocks off-site hosts (falling back to wp-admin), so allow the Cloud host
+		// for this one deliberate redirect to our own service.
+		$cloud_host = wp_parse_url( EMCP_Tools_Cloud::base_url(), PHP_URL_HOST );
+		if ( $cloud_host ) {
+			add_filter(
+				'allowed_redirect_hosts',
+				static function ( $hosts ) use ( $cloud_host ) {
+					$hosts[] = $cloud_host;
+					return $hosts;
+				}
+			);
+		}
 		wp_safe_redirect( self::authorize_url( (string) $client_id, $verifier, $csrf ) );
 		exit;
 	}

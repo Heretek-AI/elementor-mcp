@@ -229,6 +229,8 @@ class EMCP_Tools_Change_Log {
 				return self::rollback_file_delete( $rb );
 			case 'db-before-image':
 				return self::rollback_db( $rb );
+			case 'meta-before-image':
+				return self::rollback_meta( $rb );
 			default:
 				return new WP_Error( 'unknown_rollback', __( 'Unknown rollback type.', 'emcp-tools' ) );
 		}
@@ -325,6 +327,34 @@ class EMCP_Tools_Change_Log {
 			default:
 				return new WP_Error( 'rollback_failed', __( 'Unknown DB operation.', 'emcp-tools' ) );
 		}
+	}
+
+	/**
+	 * Restore post/term meta from a before-image.
+	 *
+	 * `before` maps meta_key => prior value (as returned by get_*_meta(single);
+	 * an empty string/array means the key was unset, so it is deleted on undo).
+	 *
+	 * @param array $rb Rollback ref: { object:'post'|'term', id:int, before:array }.
+	 * @return true|WP_Error
+	 */
+	private static function rollback_meta( array $rb ) {
+		$object = 'term' === ( $rb['object'] ?? '' ) ? 'term' : 'post';
+		$id     = (int) ( $rb['id'] ?? 0 );
+		$before = ( isset( $rb['before'] ) && is_array( $rb['before'] ) ) ? $rb['before'] : array();
+		if ( $id <= 0 ) {
+			return new WP_Error( 'rollback_failed', __( 'Missing object id.', 'emcp-tools' ) );
+		}
+		foreach ( $before as $key => $value ) {
+			$key   = (string) $key;
+			$empty = '' === $value || array() === $value || null === $value;
+			if ( 'term' === $object ) {
+				$empty ? delete_term_meta( $id, $key ) : update_term_meta( $id, $key, $value );
+			} else {
+				$empty ? delete_post_meta( $id, $key ) : update_post_meta( $id, $key, $value );
+			}
+		}
+		return true;
 	}
 
 	/**

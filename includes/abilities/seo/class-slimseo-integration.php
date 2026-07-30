@@ -97,6 +97,11 @@ class EMCP_Tools_SlimSEO_Integration extends EMCP_Tools_SEO_Integration {
 		);
 	}
 
+	/** The single `slim_seo` meta array is snapshotted by the base for the ledger. */
+	protected function recordable_meta_keys( string $object ): array {
+		return array( self::META_KEY );
+	}
+
 	/**
 	 * Shape a stored slim_seo array into the unified read view.
 	 *

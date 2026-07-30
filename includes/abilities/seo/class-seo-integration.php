@@ -231,7 +231,76 @@ abstract class EMCP_Tools_SEO_Integration {
 		}
 		unset( $args['confirm'] );
 
-		return call_user_func( $op['run'], $args );
+		// Write ops over a post/term auto-record an undoable change (before-image
+		// of the integration's meta keys for that object type). Non-write ops,
+		// ops on other objects, and integrations that opt out for an object type
+		// (e.g. option/custom-table stores) just run.
+		$object = '';
+		$obj_id = 0;
+		if ( 'write' === $mode ) {
+			if ( isset( $args['post_id'] ) ) {
+				$object = 'post';
+				$obj_id = absint( $args['post_id'] );
+			} elseif ( isset( $args['term_id'] ) ) {
+				$object = 'term';
+				$obj_id = absint( $args['term_id'] );
+			}
+		}
+		$meta_keys = ( '' !== $object && $obj_id > 0 ) ? $this->recordable_meta_keys( $object ) : array();
+
+		if ( empty( $meta_keys ) ) {
+			return call_user_func( $op['run'], $args );
+		}
+
+		$before = $this->snapshot_meta( $object, $obj_id, $meta_keys );
+		$result = call_user_func( $op['run'], $args );
+		if ( ! is_wp_error( $result ) && class_exists( 'EMCP_Tools_Change_Log' ) ) {
+			EMCP_Tools_Change_Log::record(
+				array(
+					'domain'   => 'seo',
+					'action'   => 'update',
+					'target'   => $this->id() . ':' . $object . ':' . $obj_id,
+					'summary'  => sprintf(
+						/* translators: 1: plugin label, 2: object type, 3: id */
+						__( 'Updated %1$s SEO for %2$s #%3$d', 'emcp-tools' ),
+						$this->label(),
+						$object,
+						$obj_id
+					),
+					'rollback' => array( 'type' => 'meta-before-image', 'object' => $object, 'id' => $obj_id, 'before' => $before ),
+				)
+			);
+		}
+		return $result;
+	}
+
+	/**
+	 * Post/term meta keys this integration writes for the given object type —
+	 * used to snapshot a before-image for the change ledger. Return an empty
+	 * array to disable automatic recording for that object (e.g. option-backed
+	 * term storage, or custom-table integrations that record their own way).
+	 *
+	 * @param string $object 'post'|'term'.
+	 * @return string[]
+	 */
+	protected function recordable_meta_keys( string $object ): array {
+		return array();
+	}
+
+	/**
+	 * Read the current values of the recordable meta keys for an object.
+	 *
+	 * @param string $object 'post'|'term'.
+	 * @param int    $id     Object id.
+	 * @param array  $keys   Meta keys.
+	 * @return array<string,mixed>
+	 */
+	private function snapshot_meta( string $object, int $id, array $keys ): array {
+		$before = array();
+		foreach ( $keys as $key ) {
+			$before[ $key ] = 'term' === $object ? get_term_meta( $id, $key, true ) : get_post_meta( $id, $key, true );
+		}
+		return $before;
 	}
 
 	/**

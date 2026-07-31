@@ -479,9 +479,17 @@ class EMCP_Tools_Query_Abilities {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'post_id' => array(
+						'post_id'   => array(
 							'type'        => 'integer',
 							'description' => __( 'The WordPress post/page ID.', 'emcp-tools' ),
+						),
+						'summary'   => array(
+							'type'        => 'boolean',
+							'description' => __( 'Return a lighter tree: omit per-element settings and add a child_count per node. Use for large pages.', 'emcp-tools' ),
+						),
+						'max_depth' => array(
+							'type'        => 'integer',
+							'description' => __( 'Only descend this many levels; deeper nodes report child_count instead of their children. 0 or omitted = full depth.', 'emcp-tools' ),
 						),
 					),
 					'required'   => array( 'post_id' ),
@@ -535,11 +543,14 @@ class EMCP_Tools_Query_Abilities {
 
 		$doc_type = $this->data->get_document_type( $post_id );
 
+		$summary   = ! empty( $input['summary'] );
+		$max_depth = isset( $input['max_depth'] ) ? max( 0, (int) $input['max_depth'] ) : 0;
+
 		return array(
 			'post_id'   => $post_id,
 			'title'     => $post->post_title,
 			'type'      => is_wp_error( $doc_type ) ? '' : $doc_type,
-			'structure' => $this->simplify_structure( $data ),
+			'structure' => $this->simplify_structure( $data, $max_depth, $summary ),
 		);
 	}
 
@@ -554,7 +565,7 @@ class EMCP_Tools_Query_Abilities {
 	 * @param array $elements The raw elements array.
 	 * @return array Simplified element tree.
 	 */
-	private function simplify_structure( array $elements ): array {
+	private function simplify_structure( array $elements, int $max_depth = 0, bool $summary = false, int $depth = 1 ): array {
 		$result = array();
 
 		foreach ( $elements as $element ) {
@@ -567,16 +578,23 @@ class EMCP_Tools_Query_Abilities {
 				$item['widgetType'] = $element['widgetType'];
 			}
 
-			// Include key settings for context.
-			if ( ! empty( $element['settings'] ) ) {
+			// Include key settings for context — omitted in summary mode.
+			if ( ! $summary && ! empty( $element['settings'] ) ) {
 				$key_settings = $this->extract_key_settings( $element );
 				if ( ! empty( $key_settings ) ) {
 					$item['settings_summary'] = $key_settings;
 				}
 			}
 
-			if ( ! empty( $element['elements'] ) ) {
-				$item['elements'] = $this->simplify_structure( $element['elements'] );
+			$children = ( ! empty( $element['elements'] ) && is_array( $element['elements'] ) ) ? $element['elements'] : array();
+			$truncate = ( $max_depth > 0 && $depth >= $max_depth );
+
+			if ( $children && ! $truncate ) {
+				$item['elements'] = $this->simplify_structure( $children, $max_depth, $summary, $depth + 1 );
+			}
+			// Report the child count when children are hidden (truncated) or in summary mode.
+			if ( $children && ( $truncate || $summary ) ) {
+				$item['child_count'] = count( $children );
 			}
 
 			$result[] = $item;

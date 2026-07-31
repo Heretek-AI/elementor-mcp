@@ -126,6 +126,11 @@ class EMCP_Tools_Plugin {
 		// MCP REST endpoint would otherwise never see this filter and would
 		// expose every registered tool regardless of what the user disabled.
 		add_filter( 'emcp_tools_ability_names', array( $this, 'filter_disabled_tools' ) );
+
+		// Refuse MCP requests whose Host header no longer matches this site's
+		// home host (connector left pointed at an old/temporary domain).
+		require_once EMCP_TOOLS_DIR . 'includes/class-mcp-host-guard.php';
+		add_filter( 'rest_pre_dispatch', array( 'EMCP_Tools_MCP_Host_Guard', 'guard' ), 5, 3 );
 	}
 
 	/**

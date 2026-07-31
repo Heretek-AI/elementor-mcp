@@ -150,6 +150,7 @@ class EMCP_Tools_Admin {
 			'brand-kits' => 'dashicons-art',
 			'skills'     => 'dashicons-superhero',
 			'widgets'    => 'dashicons-editor-code',
+			'mcp-log'    => 'dashicons-list-view',
 			'changelog'  => 'dashicons-backup',
 		);
 		return $icons[ $tab_id ] ?? 'dashicons-marker';
@@ -171,6 +172,7 @@ class EMCP_Tools_Admin {
 				self::PAGE_SLUG . '-skills'     => __( 'Skills', 'emcp-tools' ),
 				self::PAGE_SLUG . '-widgets'    => __( 'Sandbox', 'emcp-tools' ),
 				self::PAGE_SLUG . '-marketplace' => __( 'Marketplace', 'emcp-tools' ),
+				self::PAGE_SLUG . '-mcp-log'    => __( 'MCP Log', 'emcp-tools' ),
 				self::PAGE_SLUG . '-history'    => __( 'History', 'emcp-tools' ),
 				self::PAGE_SLUG . '-changelog'  => __( 'Changelog', 'emcp-tools' ),
 			);
@@ -230,6 +232,8 @@ class EMCP_Tools_Admin {
 				return 'widgets';
 			case self::PAGE_SLUG . '-marketplace':
 				return 'marketplace';
+			case self::PAGE_SLUG . '-mcp-log':
+				return 'mcp-log';
 			case self::PAGE_SLUG . '-changelog':
 				return 'changelog';
 			default:
@@ -2387,6 +2391,8 @@ class EMCP_Tools_Admin {
 					include EMCP_TOOLS_DIR . 'includes/admin/views/page-widgets.php';
 				} elseif ( 'marketplace' === $active_tab ) {
 					include EMCP_TOOLS_DIR . 'includes/admin/views/page-marketplace.php';
+				} elseif ( 'mcp-log' === $active_tab ) {
+					include EMCP_TOOLS_DIR . 'includes/admin/views/page-mcp-log.php';
 				} elseif ( 'changelog' === $active_tab ) {
 					include EMCP_TOOLS_DIR . 'includes/admin/views/page-changelog.php';
 				} else {

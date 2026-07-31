@@ -174,6 +174,10 @@ $emcp_sort     = isset( $_GET['mk_sort'] ) ? sanitize_key( wp_unslash( $_GET['mk
 				$emcp_shot   = ( isset( $emcp_l['screenshots'] ) && is_array( $emcp_l['screenshots'] ) && ! empty( $emcp_l['screenshots'][0] ) ) ? (string) $emcp_l['screenshots'][0] : '';
 				$emcp_prev   = (string) ( $emcp_l['preview_url'] ?? '' );
 				$emcp_ins    = (int) ( $emcp_l['install_count'] ?? 0 );
+				$emcp_author = ( isset( $emcp_l['author'] ) && is_array( $emcp_l['author'] ) ) ? $emcp_l['author'] : array();
+				$emcp_a_name = (string) ( $emcp_author['name'] ?? '' );
+				$emcp_a_av   = (string) ( $emcp_author['avatar'] ?? '' );
+				$emcp_a_ver  = ! empty( $emcp_author['verified'] );
 				?>
 				<div class="emcp-mk-card">
 					<?php if ( $emcp_shot ) : ?>
@@ -189,6 +193,19 @@ $emcp_sort     = isset( $_GET['mk_sort'] ) ? sanitize_key( wp_unslash( $_GET['mk
 						<h3 class="emcp-mk-card__title"><?php echo esc_html( $emcp_title ); ?></h3>
 						<?php if ( ! empty( $emcp_l['summary'] ) ) : ?>
 							<p class="emcp-mk-card__sum"><?php echo esc_html( $emcp_l['summary'] ); ?></p>
+						<?php endif; ?>
+						<?php if ( '' !== $emcp_a_name ) : ?>
+							<div class="emcp-mk-card__author">
+								<?php if ( '' !== $emcp_a_av ) : ?>
+									<img class="emcp-mk-card__av" src="<?php echo esc_url( $emcp_a_av ); ?>" alt="" loading="lazy" />
+								<?php else : ?>
+									<span class="emcp-mk-card__av emcp-mk-card__av--fb" aria-hidden="true"><?php echo esc_html( strtoupper( substr( $emcp_a_name, 0, 1 ) ) ); ?></span>
+								<?php endif; ?>
+								<span class="emcp-mk-card__aname"><?php echo esc_html( $emcp_a_name ); ?></span>
+								<?php if ( $emcp_a_ver ) : ?>
+									<span class="emcp-mk-card__ver" title="<?php esc_attr_e( 'Verified EMCP Pro member', 'emcp-tools' ); ?>" aria-label="<?php esc_attr_e( 'Verified', 'emcp-tools' ); ?>">✓</span>
+								<?php endif; ?>
+							</div>
 						<?php endif; ?>
 						<div class="emcp-mk-card__foot">
 							<span><?php echo esc_html( sprintf( _n( '%d install', '%d installs', $emcp_ins, 'emcp-tools' ), $emcp_ins ) ); ?></span>
@@ -222,6 +239,11 @@ $emcp_sort     = isset( $_GET['mk_sort'] ) ? sanitize_key( wp_unslash( $_GET['mk
 	.emcp-mk-card__pro { font-weight: 700; color: #4338ca; background: #eef0ff; padding: 1px 7px; border-radius: 999px; }
 	.emcp-mk-card__title { font-size: 15px; margin: 2px 0 0; }
 	.emcp-mk-card__sum { font-size: 13px; color: #50575e; margin: 0; flex: 1; }
+	.emcp-mk-card__author { display: flex; align-items: center; gap: 7px; margin-top: 8px; }
+	.emcp-mk-card__av { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; flex: none; border: 1px solid #e0e0e6; }
+	.emcp-mk-card__av--fb { display: grid; place-items: center; font-size: 11px; font-weight: 700; color: #fff; background: #4338ca; }
+	.emcp-mk-card__aname { font-size: 12.5px; font-weight: 600; color: #3c434a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.emcp-mk-card__ver { flex: none; width: 15px; height: 15px; display: grid; place-items: center; border-radius: 50%; background: #182fff; color: #fff; font-size: 9px; font-weight: 700; }
 	.emcp-mk-card__foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: #787c82; margin-top: 4px; }
 	.emcp-mk-card__cta { margin-top: 8px; }
 </style>

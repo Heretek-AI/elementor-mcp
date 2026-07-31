@@ -170,11 +170,16 @@ class EMCP_Tools_Admin {
 				self::PAGE_SLUG . '-brand-kits' => __( 'Brand Kits', 'emcp-tools' ),
 				self::PAGE_SLUG . '-skills'     => __( 'Skills', 'emcp-tools' ),
 				self::PAGE_SLUG . '-widgets'    => __( 'Sandbox', 'emcp-tools' ),
+				self::PAGE_SLUG . '-marketplace' => __( 'Marketplace', 'emcp-tools' ),
 				self::PAGE_SLUG . '-history'    => __( 'History', 'emcp-tools' ),
 				self::PAGE_SLUG . '-changelog'  => __( 'Changelog', 'emcp-tools' ),
 			);
 			if ( ! $this->ai_chat_tab_visible() ) {
 				unset( $this->submenus[ self::PAGE_SLUG . '-ai-chat' ] );
+			}
+			// Marketplace is a Cloud feature — drop the tab when the Cloud module is off.
+			if ( ! ( class_exists( 'EMCP_Tools_Cloud_Module' ) && EMCP_Tools_Cloud_Module::is_enabled() ) ) {
+				unset( $this->submenus[ self::PAGE_SLUG . '-marketplace' ] );
 			}
 			if ( ! $this->memory_tab_visible() ) {
 				unset( $this->submenus[ self::PAGE_SLUG . '-memory' ] );
@@ -262,6 +267,7 @@ class EMCP_Tools_Admin {
 		add_action( 'admin_post_' . self::ACTION_IMPORT_ARTIFACT, array( $this, 'handle_import_artifact' ) );
 		add_action( 'admin_post_emcp_tools_settings_push', array( $this, 'handle_settings_push' ) );
 		add_action( 'admin_post_emcp_tools_settings_pull', array( $this, 'handle_settings_pull' ) );
+		add_action( 'admin_post_emcp_tools_marketplace_install', array( $this, 'handle_marketplace_install' ) );
 	}
 
 	/** Nonce action for the .mcpb bundle download. */
@@ -416,6 +422,33 @@ class EMCP_Tools_Admin {
 		check_admin_referer( 'emcp_tools_settings_sync' );
 		$res = class_exists( 'EMCP_Tools_Settings_Sync' ) ? EMCP_Tools_Settings_Sync::pull_and_apply() : new \WP_Error( 'unavailable', '' );
 		$this->redirect_settings_sync( is_wp_error( $res ) ? 'err' : 'pull' );
+	}
+
+	/**
+	 * Install a marketplace listing into this site (as a draft artifact).
+	 */
+	public function handle_marketplace_install(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to do that.', 'emcp-tools' ), '', array( 'response' => 403 ) );
+		}
+		check_admin_referer( 'emcp_tools_marketplace_install' );
+		$slug = isset( $_POST['slug'] ) ? sanitize_title( wp_unslash( $_POST['slug'] ) ) : '';
+		$back = admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-marketplace' );
+
+		$res = ( '' !== $slug && class_exists( 'EMCP_Tools_Cloud_Sync' ) )
+			? EMCP_Tools_Cloud_Sync::marketplace_install( $slug )
+			: new \WP_Error( 'bad_request', '' );
+
+		if ( is_wp_error( $res ) ) {
+			$data   = $res->get_error_data();
+			$status = is_array( $data ) ? (int) ( $data['status'] ?? 0 ) : 0;
+			$q      = ( 402 === $status || 'pro_required' === $res->get_error_message() ) ? 'pro' : 'err';
+			wp_safe_redirect( add_query_arg( 'mk', $q, $back ) );
+			exit;
+		}
+		$post_id = is_array( $res ) ? (int) ( $res['id'] ?? 0 ) : 0;
+		wp_safe_redirect( add_query_arg( array( 'mk' => 'installed', 'mk_id' => $post_id ), $back ) );
+		exit;
 	}
 
 	/**
@@ -2312,6 +2345,8 @@ class EMCP_Tools_Admin {
 					include EMCP_TOOLS_DIR . 'includes/admin/views/page-history.php';
 				} elseif ( 'widgets' === $active_tab ) {
 					include EMCP_TOOLS_DIR . 'includes/admin/views/page-widgets.php';
+				} elseif ( 'marketplace' === $active_tab ) {
+					include EMCP_TOOLS_DIR . 'includes/admin/views/page-marketplace.php';
 				} elseif ( 'changelog' === $active_tab ) {
 					include EMCP_TOOLS_DIR . 'includes/admin/views/page-changelog.php';
 				} else {

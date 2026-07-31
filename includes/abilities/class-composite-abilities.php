@@ -21,6 +21,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 class EMCP_Tools_Composite_Abilities {
 
 	/**
+	 * Element count above which build-page warns about possible remote-connector
+	 * timeouts (the caller should split the request or use dry_run first).
+	 */
+	const SOFT_ELEMENT_LIMIT = 150;
+
+	/**
 	 * @var EMCP_Tools_Data
 	 */
 	private $data;
@@ -125,6 +131,10 @@ class EMCP_Tools_Composite_Abilities {
 							'type'        => 'object',
 							'description' => __( 'Page-level Elementor settings (background, padding, etc.).', 'emcp-tools' ),
 						),
+						'dry_run'       => array(
+							'type'        => 'boolean',
+							'description' => __( 'Validate the structure and report the element count + any coercion/skip warnings WITHOUT creating a page. Use to check a large payload before committing (build-page can time out over a remote connector past ~150 elements).', 'emcp-tools' ),
+						),
 						'structure'     => array(
 							'type'        => 'array',
 							'description' => __( 'Declarative element tree. Each item is type:"container" (with children) or type:"widget" (with widget_type + settings). Shorthand is accepted and coerced: type:"heading" is read as a heading widget, and any node with children is treated as a container, but the response lists these coercions under "warnings", so prefer the explicit shape. Every widget needs a widget_type; a widget with none is skipped and reported.', 'emcp-tools' ),
@@ -195,7 +205,31 @@ class EMCP_Tools_Composite_Abilities {
 			return new \WP_Error( 'missing_structure', __( 'The structure parameter is required and must be an array.', 'emcp-tools' ) );
 		}
 
-		// 1. Create the WordPress post.
+		// 1. Build the Elementor element tree from the declarative structure
+		//    (in memory — no DB write yet, so dry_run can validate first).
+		$this->elements_created = 0;
+		$this->warnings         = array();
+		$elements               = $this->build_elements( $structure );
+
+		// Warn on very large pages that may exceed a remote connector's timeout.
+		if ( $this->elements_created > self::SOFT_ELEMENT_LIMIT ) {
+			$this->warnings[] = sprintf(
+				/* translators: %d: number of elements */
+				__( 'Large page (%d elements). If build-page times out over a remote connector, split it into multiple calls or run dry_run first.', 'emcp-tools' ),
+				$this->elements_created
+			);
+		}
+
+		// Dry run: report what would be created (incl. coercion/skip warnings) and write nothing.
+		if ( ! empty( $input['dry_run'] ) ) {
+			return array(
+				'dry_run'      => true,
+				'would_create' => $this->elements_created,
+				'warnings'     => $this->warnings,
+			);
+		}
+
+		// 2. Create the WordPress post.
 		$post_id = wp_insert_post(
 			array(
 				'post_title'  => $title,
@@ -212,11 +246,6 @@ class EMCP_Tools_Composite_Abilities {
 		if ( is_wp_error( $post_id ) ) {
 			return $post_id;
 		}
-
-		// 2. Build the Elementor element tree from the declarative structure.
-		$this->elements_created = 0;
-		$this->warnings         = array();
-		$elements               = $this->build_elements( $structure );
 
 		// 3. Save the element data.
 		$result = $this->data->save_page_data( $post_id, $elements );

@@ -253,6 +253,43 @@ $emcp_tools_server_enabled = class_exists( 'EMCP_Tools_Plugin' )
 							<p><a href="<?php echo esc_url( EMCP_Tools_Cloud_Connect::connect_url() ); ?>" class="button button-primary"><?php esc_html_e( 'Connect to EMCP Cloud', 'emcp-tools' ); ?></a></p>
 						<?php endif; ?>
 					</div>
+
+					<?php // ===== Settings sync (paid Cloud feature) ===== ?>
+					<?php if ( $emcp_cloud_status['connected'] ) : ?>
+						<?php
+						$emcp_sync_entitled = class_exists( 'EMCP_Tools_Settings_Sync' ) && EMCP_Tools_Settings_Sync::entitled();
+						$emcp_synced        = isset( $_GET['synced'] ) ? sanitize_key( wp_unslash( $_GET['synced'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+						?>
+						<div class="emcp-conn-card">
+							<h2 class="emcp-conn-card-title"><?php esc_html_e( 'Settings sync', 'emcp-tools' ); ?></h2>
+							<?php if ( 'push' === $emcp_synced ) : ?>
+								<div class="notice notice-success inline"><p><?php esc_html_e( 'Settings pushed to the cloud.', 'emcp-tools' ); ?></p></div>
+							<?php elseif ( 'pull' === $emcp_synced ) : ?>
+								<div class="notice notice-success inline"><p><?php esc_html_e( 'Settings pulled from the cloud and applied.', 'emcp-tools' ); ?></p></div>
+							<?php elseif ( 'err' === $emcp_synced ) : ?>
+								<div class="notice notice-error inline"><p><?php esc_html_e( 'Settings sync failed. Make sure your Cloud plan includes settings sync.', 'emcp-tools' ); ?></p></div>
+							<?php endif; ?>
+
+							<?php if ( $emcp_sync_entitled ) : ?>
+								<p class="elementor-mcp-activate-note"><?php esc_html_e( 'Copy your EMCP settings between connected sites: tool toggles, active modules, compact-tool mode, and behavior preferences. Secrets, API keys, and this site\'s connection are never synced.', 'emcp-tools' ); ?></p>
+								<p>
+									<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline">
+										<input type="hidden" name="action" value="emcp_tools_settings_push" />
+										<?php wp_nonce_field( 'emcp_tools_settings_sync' ); ?>
+										<button type="submit" class="button button-primary"><?php esc_html_e( 'Push settings to cloud', 'emcp-tools' ); ?></button>
+									</form>
+									<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline" onsubmit="return confirm('<?php echo esc_js( __( 'Pull settings from the cloud and overwrite this site\'s EMCP settings?', 'emcp-tools' ) ); ?>');">
+										<input type="hidden" name="action" value="emcp_tools_settings_pull" />
+										<?php wp_nonce_field( 'emcp_tools_settings_sync' ); ?>
+										<button type="submit" class="button"><?php esc_html_e( 'Pull settings from cloud', 'emcp-tools' ); ?></button>
+									</form>
+								</p>
+							<?php else : ?>
+								<p class="elementor-mcp-activate-note"><?php esc_html_e( 'Sync your EMCP settings across all your sites. This is a paid EMCP Cloud feature.', 'emcp-tools' ); ?></p>
+								<p><a href="<?php echo esc_url( trailingslashit( EMCP_Tools_Cloud::base_url() ) . 'account/billing' ); ?>" class="button" target="_blank" rel="noopener"><?php esc_html_e( 'Upgrade your Cloud plan', 'emcp-tools' ); ?></a></p>
+							<?php endif; ?>
+						</div>
+					<?php endif; ?>
 				</div>
 			</div>
 		<?php endif; ?>

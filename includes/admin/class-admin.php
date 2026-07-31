@@ -260,6 +260,8 @@ class EMCP_Tools_Admin {
 		add_action( 'admin_post_' . self::ACTION_REVOKE_OAUTH, array( $this, 'handle_revoke_oauth_client' ) );
 		add_action( 'admin_post_' . self::ACTION_EXPORT_ARTIFACT, array( $this, 'handle_export_artifact' ) );
 		add_action( 'admin_post_' . self::ACTION_IMPORT_ARTIFACT, array( $this, 'handle_import_artifact' ) );
+		add_action( 'admin_post_emcp_tools_settings_push', array( $this, 'handle_settings_push' ) );
+		add_action( 'admin_post_emcp_tools_settings_pull', array( $this, 'handle_settings_pull' ) );
 	}
 
 	/** Nonce action for the .mcpb bundle download. */
@@ -389,6 +391,44 @@ class EMCP_Tools_Admin {
 		$count = class_exists( 'EMCP_Tools_Change_Log' ) ? EMCP_Tools_Change_Log::clear() : 0;
 
 		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-history&cleared=' . (int) $count ) );
+		exit;
+	}
+
+	/**
+	 * Push the local EMCP settings to EMCP Cloud (paid Cloud feature).
+	 */
+	public function handle_settings_push(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to do that.', 'emcp-tools' ), '', array( 'response' => 403 ) );
+		}
+		check_admin_referer( 'emcp_tools_settings_sync' );
+		$res = class_exists( 'EMCP_Tools_Settings_Sync' ) ? EMCP_Tools_Settings_Sync::push() : new \WP_Error( 'unavailable', '' );
+		$this->redirect_settings_sync( is_wp_error( $res ) ? 'err' : 'push' );
+	}
+
+	/**
+	 * Pull the EMCP settings from EMCP Cloud and apply them (paid Cloud feature).
+	 */
+	public function handle_settings_pull(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to do that.', 'emcp-tools' ), '', array( 'response' => 403 ) );
+		}
+		check_admin_referer( 'emcp_tools_settings_sync' );
+		$res = class_exists( 'EMCP_Tools_Settings_Sync' ) ? EMCP_Tools_Settings_Sync::pull_and_apply() : new \WP_Error( 'unavailable', '' );
+		$this->redirect_settings_sync( is_wp_error( $res ) ? 'err' : 'pull' );
+	}
+
+	/**
+	 * Redirect back to the Connection tab after a settings-sync action.
+	 *
+	 * @param string $status push|pull|err.
+	 */
+	private function redirect_settings_sync( string $status ): void {
+		$back = wp_get_referer();
+		if ( ! $back ) {
+			$back = admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-connection' );
+		}
+		wp_safe_redirect( add_query_arg( 'synced', $status, $back ) );
 		exit;
 	}
 

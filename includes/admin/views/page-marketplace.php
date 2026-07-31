@@ -21,6 +21,10 @@ $emcp_kind_label = array(
 $emcp_mk       = isset( $_GET['mk'] ) ? sanitize_key( wp_unslash( $_GET['mk'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 $emcp_mk_id    = isset( $_GET['mk_id'] ) ? absint( wp_unslash( $_GET['mk_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 $emcp_category = isset( $_GET['mk_cat'] ) ? sanitize_text_field( wp_unslash( $_GET['mk_cat'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+$emcp_q        = isset( $_GET['mk_q'] ) ? sanitize_text_field( wp_unslash( $_GET['mk_q'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+$emcp_f_kind   = isset( $_GET['mk_kind'] ) ? sanitize_key( wp_unslash( $_GET['mk_kind'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+$emcp_f_access = isset( $_GET['mk_access'] ) ? sanitize_key( wp_unslash( $_GET['mk_access'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+$emcp_sort     = isset( $_GET['mk_sort'] ) ? sanitize_key( wp_unslash( $_GET['mk_sort'] ) ) : 'newest'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 ?>
 <div class="elementor-mcp-section">
 	<h2><?php esc_html_e( 'Marketplace', 'emcp-tools' ); ?></h2>
@@ -53,38 +57,112 @@ $emcp_category = isset( $_GET['mk_cat'] ) ? sanitize_text_field( wp_unslash( $_G
 		return;
 	endif;
 
-	$emcp_res      = EMCP_Tools_Cloud_Sync::marketplace_list( $emcp_category );
-	$emcp_listings = ( ! is_wp_error( $emcp_res ) && isset( $emcp_res['listings'] ) && is_array( $emcp_res['listings'] ) ) ? $emcp_res['listings'] : array();
+	// Fetch the full published set once; filter/sort client-side (small catalog).
+	$emcp_res = EMCP_Tools_Cloud_Sync::marketplace_list( '' );
+	$emcp_all = ( ! is_wp_error( $emcp_res ) && isset( $emcp_res['listings'] ) && is_array( $emcp_res['listings'] ) ) ? $emcp_res['listings'] : array();
 
-	// Category options from the returned set (client-side subset filter is fine).
-	$emcp_all       = ( ! is_wp_error( $emcp_res ) && isset( $emcp_res['listings'] ) ) ? $emcp_res['listings'] : array();
-	$emcp_cats      = array();
+	// Facet options from the full set (so choosing one filter never hides the rest).
+	$emcp_cats  = array();
+	$emcp_kinds = array();
 	foreach ( $emcp_all as $emcp_row ) {
 		if ( ! empty( $emcp_row['category'] ) ) {
-			$emcp_cats[ $emcp_row['category'] ] = true;
+			$emcp_cats[ (string) $emcp_row['category'] ] = true;
+		}
+		if ( ! empty( $emcp_row['kind'] ) ) {
+			$emcp_kinds[ (string) $emcp_row['kind'] ] = true;
 		}
 	}
 	$emcp_cats = array_keys( $emcp_cats );
 	sort( $emcp_cats );
+	$emcp_kinds = array_keys( $emcp_kinds );
+	sort( $emcp_kinds );
+
+	// Apply filters.
+	$emcp_q_lc     = strtolower( $emcp_q );
+	$emcp_listings = array_values(
+		array_filter(
+			$emcp_all,
+			static function ( $row ) use ( $emcp_f_kind, $emcp_category, $emcp_f_access, $emcp_q_lc ) {
+				if ( '' !== $emcp_f_kind && (string) ( $row['kind'] ?? '' ) !== $emcp_f_kind ) {
+					return false;
+				}
+				if ( '' !== $emcp_category && (string) ( $row['category'] ?? '' ) !== $emcp_category ) {
+					return false;
+				}
+				if ( '' !== $emcp_f_access && (string) ( $row['access'] ?? 'community' ) !== $emcp_f_access ) {
+					return false;
+				}
+				if ( '' !== $emcp_q_lc ) {
+					$hay = strtolower( (string) ( $row['title'] ?? '' ) . ' ' . (string) ( $row['summary'] ?? '' ) . ' ' . (string) ( $row['category'] ?? '' ) );
+					if ( false === strpos( $hay, $emcp_q_lc ) ) {
+						return false;
+					}
+				}
+				return true;
+			}
+		)
+	);
+
+	if ( 'popular' === $emcp_sort ) {
+		usort(
+			$emcp_listings,
+			static function ( $a, $b ) {
+				return (int) ( $b['install_count'] ?? 0 ) <=> (int) ( $a['install_count'] ?? 0 );
+			}
+		);
+	}
+
+	$emcp_active_filters = ( '' !== $emcp_q ) + ( '' !== $emcp_f_kind ) + ( '' !== $emcp_category ) + ( '' !== $emcp_f_access );
 	?>
 
 	<?php if ( is_wp_error( $emcp_res ) ) : ?>
 		<div class="notice notice-error inline"><p><?php echo esc_html( $emcp_res->get_error_message() ); ?></p></div>
-	<?php elseif ( empty( $emcp_listings ) ) : ?>
+	<?php elseif ( empty( $emcp_all ) ) : ?>
 		<div class="notice notice-info inline"><p><?php esc_html_e( 'No published items yet. Check back soon.', 'emcp-tools' ); ?></p></div>
 	<?php else : ?>
 
-		<?php if ( ! empty( $emcp_cats ) ) : ?>
-			<form method="get" style="margin:14px 0;">
-				<input type="hidden" name="page" value="emcp-tools-marketplace" />
-				<select name="mk_cat" onchange="this.form.submit()">
+		<form method="get" class="emcp-mk-filters">
+			<input type="hidden" name="page" value="emcp-tools-marketplace" />
+			<input type="search" name="mk_q" value="<?php echo esc_attr( $emcp_q ); ?>" placeholder="<?php esc_attr_e( 'Search marketplace…', 'emcp-tools' ); ?>" class="emcp-mk-filters__search" />
+			<select name="mk_kind">
+				<option value=""><?php esc_html_e( 'All types', 'emcp-tools' ); ?></option>
+				<?php foreach ( $emcp_kinds as $emcp_k ) : ?>
+					<option value="<?php echo esc_attr( $emcp_k ); ?>" <?php selected( $emcp_f_kind, $emcp_k ); ?>><?php echo esc_html( $emcp_kind_label[ $emcp_k ] ?? $emcp_k ); ?></option>
+				<?php endforeach; ?>
+			</select>
+			<?php if ( ! empty( $emcp_cats ) ) : ?>
+				<select name="mk_cat">
 					<option value=""><?php esc_html_e( 'All categories', 'emcp-tools' ); ?></option>
 					<?php foreach ( $emcp_cats as $emcp_c ) : ?>
 						<option value="<?php echo esc_attr( $emcp_c ); ?>" <?php selected( $emcp_category, $emcp_c ); ?>><?php echo esc_html( $emcp_c ); ?></option>
 					<?php endforeach; ?>
 				</select>
-			</form>
-		<?php endif; ?>
+			<?php endif; ?>
+			<select name="mk_access">
+				<option value=""><?php esc_html_e( 'All access', 'emcp-tools' ); ?></option>
+				<option value="community" <?php selected( $emcp_f_access, 'community' ); ?>><?php esc_html_e( 'Community', 'emcp-tools' ); ?></option>
+				<option value="pro" <?php selected( $emcp_f_access, 'pro' ); ?>><?php esc_html_e( 'Pro', 'emcp-tools' ); ?></option>
+			</select>
+			<select name="mk_sort">
+				<option value="newest" <?php selected( $emcp_sort, 'newest' ); ?>><?php esc_html_e( 'Newest', 'emcp-tools' ); ?></option>
+				<option value="popular" <?php selected( $emcp_sort, 'popular' ); ?>><?php esc_html_e( 'Most installed', 'emcp-tools' ); ?></option>
+			</select>
+			<button type="submit" class="button"><?php esc_html_e( 'Apply', 'emcp-tools' ); ?></button>
+			<?php if ( $emcp_active_filters > 0 ) : ?>
+				<a class="button-link emcp-mk-filters__clear" href="<?php echo esc_url( admin_url( 'admin.php?page=emcp-tools-marketplace' ) ); ?>"><?php esc_html_e( 'Clear', 'emcp-tools' ); ?></a>
+			<?php endif; ?>
+		</form>
+
+		<p class="emcp-mk-count">
+			<?php echo esc_html( sprintf( _n( '%d result', '%d results', count( $emcp_listings ), 'emcp-tools' ), count( $emcp_listings ) ) ); ?>
+		</p>
+
+		<?php if ( empty( $emcp_listings ) ) : ?>
+			<div class="notice notice-info inline"><p>
+				<?php esc_html_e( 'Nothing matches those filters.', 'emcp-tools' ); ?>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=emcp-tools-marketplace' ) ); ?>"><?php esc_html_e( 'Clear filters', 'emcp-tools' ); ?></a>
+			</p></div>
+		<?php else : ?>
 
 		<div class="emcp-mk-grid">
 			<?php foreach ( $emcp_listings as $emcp_l ) :
@@ -126,11 +204,16 @@ $emcp_category = isset( $_GET['mk_cat'] ) ? sanitize_text_field( wp_unslash( $_G
 				</div>
 			<?php endforeach; ?>
 		</div>
+		<?php endif; ?>
 	<?php endif; ?>
 </div>
 
 <style>
-	.emcp-mk-grid { display: grid; grid-template-columns: repeat( auto-fill, minmax( 240px, 1fr ) ); gap: 16px; margin-top: 16px; }
+	.emcp-mk-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 16px 0 4px; }
+	.emcp-mk-filters__search { min-width: 220px; flex: 1 1 220px; max-width: 340px; }
+	.emcp-mk-filters__clear { margin-left: 2px; color: #b32d2e; text-decoration: none; }
+	.emcp-mk-count { font-size: 12px; color: #787c82; margin: 8px 0 0; }
+	.emcp-mk-grid { display: grid; grid-template-columns: repeat( auto-fill, minmax( 240px, 1fr ) ); gap: 16px; margin-top: 12px; }
 	.emcp-mk-card { display: flex; flex-direction: column; background: #fff; border: 1px solid #dcdcde; border-radius: 10px; overflow: hidden; }
 	.emcp-mk-card__shot { width: 100%; height: 150px; object-fit: cover; border-bottom: 1px solid #f0f0f1; background: #f6f7f7; }
 	.emcp-mk-card__shot--empty { display: grid; place-items: center; font-size: 34px; font-weight: 700; color: #c3c4c7; }

@@ -145,6 +145,9 @@ $emcp_tools_wb_import_error = isset( $_GET['import_error'] ) ? sanitize_text_fie
 									<a class="button" href="<?php echo esc_url( EMCP_Tools_Admin::sandbox_export_url( 'widget', $emcp_tools_wid ) ); ?>">
 										<?php esc_html_e( 'Export', 'emcp-tools' ); ?>
 									</a>
+									<?php if ( class_exists( 'EMCP_Tools_Cloud' ) && EMCP_Tools_Cloud::is_connected() ) : ?>
+										<button type="button" class="button elementor-mcp-sb-backup" data-kind="widget"><?php esc_html_e( 'Save to Cloud', 'emcp-tools' ); ?></button>
+									<?php endif; ?>
 									<button
 										type="button"
 										class="button"
@@ -198,6 +201,19 @@ $emcp_tools_wb_import_error = isset( $_GET['import_error'] ) ? sanitize_text_fie
 								if ( res && res.success ) { row.parentNode.removeChild( row ); }
 								else { e.target.disabled = false; alert( ( res && res.data && res.data.message ) || 'Failed.' ); }
 							} ).catch( function () { e.target.disabled = false; } );
+						}
+
+						if ( e.target.classList.contains( 'elementor-mcp-sb-backup' ) ) {
+							var btn = e.target;
+							btn.disabled = true;
+							var cb = new FormData();
+							cb.append( 'kind', btn.getAttribute( 'data-kind' ) );
+							cb.append( 'id', id );
+							post( 'emcp_tools_backup_artifact', cb ).then( function ( res ) {
+								btn.disabled = false;
+								if ( res && res.success ) { btn.textContent = '<?php echo esc_js( __( 'Saved ✓', 'emcp-tools' ) ); ?>'; }
+								else { alert( ( res && res.data && res.data.message ) || 'Failed.' ); }
+							} ).catch( function () { btn.disabled = false; } );
 						}
 					} );
 				} )();

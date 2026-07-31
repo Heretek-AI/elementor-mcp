@@ -253,6 +253,7 @@ class EMCP_Tools_Admin {
 		add_action( 'wp_ajax_emcp_tools_delete_widget', array( $this, 'ajax_delete_widget' ) );
 		add_action( 'wp_ajax_emcp_tools_toggle_block', array( $this, 'ajax_toggle_block' ) );
 		add_action( 'wp_ajax_emcp_tools_delete_block', array( $this, 'ajax_delete_block' ) );
+		add_action( 'wp_ajax_emcp_tools_backup_artifact', array( $this, 'ajax_backup_artifact' ) );
 		add_action( 'wp_ajax_emcp_tools_memory_set_status', array( $this, 'ajax_memory_set_status' ) );
 		add_action( 'wp_ajax_emcp_tools_memory_save_guidance', array( $this, 'ajax_memory_save_guidance' ) );
 		add_action( 'wp_ajax_emcp_tools_memory_save_settings', array( $this, 'ajax_memory_save_settings' ) );
@@ -424,6 +425,36 @@ class EMCP_Tools_Admin {
 		check_admin_referer( 'emcp_tools_settings_sync' );
 		$res = class_exists( 'EMCP_Tools_Settings_Sync' ) ? EMCP_Tools_Settings_Sync::pull_and_apply() : new \WP_Error( 'unavailable', '' );
 		$this->redirect_settings_sync( is_wp_error( $res ) ? 'err' : 'pull' );
+	}
+
+	/**
+	 * Back up a Sandbox artifact (block/widget/snippet) to EMCP Cloud. AJAX.
+	 */
+	public function ajax_backup_artifact(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to do this.', 'emcp-tools' ) ), 403 );
+		}
+		$kind   = isset( $_POST['kind'] ) ? sanitize_key( wp_unslash( $_POST['kind'] ) ) : '';
+		$nonces = array(
+			'widget'  => 'emcp_tools_widgets',
+			'block'   => 'emcp_tools_blocks',
+			'snippet' => 'emcp_tools_php_snippets',
+		);
+		if ( ! isset( $nonces[ $kind ] ) || ! check_ajax_referer( $nonces[ $kind ], 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'emcp-tools' ) ), 403 );
+		}
+		$id = isset( $_POST['id'] ) ? absint( wp_unslash( $_POST['id'] ) ) : 0;
+		if ( ! $id || ! class_exists( 'EMCP_Tools_Cloud_Sync' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Nothing to save.', 'emcp-tools' ) ) );
+		}
+		$res = EMCP_Tools_Cloud_Sync::backup( $kind, $id );
+		if ( is_wp_error( $res ) ) {
+			$msg = ( 'not_connected' === $res->get_error_code() )
+				? __( 'Connect this site to EMCP Cloud first.', 'emcp-tools' )
+				: $res->get_error_message();
+			wp_send_json_error( array( 'message' => $msg ) );
+		}
+		wp_send_json_success( array( 'message' => __( 'Saved to cloud.', 'emcp-tools' ) ) );
 	}
 
 	/**

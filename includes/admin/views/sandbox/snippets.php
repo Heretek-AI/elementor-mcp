@@ -210,6 +210,9 @@ $emcp_tools_sn_nonce = wp_create_nonce( 'emcp_tools_php_snippets' );
 								<a class="button" href="<?php echo esc_url( EMCP_Tools_Admin::sandbox_export_url( 'snippet', $emcp_tools_sid ) ); ?>">
 									<?php esc_html_e( 'Export', 'emcp-tools' ); ?>
 								</a>
+								<?php if ( class_exists( 'EMCP_Tools_Cloud' ) && EMCP_Tools_Cloud::is_connected() ) : ?>
+									<button type="button" class="button elementor-mcp-sb-backup" data-kind="snippet"><?php esc_html_e( 'Save to Cloud', 'emcp-tools' ); ?></button>
+								<?php endif; ?>
 								<button
 									type="button"
 									class="button"
@@ -314,6 +317,19 @@ $emcp_tools_sn_nonce = wp_create_nonce( 'emcp_tools_php_snippets' );
 							if ( res && res.success ) { row.parentNode.removeChild( row ); }
 							else { e.target.disabled = false; alert( ( res && res.data && res.data.message ) || 'Failed.' ); }
 						} ).catch( function () { e.target.disabled = false; } );
+					}
+
+					if ( e.target.classList.contains( 'elementor-mcp-sb-backup' ) ) {
+						var btn = e.target;
+						btn.disabled = true;
+						var cb = new FormData();
+						cb.append( 'kind', btn.getAttribute( 'data-kind' ) );
+						cb.append( 'id', id );
+						post( 'emcp_tools_backup_artifact', cb ).then( function ( res ) {
+							btn.disabled = false;
+							if ( res && res.success ) { btn.textContent = '<?php echo esc_js( __( 'Saved ✓', 'emcp-tools' ) ); ?>'; }
+							else { alert( ( res && res.data && res.data.message ) || 'Failed.' ); }
+						} ).catch( function () { btn.disabled = false; } );
 					}
 
 					if ( e.target.classList.contains( 'elementor-mcp-sn-edit' ) && form ) {

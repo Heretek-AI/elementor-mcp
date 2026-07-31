@@ -116,6 +116,17 @@ class EMCP_Tools_Image_Optimizer {
 		if ( ! $this->settings['compress'] && ! $this->settings['webp'] ) {
 			return $metadata;
 		}
+		/**
+		 * Per-attachment opt-out. Return false to skip compression + WebP for a
+		 * single attachment — used by sideload-image / add-stock-image when the
+		 * caller passes convert_webp:false (conversion timing out on shared hosting).
+		 *
+		 * @param bool $do            Whether to optimise (default true).
+		 * @param int  $attachment_id The attachment being processed.
+		 */
+		if ( ! apply_filters( 'emcp_tools_optimize_attachment', true, (int) $attachment_id ) ) {
+			return $metadata;
+		}
 		$mime = get_post_mime_type( (int) $attachment_id );
 		if ( ! in_array( $mime, array( 'image/jpeg', 'image/png' ), true ) ) {
 			return $metadata;

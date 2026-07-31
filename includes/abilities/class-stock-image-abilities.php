@@ -351,6 +351,10 @@ class EMCP_Tools_Stock_Image_Abilities {
 							'type'        => 'string',
 							'description' => __( 'Attribution text for Creative Commons images. Stored as the attachment caption/excerpt.', 'emcp-tools' ),
 						),
+						'convert_webp' => array(
+							'type'        => 'boolean',
+							'description' => __( 'Convert the uploaded image to WebP (default true). Set false to skip conversion when it is timing out on shared hosting.', 'emcp-tools' ),
+						),
 					),
 					'required'   => array( 'url' ),
 				),
@@ -453,8 +457,19 @@ class EMCP_Tools_Stock_Image_Abilities {
 			'tmp_name' => $tmp_file,
 		);
 
-		// Sideload into the media library.
+		// Sideload into the media library. media_handle_sideload() triggers
+		// wp_generate_attachment_metadata() synchronously, which is where the
+		// Image Optimization module compresses + generates WebP. When the caller
+		// asks to skip conversion (convert_webp:false — for slow shared hosting),
+		// suppress that work for just this upload.
+		$skip_webp = array_key_exists( 'convert_webp', (array) $input ) && false === $input['convert_webp'];
+		if ( $skip_webp ) {
+			add_filter( 'emcp_tools_optimize_attachment', '__return_false', 99 );
+		}
 		$attachment_id = media_handle_sideload( $file_array, 0 );
+		if ( $skip_webp ) {
+			remove_filter( 'emcp_tools_optimize_attachment', '__return_false', 99 );
+		}
 
 		if ( is_wp_error( $attachment_id ) ) {
 			// Clean up temp file on failure.
@@ -465,8 +480,9 @@ class EMCP_Tools_Stock_Image_Abilities {
 			return new \WP_Error(
 				'sideload_failed',
 				sprintf(
-					/* translators: %s: error message */
-					__( 'Failed to sideload image: %s', 'emcp-tools' ),
+					/* translators: 1: source URL, 2: error message */
+					__( 'Image download/processing failed or timed out for %1$s: %2$s. Retry, or pass convert_webp:false to skip WebP conversion.', 'emcp-tools' ),
+					esc_url_raw( (string) ( $input['url'] ?? '' ) ),
 					$attachment_id->get_error_message()
 				)
 			);
@@ -579,6 +595,10 @@ class EMCP_Tools_Stock_Image_Abilities {
 							'enum'        => array( 'none', 'file', 'custom' ),
 							'description' => __( 'Link behavior. Default: none.', 'emcp-tools' ),
 						),
+						'convert_webp' => array(
+							'type'        => 'boolean',
+							'description' => __( 'Convert the uploaded image to WebP (default true). Set false to skip conversion when it is timing out on shared hosting.', 'emcp-tools' ),
+						),
 					),
 					'required'   => array( 'post_id', 'parent_id', 'query' ),
 				),
@@ -689,13 +709,17 @@ class EMCP_Tools_Stock_Image_Abilities {
 		$caption     = sanitize_text_field( $input['caption'] ?? '' );
 		$attribution = $image['attribution'] ?? '';
 
-		$sideload_result = $this->execute_sideload_image( array(
+		$sideload_input = array(
 			'url'         => $image['url'],
 			'title'       => $image['title'] ?? $query,
 			'alt_text'    => ! empty( $alt_text ) ? $alt_text : ( $image['title'] ?? $query ),
 			'caption'     => $caption,
 			'attribution' => $attribution,
-		) );
+		);
+		if ( array_key_exists( 'convert_webp', (array) $input ) ) {
+			$sideload_input['convert_webp'] = $input['convert_webp'];
+		}
+		$sideload_result = $this->execute_sideload_image( $sideload_input );
 
 		if ( is_wp_error( $sideload_result ) ) {
 			return $sideload_result;

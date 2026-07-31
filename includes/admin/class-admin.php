@@ -228,6 +228,8 @@ class EMCP_Tools_Admin {
 				return 'skills';
 			case self::PAGE_SLUG . '-widgets':
 				return 'widgets';
+			case self::PAGE_SLUG . '-marketplace':
+				return 'marketplace';
 			case self::PAGE_SLUG . '-changelog':
 				return 'changelog';
 			default:

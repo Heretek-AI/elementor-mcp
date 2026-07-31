@@ -208,7 +208,7 @@ $emcp_sort     = isset( $_GET['mk_sort'] ) ? sanitize_key( wp_unslash( $_GET['mk
 									<span class="emcp-mk-card__aname"><?php echo esc_html( $emcp_a_name ); ?></span>
 								<?php endif; ?>
 								<?php if ( $emcp_a_ver ) : ?>
-									<span class="emcp-mk-card__ver" title="<?php esc_attr_e( 'Verified EMCP Pro member', 'emcp-tools' ); ?>" aria-label="<?php esc_attr_e( 'Verified', 'emcp-tools' ); ?>">✓</span>
+									<img class="emcp-mk-card__ver" src="<?php echo esc_url( EMCP_TOOLS_URL . 'assets/img/pro.svg' ); ?>" alt="<?php esc_attr_e( 'Verified', 'emcp-tools' ); ?>" title="<?php esc_attr_e( 'Verified EMCP Pro member', 'emcp-tools' ); ?>" width="15" height="15" />
 								<?php endif; ?>
 							</div>
 						<?php endif; ?>
@@ -250,7 +250,7 @@ $emcp_sort     = isset( $_GET['mk_sort'] ) ? sanitize_key( wp_unslash( $_GET['mk
 	.emcp-mk-card__aname { font-size: 12.5px; font-weight: 600; color: #3c434a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	a.emcp-mk-card__aname--link { text-decoration: none; }
 	a.emcp-mk-card__aname--link:hover { color: #2271b1; text-decoration: underline; }
-	.emcp-mk-card__ver { flex: none; width: 15px; height: 15px; display: grid; place-items: center; border-radius: 50%; background: #182fff; color: #fff; font-size: 9px; font-weight: 700; }
+	.emcp-mk-card__ver { flex: none; width: 15px; height: 15px; display: block; }
 	.emcp-mk-card__foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: #787c82; margin-top: 4px; }
 	.emcp-mk-card__cta { margin-top: 8px; }
 </style>

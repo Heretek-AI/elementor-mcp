@@ -143,6 +143,27 @@ class EMCP_Tools_Cloud_Sync {
 	}
 
 	/**
+	 * Website submit-page URL for publishing a backed-up artifact to the
+	 * marketplace. The artifact must already be pushed to the cloud (its
+	 * stable uuid is what the submit page looks up). '' if unresolvable.
+	 *
+	 * @param string $kind block|widget|snippet.
+	 * @param int    $id   Local artifact id.
+	 * @return string
+	 */
+	public static function publish_url( string $kind, int $id ): string {
+		$art = self::abilities()->resolve_artifact( $kind );
+		if ( ! $art ) {
+			return '';
+		}
+		$uuid = (string) $art->uuid( $id );
+		if ( '' === $uuid ) {
+			return '';
+		}
+		return trailingslashit( EMCP_Tools_Cloud::base_url() ) . 'account/marketplace/submit?artifact=' . rawurlencode( $uuid );
+	}
+
+	/**
 	 * Publish one of your cloud artifacts as a marketplace listing (pending
 	 * moderation).
 	 *

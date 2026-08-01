@@ -212,6 +212,13 @@ $emcp_tools_sn_nonce = wp_create_nonce( 'emcp_tools_php_snippets' );
 								</a>
 								<?php if ( class_exists( 'EMCP_Tools_Cloud' ) && EMCP_Tools_Cloud::is_connected() ) : ?>
 									<button type="button" class="button elementor-mcp-sb-backup" data-kind="snippet"><?php esc_html_e( 'Save to Cloud', 'emcp-tools' ); ?></button>
+									<?php
+									$emcp_tools_pushed = (bool) get_post_meta( $emcp_tools_sid, '_emcp_cloud_pushed', true );
+									$emcp_tools_pub    = class_exists( 'EMCP_Tools_Cloud_Sync' ) ? EMCP_Tools_Cloud_Sync::publish_url( 'snippet', $emcp_tools_sid ) : '';
+									?>
+									<?php if ( '' !== $emcp_tools_pub ) : ?>
+										<a class="button elementor-mcp-sb-publish<?php echo $emcp_tools_pushed ? '' : ' disabled'; ?>" href="<?php echo esc_url( $emcp_tools_pub ); ?>" target="_blank" rel="noopener"<?php echo $emcp_tools_pushed ? '' : ' aria-disabled="true" tabindex="-1"'; ?> title="<?php echo esc_attr( $emcp_tools_pushed ? __( 'Publish this artifact to the marketplace', 'emcp-tools' ) : __( 'Save to Cloud first, then publish.', 'emcp-tools' ) ); ?>"><?php esc_html_e( 'Publish to Marketplace ↗', 'emcp-tools' ); ?></a>
+									<?php endif; ?>
 								<?php endif; ?>
 								<button
 									type="button"
@@ -295,6 +302,11 @@ $emcp_tools_sn_nonce = wp_create_nonce( 'emcp_tools_php_snippets' );
 					if ( ! row ) { return; }
 					var id = row.getAttribute( 'data-snippet-id' );
 
+					if ( e.target.classList.contains( 'elementor-mcp-sb-publish' ) && e.target.classList.contains( 'disabled' ) ) {
+						e.preventDefault();
+						return;
+					}
+
 					if ( e.target.classList.contains( 'elementor-mcp-sn-toggle' ) ) {
 						var status = e.target.getAttribute( 'data-status' );
 						if ( status === 'active' && ! confirm( '<?php echo esc_js( __( 'Activate this snippet? It will run real PHP on your site. Make sure you have read and trust the code.', 'emcp-tools' ) ); ?>' ) ) { return; }
@@ -327,8 +339,17 @@ $emcp_tools_sn_nonce = wp_create_nonce( 'emcp_tools_php_snippets' );
 						cb.append( 'id', id );
 						post( 'emcp_tools_backup_artifact', cb ).then( function ( res ) {
 							btn.disabled = false;
-							if ( res && res.success ) { btn.textContent = '<?php echo esc_js( __( 'Saved ✓', 'emcp-tools' ) ); ?>'; }
-							else { alert( ( res && res.data && res.data.message ) || 'Failed.' ); }
+							if ( res && res.success ) {
+								btn.textContent = '<?php echo esc_js( __( 'Saved ✓', 'emcp-tools' ) ); ?>';
+								var pub = row.querySelector( '.elementor-mcp-sb-publish' );
+								if ( pub ) {
+									pub.classList.remove( 'disabled' );
+									pub.removeAttribute( 'aria-disabled' );
+									pub.removeAttribute( 'tabindex' );
+									pub.title = '<?php echo esc_js( __( 'Publish this artifact to the marketplace', 'emcp-tools' ) ); ?>';
+									if ( res.data && res.data.publish_url ) { pub.href = res.data.publish_url; }
+								}
+							} else { alert( ( res && res.data && res.data.message ) || 'Failed.' ); }
 						} ).catch( function () { btn.disabled = false; } );
 					}
 

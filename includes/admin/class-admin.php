@@ -458,7 +458,15 @@ class EMCP_Tools_Admin {
 				: $res->get_error_message();
 			wp_send_json_error( array( 'message' => $msg ) );
 		}
-		wp_send_json_success( array( 'message' => __( 'Saved to cloud.', 'emcp-tools' ) ) );
+		// Record that this artifact now exists in the cloud, so the "Publish to
+		// Marketplace" button can enable (it links to the website submit page).
+		update_post_meta( $id, '_emcp_cloud_pushed', time() );
+		wp_send_json_success(
+			array(
+				'message'     => __( 'Saved to cloud.', 'emcp-tools' ),
+				'publish_url' => EMCP_Tools_Cloud_Sync::publish_url( $kind, $id ),
+			)
+		);
 	}
 
 	/**

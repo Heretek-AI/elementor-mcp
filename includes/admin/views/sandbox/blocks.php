@@ -147,6 +147,13 @@ $emcp_tools_bb_import_error = isset( $_GET['import_error'] ) ? sanitize_text_fie
 									</a>
 									<?php if ( class_exists( 'EMCP_Tools_Cloud' ) && EMCP_Tools_Cloud::is_connected() ) : ?>
 										<button type="button" class="button elementor-mcp-sb-backup" data-kind="block"><?php esc_html_e( 'Save to Cloud', 'emcp-tools' ); ?></button>
+										<?php
+										$emcp_tools_pushed = (bool) get_post_meta( $emcp_tools_bid, '_emcp_cloud_pushed', true );
+										$emcp_tools_pub    = class_exists( 'EMCP_Tools_Cloud_Sync' ) ? EMCP_Tools_Cloud_Sync::publish_url( 'block', $emcp_tools_bid ) : '';
+										?>
+										<?php if ( '' !== $emcp_tools_pub ) : ?>
+											<a class="button elementor-mcp-sb-publish<?php echo $emcp_tools_pushed ? '' : ' disabled'; ?>" href="<?php echo esc_url( $emcp_tools_pub ); ?>" target="_blank" rel="noopener"<?php echo $emcp_tools_pushed ? '' : ' aria-disabled="true" tabindex="-1"'; ?> title="<?php echo esc_attr( $emcp_tools_pushed ? __( 'Publish this artifact to the marketplace', 'emcp-tools' ) : __( 'Save to Cloud first, then publish.', 'emcp-tools' ) ); ?>"><?php esc_html_e( 'Publish to Marketplace ↗', 'emcp-tools' ); ?></a>
+										<?php endif; ?>
 									<?php endif; ?>
 									<button
 										type="button"
@@ -180,6 +187,11 @@ $emcp_tools_bb_import_error = isset( $_GET['import_error'] ) ? sanitize_text_fie
 						if ( ! row ) { return; }
 						var id = row.getAttribute( 'data-block-id' );
 
+						if ( e.target.classList.contains( 'elementor-mcp-sb-publish' ) && e.target.classList.contains( 'disabled' ) ) {
+							e.preventDefault();
+							return;
+						}
+
 						if ( e.target.classList.contains( 'elementor-mcp-wb-toggle' ) ) {
 							e.target.disabled = true;
 							var b = new FormData();
@@ -211,8 +223,17 @@ $emcp_tools_bb_import_error = isset( $_GET['import_error'] ) ? sanitize_text_fie
 							cb.append( 'id', id );
 							post( 'emcp_tools_backup_artifact', cb ).then( function ( res ) {
 								btn.disabled = false;
-								if ( res && res.success ) { btn.textContent = '<?php echo esc_js( __( 'Saved ✓', 'emcp-tools' ) ); ?>'; }
-								else { alert( ( res && res.data && res.data.message ) || 'Failed.' ); }
+								if ( res && res.success ) {
+									btn.textContent = '<?php echo esc_js( __( 'Saved ✓', 'emcp-tools' ) ); ?>';
+									var pub = row.querySelector( '.elementor-mcp-sb-publish' );
+									if ( pub ) {
+										pub.classList.remove( 'disabled' );
+										pub.removeAttribute( 'aria-disabled' );
+										pub.removeAttribute( 'tabindex' );
+										pub.title = '<?php echo esc_js( __( 'Publish this artifact to the marketplace', 'emcp-tools' ) ); ?>';
+										if ( res.data && res.data.publish_url ) { pub.href = res.data.publish_url; }
+									}
+								} else { alert( ( res && res.data && res.data.message ) || 'Failed.' ); }
 							} ).catch( function () { btn.disabled = false; } );
 						}
 					} );

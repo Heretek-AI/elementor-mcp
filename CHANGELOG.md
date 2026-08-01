@@ -2,6 +2,24 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.8.0]
+
+### Added
+- **EMCP Cloud (Pro).** Connect your site to an EMCP Cloud account (OAuth) to back up your Sandbox blocks, widgets, and PHP snippets, sync them across every connected site, and publish them to a community/Pro Marketplace. A new **Marketplace** admin tab browses published artifacts — with search and type/category/access filters and each listing's author (avatar, name, and Verified badge, linking to the author's public profile) — and installs them as drafts to review. One-click **Save to Cloud** buttons on the Sandbox back up an artifact.
+- **Settings Sync (paid Cloud).** Copy your EMCP settings — tool toggles, active modules, compact-tool mode, and behaviour preferences — between connected sites from the Connection tab. Secrets, API keys, and this site's own connection are never synced.
+- **Forminator integration (Pro).** Two dispatcher tools (`forminator-read` / `forminator-write`) list forms with their shortcodes, read fields and submissions, and delete a submission (confirm-gated). Verified live against Forminator 1.56.2.
+- **MCP Log admin tab.** Records recent MCP requests (tool, status, duration, request id) so a connector failure can be matched to a server-side outcome; with `WP_DEBUG` on it also captures the underlying error.
+- **`get-page-structure` `summary` / `max_depth`.** Return a shallow, workable tree (containers + child counts) for very large pages instead of timing out.
+- **`build-page` `dry_run`.** Validate a declarative structure and report the element count and any coerced/skipped widgets without writing a page. Pages over ~150 elements now include an explicit split/timeout warning.
+- **`sideload-image` / `add-stock-image` `convert_webp`.** Set `false` to skip the synchronous WebP conversion when it is timing out on shared hosting (via a new `emcp_tools_optimize_attachment` filter).
+
+### Changed
+- **Connection page reorganised into MCP / Cloud / 3rd Party Services tabs.** The EMCP Cloud connect + settings-sync section moved into its own **Cloud** tab; History moved to the app bar next to Changelog.
+
+### Fixed
+- **Stale-domain connectors now fail loudly.** If an MCP connector is left pointed at an old domain after a site URL change, the endpoint returns an explicit `Site URL mismatch` error (HTTP 421) with the correct URL instead of a generic "tool execution error".
+- **Intermittent "connector isn't responding" on shared LiteSpeed hosting.** The MCP route now sends `Cache-Control: no-store` + `X-LiteSpeed-Cache-Control: no-cache` + `X-Accel-Buffering: no` so LiteSpeed/QUIC never caches or buffers MCP responses. A new readme FAQ + `docs/LITESPEED_MCP.md` cover cache-exclusion and PHP-limit tuning, and an opt-in `EMCP_TOOLS_PROFILE_REGISTRATION` constant logs per-request registration timing.
+
 ## [3.7.0]
 
 ### Added

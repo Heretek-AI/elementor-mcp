@@ -176,6 +176,19 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 
 == Changelog ==
 
+= 3.8.0 =
+EMCP Cloud — back up, sync, and share your work — plus remote-connector reliability fixes and Forminator support.
+* Added: EMCP Cloud (Pro). Connect your site to an EMCP Cloud account to back up your Sandbox blocks, widgets, and PHP snippets, sync them across every connected site, and publish them to a community/Pro Marketplace. A new Marketplace admin tab browses published artifacts (search, type/category/access filters, and the author's avatar, name, and Verified badge) and installs them as drafts to review. One-click "Save to Cloud" buttons on the Sandbox back up an artifact.
+* Added: Settings Sync (paid Cloud). Copy your EMCP settings — tool toggles, active modules, compact-tool mode, and preferences — between connected sites from the Connection tab. Secrets, API keys, and the site's own connection are never synced.
+* Added: Forminator integration (Pro). Two dispatcher tools (forminator-read / forminator-write) list forms with their shortcodes, read fields and submissions, and delete a submission (confirm:true). Verified against Forminator 1.56.2.
+* Added: MCP Log admin tab. A record of recent MCP requests (tool, status, duration, request id) so a connector failure can be matched to a server-side outcome; with WP_DEBUG on it also captures the underlying error.
+* Added: get-page-structure gains summary and max_depth options so very large pages return a shallow, workable tree instead of timing out.
+* Added: build-page gains a dry_run option that validates a structure and reports the element count and any coerced or skipped widgets without writing a page, and warns when a page is large enough to risk a remote-connector timeout.
+* Added: sideload-image and add-stock-image gain a convert_webp option — set false to skip WebP conversion when it is timing out on shared hosting.
+* Changed: the Connection page is reorganised into three tabs — MCP, Cloud, and 3rd Party Services — with the EMCP Cloud connect and settings-sync section moved into its own Cloud tab. History moved next to Changelog in the app bar.
+* Fixed: stale-domain connectors now fail loudly. If a connector is left pointed at an old domain after a site URL change, the MCP endpoint returns an explicit "Site URL mismatch" error (HTTP 421) with the correct URL instead of a generic tool-execution failure.
+* Fixed: intermittent "connector isn't responding" on shared LiteSpeed hosting. The MCP route now sends no-store/no-cache headers so LiteSpeed/QUIC never caches or buffers MCP responses; a new FAQ covers cache-exclusion and PHP-limit tuning.
+
 = 3.7.0 =
 Custom Gutenberg blocks, plus a memory so your AI stops guessing.
 * Added: Gutenberg Block authoring in the Sandbox (Pro). Your AI agent designs a custom block from a structured spec, the plugin compiles it into a sandboxed dynamic block under wp-content/uploads (never your theme or core), and you review and activate it before it goes live. Active blocks appear in the editor inserter under "EMCP Custom" with a live preview and a Settings panel. The Sandbox page is now split into Blocks, Widgets, and PHP Snippets, each with its own management screen. Blocks and widgets can be exported and imported as portable JSON bundles.

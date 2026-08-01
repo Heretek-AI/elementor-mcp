@@ -140,6 +140,8 @@ class EMCP_Tools_Plugin {
 		// home host (connector left pointed at an old/temporary domain).
 		require_once EMCP_TOOLS_DIR . 'includes/class-mcp-host-guard.php';
 		add_filter( 'rest_pre_dispatch', array( 'EMCP_Tools_MCP_Host_Guard', 'guard' ), 5, 3 );
+		// Never cache/buffer MCP responses (LiteSpeed/QUIC drop-suspect, Issue 1).
+		add_filter( 'rest_pre_serve_request', array( 'EMCP_Tools_MCP_Host_Guard', 'no_store_headers' ), 10, 4 );
 
 		// Record every MCP request (tool, status, duration) for the MCP Log tab.
 		require_once EMCP_TOOLS_DIR . 'includes/class-mcp-request-log.php';

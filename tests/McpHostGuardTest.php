@@ -33,4 +33,11 @@ class McpHostGuardTest extends TestCase {
 		// A missing Host header must never brick the endpoint.
 		$this->assertTrue( EMCP_Tools_MCP_Host_Guard::host_matches( '', 'example.com' ) );
 	}
+
+	public function test_is_mcp_route(): void {
+		$this->assertTrue( EMCP_Tools_MCP_Host_Guard::is_mcp_route( '/mcp/emcp-tools-server' ) );
+		$this->assertTrue( EMCP_Tools_MCP_Host_Guard::is_mcp_route( '/mcp/emcp-tools-server/messages' ) );
+		$this->assertFalse( EMCP_Tools_MCP_Host_Guard::is_mcp_route( '/wp/v2/posts' ) );
+		$this->assertFalse( EMCP_Tools_MCP_Host_Guard::is_mcp_route( '/mcp/other-server' ) );
+	}
 }

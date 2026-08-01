@@ -165,6 +165,10 @@ Yes. The MCP Adapter handles the MCP protocol transport layer. This plugin regis
 
 The plugin enforces WordPress capability checks on every tool. Read operations require `edit_posts`, write operations check `edit_post` ownership, and global settings require `manage_options`. All input is sanitized and validated.
 
+= A remote MCP connector intermittently says "the connector's server isn't responding" =
+
+On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/buffering or timing out the request, not the plugin. The MCP route already sends no-store/no-cache headers; in addition: exclude `/wp-json/mcp/` from LiteSpeed Cache (Cache -> Excludes -> Do Not Cache URIs), raise PHP `max_execution_time` (>=60) and the concurrent PHP worker limit, and check the new **EMCP Tools -> MCP Log** tab (with `WP_DEBUG` on it records the underlying error) to tell a real error from a transport timeout. For large operations use `build-page` `dry_run`, `sideload-image` `convert_webp:false`, and `get-page-structure` `summary:true`.
+
 == Screenshots ==
 
 1. Tools management page with category-grouped toggles.

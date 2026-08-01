@@ -89,6 +89,8 @@ class EMCP_Tools_Ability_Registrar {
 	 * @return string[] Array of registered ability names.
 	 */
 	public function register_all( bool $elementor_active = true ): array {
+		$profile = defined( 'EMCP_TOOLS_PROFILE_REGISTRATION' ) && EMCP_TOOLS_PROFILE_REGISTRATION;
+		$started = $profile ? microtime( true ) : 0.0;
 		try {
 			$this->register_groups( $elementor_active );
 		} catch ( \Throwable $e ) {
@@ -104,6 +106,10 @@ class EMCP_Tools_Ability_Registrar {
 			if ( function_exists( 'error_log' ) ) {
 				error_log( 'EMCP Tools: ability registration stopped early: ' . $e->getMessage() );
 			}
+		}
+
+		if ( $profile && function_exists( 'error_log' ) ) {
+			error_log( sprintf( 'EMCP Tools: ability registration took %.1f ms (%d tools).', ( microtime( true ) - $started ) * 1000, count( $this->ability_names ) ) );
 		}
 
 		/**

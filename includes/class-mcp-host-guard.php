@@ -49,6 +49,31 @@ class EMCP_Tools_MCP_Host_Guard {
 		return $req === self::norm( $home_host );
 	}
 
+	/** Whether a REST route is (under) the EMCP MCP server route. */
+	public static function is_mcp_route( string $route ): bool {
+		return 0 === strpos( $route, '/mcp/emcp-tools-server' );
+	}
+
+	/**
+	 * rest_pre_serve_request filter — tell LiteSpeed / proxies not to cache or
+	 * buffer MCP responses (the leading suspect for intermittent "connector isn't
+	 * responding" on shared LiteSpeed hosting).
+	 *
+	 * @param bool  $served  Whether the request has been served.
+	 * @param mixed $result  Response (unused).
+	 * @param mixed $request WP_REST_Request.
+	 * @param mixed $server  REST server (unused).
+	 * @return bool Unmodified $served.
+	 */
+	public static function no_store_headers( $served, $result, $request, $server ) {
+		if ( is_object( $request ) && method_exists( $request, 'get_route' ) && self::is_mcp_route( (string) $request->get_route() ) && ! headers_sent() ) {
+			header( 'Cache-Control: no-store, no-cache, must-revalidate, max-age=0' );
+			header( 'X-LiteSpeed-Cache-Control: no-cache' );
+			header( 'X-Accel-Buffering: no' );
+		}
+		return $served;
+	}
+
 	/**
 	 * rest_pre_dispatch filter — acts only on the MCP server route.
 	 *
@@ -61,7 +86,7 @@ class EMCP_Tools_MCP_Host_Guard {
 		if ( ! is_object( $request ) || ! method_exists( $request, 'get_route' ) ) {
 			return $result;
 		}
-		if ( 0 !== strpos( (string) $request->get_route(), '/mcp/emcp-tools-server' ) ) {
+		if ( ! self::is_mcp_route( (string) $request->get_route() ) ) {
 			return $result;
 		}
 		/**

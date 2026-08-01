@@ -588,7 +588,7 @@ class EMCP_Tools_Admin {
 	 *
 	 * @since 1.8.0
 	 */
-	const DEFAULTS_VERSION = 25;
+	const DEFAULTS_VERSION = 26;
 
 	/**
 	 * SEO/A11y Pro MCP tool slugs that ship disabled-by-default (v2 defaults).
@@ -1060,6 +1060,11 @@ class EMCP_Tools_Admin {
 		// value (approved-guidance injection) works with the tools off.
 		if ( $applied < 25 ) {
 			$add = array_merge( $add, self::memory_tool_slugs() );
+		}
+
+		// v26 — Forminator write (delete-entry) disabled-by-default.
+		if ( $applied < 26 ) {
+			$add[] = 'emcp-tools/forminator-write';
 		}
 
 		$merged = array_values( array_unique( array_merge( $existing, $add ) ) );
@@ -2774,6 +2779,11 @@ class EMCP_Tools_Admin {
 		return defined( 'SRFM_VER' ) || post_type_exists( 'sureforms_form' );
 	}
 
+	/** @since 3.8.0 */
+	public static function forminator_available(): bool {
+		return class_exists( 'Forminator_API' ) || defined( 'FORMINATOR_VERSION' );
+	}
+
 	/**
 	 * SEO-plugin availability — mirrors each adapter's is_active() so the admin
 	 * card greys out its toggles when the plugin is inactive. Reconciled with the
@@ -2947,6 +2957,8 @@ class EMCP_Tools_Admin {
 			'emcp-tools/metform-write',
 			'emcp-tools/sureforms-read',
 			'emcp-tools/sureforms-write',
+			'emcp-tools/forminator-read',
+			'emcp-tools/forminator-write',
 		);
 	}
 
@@ -3843,6 +3855,31 @@ class EMCP_Tools_Admin {
 						'operations'       => array( 'update-entry-status', 'delete-entry' ),
 						'available'        => self::sureforms_available(),
 						'unavailable_note' => __( 'Install & activate SureForms to enable this tool.', 'emcp-tools' ),
+					),
+				),
+			),
+			'wp_forminator'    => array(
+				'platform' => 'plugins',
+				'group'    => 'forms',
+				'pro'      => true,
+				'label'    => __( 'Forminator', 'emcp-tools' ),
+				'note'     => __( 'Forminator exposed as two tools, one Read, one Write. Reads cover forms (id, name, shortcode, fields) and submissions; writes delete a submission. Requires Forminator active.', 'emcp-tools' ),
+				'tools'    => array(
+					'emcp-tools/forminator-read'  => array(
+						'label'            => __( 'Forminator Read', 'emcp-tools' ),
+						'description'      => __( 'Read Forminator forms, fields, shortcodes, and submissions.', 'emcp-tools' ),
+						'badges'           => array( 'read-only' ),
+						'operations'       => array( 'list-forms', 'get-form', 'list-entries', 'get-entry' ),
+						'available'        => self::forminator_available(),
+						'unavailable_note' => __( 'Install & activate Forminator to enable this tool.', 'emcp-tools' ),
+					),
+					'emcp-tools/forminator-write' => array(
+						'label'            => __( 'Forminator Write', 'emcp-tools' ),
+						'description'      => __( 'Delete a Forminator submission (confirm:true).', 'emcp-tools' ),
+						'badges'           => array( 'destructive' ),
+						'operations'       => array( 'delete-entry' ),
+						'available'        => self::forminator_available(),
+						'unavailable_note' => __( 'Install & activate Forminator to enable this tool.', 'emcp-tools' ),
 					),
 				),
 			),

@@ -49,6 +49,7 @@ final class EMCP_Tools_Pro_Loader {
 		'includes/abilities/forms/class-formidable-integration.php',
 		'includes/abilities/forms/class-metform-integration.php',
 		'includes/abilities/forms/class-sureforms-integration.php',
+		'includes/abilities/forms/class-forminator-integration.php',
 		// Elementor addon widget packs (discovery + curation only; placement
 		// stays on the generic add-free-widget tool).
 		'includes/abilities/addons/class-addon-pack-integration.php',

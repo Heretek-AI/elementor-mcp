@@ -362,19 +362,39 @@ $emcp_videos = array(
 		</div>
 	</section>
 
-		<aside class="emcp-dash-cloudbanner">
-			<span class="emcp-dash-cloudbanner-badge"><?php esc_html_e( 'EMCP Cloud', 'emcp-tools' ); ?></span>
-			<span class="emcp-dash-cloudbanner-icon dashicons dashicons-cloud" aria-hidden="true"></span>
-			<h3 class="emcp-dash-cloudbanner-title"><?php esc_html_e( 'Your artifacts, everywhere', 'emcp-tools' ); ?></h3>
-			<p class="emcp-dash-cloudbanner-desc"><?php esc_html_e( 'Back up your blocks, widgets and snippets to the cloud, sync them across sites, and publish to the marketplace.', 'emcp-tools' ); ?></p>
-			<ul class="emcp-dash-cloudbanner-list">
-				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Back up & restore anywhere', 'emcp-tools' ); ?></li>
-				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Sync across all your sites', 'emcp-tools' ); ?></li>
-				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Publish & sell on the marketplace', 'emcp-tools' ); ?></li>
-			</ul>
-			<a class="emcp-dash-cloudbanner-cta" href="<?php echo esc_url( admin_url( 'admin.php?page=emcp-tools-connection' ) ); ?>">
-				<?php esc_html_e( 'Explore EMCP Cloud', 'emcp-tools' ); ?><span class="dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
-			</a>
+		<aside class="emcp-dash-side">
+			<!-- EMCP Cloud -->
+			<div class="emcp-dash-promo emcp-dash-promo--cloud">
+				<span class="emcp-dash-promo-badge"><?php esc_html_e( 'EMCP Cloud', 'emcp-tools' ); ?></span>
+				<span class="emcp-dash-promo-icon dashicons dashicons-cloud" aria-hidden="true"></span>
+				<h3 class="emcp-dash-promo-title"><?php esc_html_e( 'Your artifacts, everywhere', 'emcp-tools' ); ?></h3>
+				<p class="emcp-dash-promo-desc"><?php esc_html_e( 'Back up your blocks, widgets and snippets, sync them across sites, and publish to the marketplace.', 'emcp-tools' ); ?></p>
+				<ul class="emcp-dash-promo-list">
+					<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Back up & restore anywhere', 'emcp-tools' ); ?></li>
+					<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Sync across all your sites', 'emcp-tools' ); ?></li>
+					<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Publish & sell on the marketplace', 'emcp-tools' ); ?></li>
+				</ul>
+				<a class="emcp-dash-promo-cta" href="<?php echo esc_url( admin_url( 'admin.php?page=emcp-tools-connection' ) ); ?>">
+					<?php esc_html_e( 'Explore EMCP Cloud', 'emcp-tools' ); ?><span class="dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
+				</a>
+			</div>
+			<!-- EMCP Pro -->
+			<div class="emcp-dash-promo emcp-dash-promo--pro">
+				<span class="emcp-dash-promo-badge"><?php esc_html_e( 'EMCP Pro', 'emcp-tools' ); ?></span>
+				<?php if ( $emcp_is_free ) : ?>
+					<span class="emcp-dash-promo-icon dashicons dashicons-star-filled" aria-hidden="true"></span>
+					<h3 class="emcp-dash-promo-title"><?php esc_html_e( 'Unlock the full toolkit', 'emcp-tools' ); ?></h3>
+					<p class="emcp-dash-promo-desc"><?php esc_html_e( 'Widget & block builder, AI Chat, SEO & accessibility, Themer, Templates, and more.', 'emcp-tools' ); ?></p>
+					<a class="emcp-dash-promo-cta" href="<?php echo esc_url( function_exists( 'emcp_tools_upgrade_url' ) ? emcp_tools_upgrade_url() : 'https://emcptools.com/pricing' ); ?>" target="_blank" rel="noopener noreferrer">
+						<?php esc_html_e( 'Upgrade to Pro', 'emcp-tools' ); ?><span class="dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
+					</a>
+				<?php else : ?>
+					<span class="emcp-dash-promo-icon dashicons dashicons-yes-alt" aria-hidden="true"></span>
+					<h3 class="emcp-dash-promo-title"><?php esc_html_e( 'You\'re on the Pro plan', 'emcp-tools' ); ?></h3>
+					<p class="emcp-dash-promo-desc"><?php esc_html_e( 'Thanks for going Pro — every premium feature is unlocked on this site.', 'emcp-tools' ); ?></p>
+					<span class="emcp-dash-promo-note"><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Pro plan active', 'emcp-tools' ); ?></span>
+				<?php endif; ?>
+			</div>
 		</aside>
 	</div><!-- .emcp-dash-row--toolkit -->
 

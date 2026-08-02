@@ -2550,19 +2550,15 @@ class EMCP_Tools_Admin {
 						<?php endforeach; ?>
 					</div>
 				<?php endif; ?>
-				<button type="button" class="emcp-annc-close" aria-label="<?php esc_attr_e( 'Dismiss', 'emcp-tools' ); ?>"><span class="dashicons dashicons-no-alt" aria-hidden="true"></span></button>
 			</div>
 			<script>
 			( function () {
 				var b = document.querySelector( '[data-emcp-annc]' );
 				if ( ! b ) { return; }
-				try { if ( localStorage.getItem( 'emcpAnncClosed_v1' ) ) { b.style.display = 'none'; return; } } catch ( e ) {}
 				var slides = b.querySelectorAll( '.emcp-annc-slide' ), dots = b.querySelectorAll( '.emcp-annc-dot' ), i = 0, t;
 				function go( n ) { i = ( n + slides.length ) % slides.length; slides.forEach( function ( s, x ) { s.classList.toggle( 'is-active', x === i ); } ); dots.forEach( function ( d, x ) { d.classList.toggle( 'is-active', x === i ); } ); }
 				function reset() { if ( b.getAttribute( 'data-rotate' ) !== '1' ) { return; } clearInterval( t ); t = setInterval( function () { go( i + 1 ); }, 7000 ); }
 				dots.forEach( function ( d ) { d.addEventListener( 'click', function () { go( parseInt( d.getAttribute( 'data-i' ), 10 ) ); reset(); } ); } );
-				var xb = b.querySelector( '.emcp-annc-close' );
-				if ( xb ) { xb.addEventListener( 'click', function ( e ) { e.preventDefault(); b.style.display = 'none'; try { localStorage.setItem( 'emcpAnncClosed_v1', '1' ); } catch ( er ) {} } ); }
 				reset();
 			} )();
 			</script>

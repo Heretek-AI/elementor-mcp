@@ -212,4 +212,63 @@ class EMCP_Tools_Cloud_Sync {
 		$new_id = $art->apply_bundle( $bundle );
 		return is_wp_error( $new_id ) ? $new_id : array( 'id' => (int) $new_id );
 	}
+
+	/**
+	 * Marketplace state for a local artifact (published? pending update? updatable?).
+	 * Drives the Sandbox buttons.
+	 *
+	 * @param string $kind block|widget|snippet.
+	 * @param int    $id   Local artifact id.
+	 * @return array|\WP_Error
+	 */
+	public static function marketplace_state( string $kind, int $id ) {
+		if ( ! EMCP_Tools_Cloud::is_connected() ) {
+			return self::not_connected();
+		}
+		$art = self::abilities()->resolve_artifact( $kind );
+		if ( ! $art ) {
+			return new \WP_Error( 'unknown_kind', __( 'Unknown artifact kind.', 'emcp-tools' ) );
+		}
+		$uuid = (string) $art->uuid( $id );
+		if ( '' === $uuid ) {
+			return new \WP_Error( 'no_uuid', __( 'Artifact has no cloud id yet.', 'emcp-tools' ) );
+		}
+		return EMCP_Tools_Cloud_Client::get( '/api/cloud/v1/marketplace/state?artifact_uuid=' . rawurlencode( $uuid ) );
+	}
+
+	/**
+	 * Push an update to an already-published marketplace listing: re-push the
+	 * bundle (which creates a new cloud version) and flag the listing as a
+	 * pending update for re-review.
+	 *
+	 * @param string $kind      block|widget|snippet.
+	 * @param int    $id        Local artifact id.
+	 * @param string $changelog Optional author notes.
+	 * @return array|\WP_Error
+	 */
+	public static function push_update( string $kind, int $id, string $changelog = '' ) {
+		$backup = self::backup( $kind, $id );
+		if ( is_wp_error( $backup ) ) {
+			return $backup;
+		}
+		$art = self::abilities()->resolve_artifact( $kind );
+		if ( ! $art ) {
+			return new \WP_Error( 'unknown_kind', __( 'Unknown artifact kind.', 'emcp-tools' ) );
+		}
+		return EMCP_Tools_Cloud_Client::request(
+			'POST',
+			'/api/cloud/v1/marketplace/update',
+			array( 'artifact_uuid' => (string) $art->uuid( $id ), 'changelog' => $changelog )
+		);
+	}
+
+	/**
+	 * Public marketplace URL for a published listing.
+	 *
+	 * @param string $slug Listing slug.
+	 * @return string
+	 */
+	public static function marketplace_view_url( string $slug ): string {
+		return trailingslashit( EMCP_Tools_Cloud::base_url() ) . 'marketplace/' . rawurlencode( $slug );
+	}
 }

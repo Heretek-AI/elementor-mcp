@@ -258,6 +258,8 @@ class EMCP_Tools_Admin {
 		add_action( 'wp_ajax_emcp_tools_toggle_block', array( $this, 'ajax_toggle_block' ) );
 		add_action( 'wp_ajax_emcp_tools_delete_block', array( $this, 'ajax_delete_block' ) );
 		add_action( 'wp_ajax_emcp_tools_backup_artifact', array( $this, 'ajax_backup_artifact' ) );
+		add_action( 'wp_ajax_emcp_tools_push_update', array( $this, 'ajax_push_update' ) );
+		add_action( 'wp_ajax_emcp_tools_marketplace_state', array( $this, 'ajax_marketplace_state' ) );
 		add_action( 'wp_ajax_emcp_tools_memory_set_status', array( $this, 'ajax_memory_set_status' ) );
 		add_action( 'wp_ajax_emcp_tools_memory_save_guidance', array( $this, 'ajax_memory_save_guidance' ) );
 		add_action( 'wp_ajax_emcp_tools_memory_save_settings', array( $this, 'ajax_memory_save_settings' ) );
@@ -458,15 +460,164 @@ class EMCP_Tools_Admin {
 				: $res->get_error_message();
 			wp_send_json_error( array( 'message' => $msg ) );
 		}
-		// Record that this artifact now exists in the cloud, so the "Publish to
-		// Marketplace" button can enable (it links to the website submit page).
+		// Record that this artifact now exists in the cloud + the checksum of what
+		// was pushed (to later detect local edits), and refresh its marketplace
+		// state so the buttons reflect reality.
 		update_post_meta( $id, '_emcp_cloud_pushed', time() );
-		wp_send_json_success(
-			array(
-				'message'     => __( 'Saved to cloud.', 'emcp-tools' ),
-				'publish_url' => EMCP_Tools_Cloud_Sync::publish_url( $kind, $id ),
-			)
+		self::store_artifact_checksum( $kind, $id );
+		self::refresh_marketplace_state( $kind, $id );
+		$payload            = self::cloud_action_payload( $kind, $id );
+		$payload['message'] = __( 'Saved to cloud.', 'emcp-tools' );
+		wp_send_json_success( $payload );
+	}
+
+	/** Nonce action for a sandbox artifact kind. */
+	private static function cloud_nonce_action( string $kind ): string {
+		$map = array( 'widget' => 'emcp_tools_widgets', 'block' => 'emcp_tools_blocks', 'snippet' => 'emcp_tools_php_snippets' );
+		return $map[ $kind ] ?? '';
+	}
+
+	/** Cache the current content checksum as the last-pushed checksum. */
+	private static function store_artifact_checksum( string $kind, int $id ): void {
+		$sum = self::artifact_checksum( $kind, $id );
+		if ( '' !== $sum ) {
+			update_post_meta( $id, '_emcp_cloud_checksum', $sum );
+		}
+	}
+
+	/** Current content checksum for an artifact ('' if unresolvable). */
+	private static function artifact_checksum( string $kind, int $id ): string {
+		if ( ! class_exists( 'EMCP_Tools_Sandbox_Cloud_Abilities' ) ) {
+			return '';
+		}
+		$art = ( new EMCP_Tools_Sandbox_Cloud_Abilities() )->resolve_artifact( $kind );
+		return $art ? (string) $art->checksum( $id ) : '';
+	}
+
+	/** True when local content differs from what was last pushed to the cloud. */
+	private static function artifact_changed( string $kind, int $id ): bool {
+		if ( ! get_post_meta( $id, '_emcp_cloud_pushed', true ) ) {
+			return false;
+		}
+		$pushed = (string) get_post_meta( $id, '_emcp_cloud_checksum', true );
+		if ( '' === $pushed ) {
+			return false; // unknown baseline → treat as unchanged
+		}
+		return self::artifact_checksum( $kind, $id ) !== $pushed;
+	}
+
+	/**
+	 * Fetch marketplace state from the cloud and cache the useful bits locally.
+	 * Best-effort — returns the state array, or null on any error.
+	 */
+	private static function refresh_marketplace_state( string $kind, int $id ): ?array {
+		if ( ! class_exists( 'EMCP_Tools_Cloud_Sync' ) ) {
+			return null;
+		}
+		$state = EMCP_Tools_Cloud_Sync::marketplace_state( $kind, $id );
+		if ( is_wp_error( $state ) || ! is_array( $state ) ) {
+			return null;
+		}
+		$slug = isset( $state['slug'] ) ? (string) $state['slug'] : '';
+		if ( '' !== $slug ) {
+			update_post_meta( $id, '_emcp_marketplace_slug', $slug );
+			update_post_meta( $id, '_emcp_marketplace_status', (string) ( $state['status'] ?? '' ) );
+			update_post_meta( $id, '_emcp_marketplace_pending', ! empty( $state['hasPendingUpdate'] ) ? 1 : 0 );
+		} else {
+			delete_post_meta( $id, '_emcp_marketplace_slug' );
+			delete_post_meta( $id, '_emcp_marketplace_status' );
+			delete_post_meta( $id, '_emcp_marketplace_pending' );
+		}
+		return $state;
+	}
+
+	/** JS payload describing an artifact's cloud/marketplace state (from cached meta). */
+	public static function cloud_action_payload( string $kind, int $id ): array {
+		$slug   = (string) get_post_meta( $id, '_emcp_marketplace_slug', true );
+		$status = (string) get_post_meta( $id, '_emcp_marketplace_status', true );
+		return array(
+			'kind'               => $kind,
+			'id'                 => $id,
+			'pushed'             => (bool) get_post_meta( $id, '_emcp_cloud_pushed', true ),
+			'changed'            => self::artifact_changed( $kind, $id ),
+			'slug'               => $slug,
+			'status'             => $status,
+			'published'          => ( 'published' === $status ),
+			'has_pending_update' => (bool) get_post_meta( $id, '_emcp_marketplace_pending', true ),
+			'publish_url'        => class_exists( 'EMCP_Tools_Cloud_Sync' ) ? EMCP_Tools_Cloud_Sync::publish_url( $kind, $id ) : '',
+			'view_url'           => ( '' !== $slug && class_exists( 'EMCP_Tools_Cloud_Sync' ) ) ? EMCP_Tools_Cloud_Sync::marketplace_view_url( $slug ) : '',
 		);
+	}
+
+	/** Renders the Sandbox cloud/marketplace button cluster (JS controls visibility). */
+	public static function render_sandbox_cloud_actions( string $kind, int $id ): string {
+		if ( ! class_exists( 'EMCP_Tools_Cloud' ) || ! EMCP_Tools_Cloud::is_connected() ) {
+			return '';
+		}
+		$state = self::cloud_action_payload( $kind, $id );
+		$nonce = wp_create_nonce( self::cloud_nonce_action( $kind ) );
+		ob_start();
+		?>
+		<span class="emcp-sb-cloud" data-kind="<?php echo esc_attr( $kind ); ?>" data-id="<?php echo esc_attr( (string) $id ); ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>" data-state="<?php echo esc_attr( (string) wp_json_encode( $state ) ); ?>">
+			<button type="button" class="button emcp-sb-save" hidden
+				data-t-save="<?php echo esc_attr__( 'Save to Cloud', 'emcp-tools' ); ?>"
+				data-t-update="<?php echo esc_attr__( 'Update cloud', 'emcp-tools' ); ?>"
+				data-t-saved="<?php echo esc_attr__( 'Saved ✓', 'emcp-tools' ); ?>"></button>
+			<a class="button emcp-sb-publish" href="#" target="_blank" rel="noopener" hidden><?php esc_html_e( 'Publish to Marketplace ↗', 'emcp-tools' ); ?></a>
+			<a class="button emcp-sb-view" href="#" target="_blank" rel="noopener" hidden><?php esc_html_e( 'View on Marketplace ↗', 'emcp-tools' ); ?></a>
+			<button type="button" class="button emcp-sb-update" hidden><?php esc_html_e( 'Push update', 'emcp-tools' ); ?></button>
+			<span class="emcp-sb-tag" hidden
+				data-t-inreview="<?php echo esc_attr__( 'Update in review', 'emcp-tools' ); ?>"
+				data-t-pending="<?php echo esc_attr__( 'In review', 'emcp-tools' ); ?>"
+				data-t-uptodate="<?php echo esc_attr__( 'Up to date', 'emcp-tools' ); ?>"></span>
+			<span class="emcp-sb-msg" aria-live="polite"></span>
+		</span>
+		<?php
+		return (string) ob_get_clean();
+	}
+
+	/** Push an update to an already-published marketplace listing. AJAX. */
+	public function ajax_push_update(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to do this.', 'emcp-tools' ) ), 403 );
+		}
+		$kind = isset( $_POST['kind'] ) ? sanitize_key( wp_unslash( $_POST['kind'] ) ) : '';
+		$na   = self::cloud_nonce_action( $kind );
+		if ( '' === $na || ! check_ajax_referer( $na, 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'emcp-tools' ) ), 403 );
+		}
+		$id        = isset( $_POST['id'] ) ? absint( wp_unslash( $_POST['id'] ) ) : 0;
+		$changelog = isset( $_POST['changelog'] ) ? sanitize_textarea_field( wp_unslash( $_POST['changelog'] ) ) : '';
+		if ( ! $id || ! class_exists( 'EMCP_Tools_Cloud_Sync' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Nothing to update.', 'emcp-tools' ) ) );
+		}
+		$res = EMCP_Tools_Cloud_Sync::push_update( $kind, $id, $changelog );
+		if ( is_wp_error( $res ) ) {
+			wp_send_json_error( array( 'message' => $res->get_error_message() ) );
+		}
+		self::store_artifact_checksum( $kind, $id );
+		self::refresh_marketplace_state( $kind, $id );
+		$payload            = self::cloud_action_payload( $kind, $id );
+		$payload['message'] = __( 'Update pushed — pending review.', 'emcp-tools' );
+		wp_send_json_success( $payload );
+	}
+
+	/** Refresh + return an artifact's marketplace state. AJAX (page-load sync). */
+	public function ajax_marketplace_state(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Forbidden.', 'emcp-tools' ) ), 403 );
+		}
+		$kind = isset( $_POST['kind'] ) ? sanitize_key( wp_unslash( $_POST['kind'] ) ) : '';
+		$na   = self::cloud_nonce_action( $kind );
+		if ( '' === $na || ! check_ajax_referer( $na, 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'emcp-tools' ) ), 403 );
+		}
+		$id = isset( $_POST['id'] ) ? absint( wp_unslash( $_POST['id'] ) ) : 0;
+		if ( ! $id ) {
+			wp_send_json_error( array( 'message' => __( 'Missing id.', 'emcp-tools' ) ) );
+		}
+		self::refresh_marketplace_state( $kind, $id );
+		wp_send_json_success( self::cloud_action_payload( $kind, $id ) );
 	}
 
 	/**
@@ -1493,6 +1644,13 @@ class EMCP_Tools_Admin {
 			$js_ver,
 			true
 		);
+
+		// Sandbox cloud/marketplace button state machine (no-op unless the page
+		// renders .emcp-sb-cloud clusters).
+		$sb_js = EMCP_TOOLS_DIR . 'assets/js/sandbox-cloud.js';
+		if ( file_exists( $sb_js ) ) {
+			wp_enqueue_script( 'emcp-tools-sandbox-cloud', EMCP_TOOLS_URL . 'assets/js/sandbox-cloud.js', array(), (string) filemtime( $sb_js ), true );
+		}
 
 		wp_localize_script(
 			'elementor-mcp-admin',

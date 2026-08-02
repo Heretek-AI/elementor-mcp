@@ -330,7 +330,9 @@ $emcp_videos = array(
 	</section>
 
 	<!-- Feature sneak peek -->
-	<section class="emcp-dash-section" aria-labelledby="emcp-dash-features-h">
+	<!-- Explore your toolkit + EMCP Cloud banner, side by side (75/25) -->
+	<div class="emcp-dash-row emcp-dash-row--toolkit">
+	<section class="emcp-dash-section emcp-dash-section--toolkit" aria-labelledby="emcp-dash-features-h">
 		<div class="emcp-dash-section-head">
 			<h2 id="emcp-dash-features-h" class="emcp-dash-section-title"><?php esc_html_e( 'Explore your toolkit', 'emcp-tools' ); ?></h2>
 			<p class="emcp-dash-section-sub"><?php esc_html_e( 'Everything this plugin can do, jump straight in.', 'emcp-tools' ); ?></p>
@@ -359,6 +361,22 @@ $emcp_videos = array(
 			<?php endforeach; ?>
 		</div>
 	</section>
+
+		<aside class="emcp-dash-cloudbanner">
+			<span class="emcp-dash-cloudbanner-badge"><?php esc_html_e( 'EMCP Cloud', 'emcp-tools' ); ?></span>
+			<span class="emcp-dash-cloudbanner-icon dashicons dashicons-cloud" aria-hidden="true"></span>
+			<h3 class="emcp-dash-cloudbanner-title"><?php esc_html_e( 'Your artifacts, everywhere', 'emcp-tools' ); ?></h3>
+			<p class="emcp-dash-cloudbanner-desc"><?php esc_html_e( 'Back up your blocks, widgets and snippets to the cloud, sync them across sites, and publish to the marketplace.', 'emcp-tools' ); ?></p>
+			<ul class="emcp-dash-cloudbanner-list">
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Back up & restore anywhere', 'emcp-tools' ); ?></li>
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Sync across all your sites', 'emcp-tools' ); ?></li>
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Publish & sell on the marketplace', 'emcp-tools' ); ?></li>
+			</ul>
+			<a class="emcp-dash-cloudbanner-cta" href="<?php echo esc_url( admin_url( 'admin.php?page=emcp-tools-connection' ) ); ?>">
+				<?php esc_html_e( 'Explore EMCP Cloud', 'emcp-tools' ); ?><span class="dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
+			</a>
+		</aside>
+	</div><!-- .emcp-dash-row--toolkit -->
 
 	<!-- Video guides + help, side by side (70/30) -->
 	<div class="emcp-dash-row">

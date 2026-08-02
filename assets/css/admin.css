@@ -4472,3 +4472,45 @@ body[data-emcp-auth="app-password"] [data-authfor="oauth"] { display: none; }
 .emcp-sb-actions .button-primary .dashicons,
 .emcp-sb-actions .button-primary:hover .dashicons,
 .emcp-sb-actions .button-primary:focus .dashicons { color: var(--mcp-white); }
+
+/* ── Rotating announcement / promo bar ─────────────────────────────────── */
+.emcp-annc { position: relative; margin: 0 0 14px; border-radius: var(--mcp-radius); overflow: hidden; }
+.emcp-annc-slides { position: relative; }
+.emcp-annc-slide { display: none; align-items: center; gap: 12px; min-height: 46px; padding: 10px 96px 10px 16px; text-decoration: none; box-sizing: border-box; }
+.emcp-annc-slide.is-active { display: flex; }
+.emcp-annc-slide--cloud { background: var(--mcp-primary); }
+.emcp-annc-slide--ltd { background: #c2410c; }
+.emcp-annc-badge { flex: none; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; background: rgba(255,255,255,.22); color: #fff; padding: 2px 8px; border-radius: 999px; }
+.emcp-annc-icon { flex: none; color: rgba(255,255,255,.85); font-size: 18px; width: 18px; height: 18px; }
+.emcp-annc-text { flex: 1 1 auto; min-width: 0; font-size: 13px; color: rgba(255,255,255,.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.emcp-annc-text strong { color: #fff; font-weight: 700; }
+.emcp-annc-cta { flex: none; display: inline-flex; align-items: center; gap: 2px; font-size: 12.5px; font-weight: 600; color: #fff; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.4); padding: 5px 12px; border-radius: 999px; transition: background .15s; }
+.emcp-annc-slide:hover .emcp-annc-cta { background: rgba(255,255,255,.28); }
+.emcp-annc-cta .dashicons { font-size: 15px; width: 15px; height: 15px; }
+.emcp-annc-dots { position: absolute; right: 42px; top: 50%; transform: translateY(-50%); display: flex; gap: 5px; z-index: 2; }
+.emcp-annc-dot { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 50%; background: rgba(255,255,255,.4); cursor: pointer; transition: background .15s; }
+.emcp-annc-dot.is-active { background: #fff; }
+.emcp-annc-close { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: inline-flex; align-items: center; justify-content: center; background: transparent; border: 0; color: rgba(255,255,255,.7); cursor: pointer; padding: 3px; line-height: 0; z-index: 2; }
+.emcp-annc-close:hover { color: #fff; }
+.emcp-annc-close .dashicons { font-size: 18px; width: 18px; height: 18px; }
+@media screen and (max-width: 782px) {
+	.emcp-annc-slide { padding-right: 66px; gap: 8px; }
+	.emcp-annc-badge, .emcp-annc-icon, .emcp-annc-dots { display: none; }
+	.emcp-annc-text { white-space: normal; font-size: 12px; }
+}
+
+/* ── Explore your toolkit + EMCP Cloud banner (75/25) ──────────────────── */
+.emcp-dash-row--toolkit { display: flex; gap: 20px; align-items: stretch; margin-bottom: 26px; }
+.emcp-dash-section--toolkit { flex: 75 1 0; min-width: 0; }
+.emcp-dash-cloudbanner { flex: 25 1 0; min-width: 0; display: flex; flex-direction: column; gap: 9px; background: var(--mcp-primary); color: #fff; border-radius: var(--mcp-radius); padding: 22px 20px; }
+.emcp-dash-cloudbanner-badge { align-self: flex-start; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; background: rgba(255,255,255,.2); padding: 3px 9px; border-radius: 999px; }
+.emcp-dash-cloudbanner-icon { font-size: 30px; width: 30px; height: 30px; color: rgba(255,255,255,.92); margin-top: 4px; }
+.emcp-dash-cloudbanner-title { color: #fff; font-family: 'Geist', sans-serif; font-size: 18px; font-weight: 600; margin: 2px 0 0; letter-spacing: -0.01em; }
+.emcp-dash-cloudbanner-desc { color: rgba(255,255,255,.85); font-size: 13px; line-height: 1.5; margin: 0; }
+.emcp-dash-cloudbanner-list { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.emcp-dash-cloudbanner-list li { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: rgba(255,255,255,.92); }
+.emcp-dash-cloudbanner-list li .dashicons { flex: none; font-size: 16px; width: 16px; height: 16px; color: #fff; }
+.emcp-dash-cloudbanner-cta { margin-top: auto; display: inline-flex; align-items: center; justify-content: center; gap: 4px; background: #fff; color: var(--mcp-primary); font-weight: 600; font-size: 13px; padding: 9px 14px; border-radius: 8px; text-decoration: none; transition: background .15s; }
+.emcp-dash-cloudbanner-cta:hover { background: rgba(255,255,255,.92); color: var(--mcp-primary-hover); }
+.emcp-dash-cloudbanner-cta .dashicons { font-size: 15px; width: 15px; height: 15px; }
+@media screen and (max-width: 1200px) { .emcp-dash-row--toolkit { flex-direction: column; } }

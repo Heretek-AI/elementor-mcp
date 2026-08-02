@@ -2506,6 +2506,67 @@ class EMCP_Tools_Admin {
 				|| ! emcp_tools_fs()->can_use_premium_code();
 			?>
 
+			<!-- Rotating promo / announcement bar -->
+			<?php
+			$emcp_anncs = array(
+				array(
+					'key'   => 'cloud',
+					'badge' => __( 'New', 'emcp-tools' ),
+					'icon'  => 'dashicons-cloud',
+					'title' => __( 'EMCP Cloud is live', 'emcp-tools' ),
+					'text'  => __( 'Back up, sync and sell your blocks, widgets and snippets across every site you run.', 'emcp-tools' ),
+					'cta'   => __( 'Explore Cloud', 'emcp-tools' ),
+					'url'   => 'https://emcptools.com/cloud',
+				),
+			);
+			if ( $emcp_tools_show_upgrade ) {
+				$emcp_anncs[] = array(
+					'key'   => 'ltd',
+					'badge' => __( 'Limited', 'emcp-tools' ),
+					'icon'  => 'dashicons-clock',
+					'title' => __( 'Lifetime deal ends soon', 'emcp-tools' ),
+					'text'  => __( 'Pay once, own EMCP Pro forever — this lifetime deal is going away for good.', 'emcp-tools' ),
+					'cta'   => __( 'Get the LTD', 'emcp-tools' ),
+					'url'   => function_exists( 'emcp_tools_upgrade_url' ) ? emcp_tools_upgrade_url() : 'https://emcptools.com/pricing',
+				);
+			}
+			$emcp_annc_rotate = count( $emcp_anncs ) > 1;
+			?>
+			<div class="emcp-annc" data-emcp-annc data-rotate="<?php echo $emcp_annc_rotate ? '1' : '0'; ?>">
+				<div class="emcp-annc-slides">
+					<?php foreach ( $emcp_anncs as $emcp_i => $emcp_a ) : ?>
+						<a class="emcp-annc-slide emcp-annc-slide--<?php echo esc_attr( $emcp_a['key'] ); ?><?php echo 0 === $emcp_i ? ' is-active' : ''; ?>" href="<?php echo esc_url( $emcp_a['url'] ); ?>" target="_blank" rel="noopener">
+							<span class="emcp-annc-badge"><?php echo esc_html( $emcp_a['badge'] ); ?></span>
+							<span class="emcp-annc-icon dashicons <?php echo esc_attr( $emcp_a['icon'] ); ?>" aria-hidden="true"></span>
+							<span class="emcp-annc-text"><strong><?php echo esc_html( $emcp_a['title'] ); ?></strong> <?php echo esc_html( $emcp_a['text'] ); ?></span>
+							<span class="emcp-annc-cta"><?php echo esc_html( $emcp_a['cta'] ); ?><span class="dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span></span>
+						</a>
+					<?php endforeach; ?>
+				</div>
+				<?php if ( $emcp_annc_rotate ) : ?>
+					<div class="emcp-annc-dots">
+						<?php foreach ( $emcp_anncs as $emcp_i => $emcp_a ) : ?>
+							<button type="button" class="emcp-annc-dot<?php echo 0 === $emcp_i ? ' is-active' : ''; ?>" data-i="<?php echo (int) $emcp_i; ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %d: announcement number */ __( 'Announcement %d', 'emcp-tools' ), $emcp_i + 1 ) ); ?>"></button>
+						<?php endforeach; ?>
+					</div>
+				<?php endif; ?>
+				<button type="button" class="emcp-annc-close" aria-label="<?php esc_attr_e( 'Dismiss', 'emcp-tools' ); ?>"><span class="dashicons dashicons-no-alt" aria-hidden="true"></span></button>
+			</div>
+			<script>
+			( function () {
+				var b = document.querySelector( '[data-emcp-annc]' );
+				if ( ! b ) { return; }
+				try { if ( localStorage.getItem( 'emcpAnncClosed_v1' ) ) { b.style.display = 'none'; return; } } catch ( e ) {}
+				var slides = b.querySelectorAll( '.emcp-annc-slide' ), dots = b.querySelectorAll( '.emcp-annc-dot' ), i = 0, t;
+				function go( n ) { i = ( n + slides.length ) % slides.length; slides.forEach( function ( s, x ) { s.classList.toggle( 'is-active', x === i ); } ); dots.forEach( function ( d, x ) { d.classList.toggle( 'is-active', x === i ); } ); }
+				function reset() { if ( b.getAttribute( 'data-rotate' ) !== '1' ) { return; } clearInterval( t ); t = setInterval( function () { go( i + 1 ); }, 7000 ); }
+				dots.forEach( function ( d ) { d.addEventListener( 'click', function () { go( parseInt( d.getAttribute( 'data-i' ), 10 ) ); reset(); } ); } );
+				var xb = b.querySelector( '.emcp-annc-close' );
+				if ( xb ) { xb.addEventListener( 'click', function ( e ) { e.preventDefault(); b.style.display = 'none'; try { localStorage.setItem( 'emcpAnncClosed_v1', '1' ); } catch ( er ) {} } ); }
+				reset();
+			} )();
+			</script>
+
 			<!-- App bar -->
 			<div class="emcp-appbar">
 				<div class="emcp-appbar-brand">
@@ -2515,6 +2576,10 @@ class EMCP_Tools_Admin {
 					<span class="emcp-appbar-version">v<?php echo esc_html( EMCP_TOOLS_VERSION ); ?></span>
 				</div>
 				<div class="emcp-appbar-actions">
+					<a class="emcp-appbar-changelog<?php echo 'mcp-log' === $active_tab ? ' is-active' : ''; ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-mcp-log' ) ); ?>">
+						<span class="dashicons dashicons-list-view" aria-hidden="true"></span>
+						<?php esc_html_e( 'MCP Log', 'emcp-tools' ); ?>
+					</a>
 					<a class="emcp-appbar-changelog<?php echo 'history' === $active_tab ? ' is-active' : ''; ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-history' ) ); ?>">
 						<span class="dashicons dashicons-clock" aria-hidden="true"></span>
 						<?php esc_html_e( 'History', 'emcp-tools' ); ?>
@@ -2526,7 +2591,7 @@ class EMCP_Tools_Admin {
 					<?php if ( self::affiliation_page_available() ) : ?>
 						<a class="emcp-appbar-changelog" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-affiliation' ) ); ?>">
 							<span class="dashicons dashicons-money-alt" aria-hidden="true"></span>
-							<?php esc_html_e( 'Affiliate Program', 'emcp-tools' ); ?>
+							<?php esc_html_e( 'Affiliate', 'emcp-tools' ); ?>
 						</a>
 					<?php endif; ?>
 					<?php if ( $emcp_tools_show_upgrade ) : ?>
@@ -2559,8 +2624,8 @@ class EMCP_Tools_Admin {
 				<?php
 				foreach ( $this->get_submenus() as $emcp_slug => $emcp_label ) :
 					$emcp_tab_id = ( self::PAGE_SLUG === $emcp_slug ) ? 'dashboard' : substr( $emcp_slug, strlen( self::PAGE_SLUG . '-' ) );
-					// Changelog + History live in the app-bar top-right, not the tab nav.
-					if ( 'changelog' === $emcp_tab_id || 'history' === $emcp_tab_id ) {
+					// Changelog + History + MCP Log live in the app-bar top-right, not the tab nav.
+					if ( 'changelog' === $emcp_tab_id || 'history' === $emcp_tab_id || 'mcp-log' === $emcp_tab_id ) {
 						continue;
 					}
 					$emcp_is_on = ( $emcp_tab_id === $active_tab );

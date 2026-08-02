@@ -135,15 +135,16 @@ $emcp_tools_bb_import_error = isset( $_GET['import_error'] ) ? sanitize_text_fie
 										<?php echo $emcp_tools_active ? esc_html__( 'Active', 'emcp-tools' ) : esc_html__( 'Inactive', 'emcp-tools' ); ?>
 									</span>
 								</td>
-								<td>
+								<td class="emcp-sb-actions">
 									<button type="button" class="button elementor-mcp-wb-toggle" data-status="<?php echo esc_attr( $emcp_tools_active ? 'draft' : 'active' ); ?>">
+										<span class="dashicons dashicons-<?php echo $emcp_tools_active ? 'controls-pause' : 'controls-play'; ?>" aria-hidden="true"></span>
 										<?php echo $emcp_tools_active ? esc_html__( 'Deactivate', 'emcp-tools' ) : esc_html__( 'Activate', 'emcp-tools' ); ?>
 									</button>
-									<button type="button" class="button elementor-mcp-wb-delete">
-										<?php esc_html_e( 'Delete', 'emcp-tools' ); ?>
+									<button type="button" class="button emcp-sb-danger elementor-mcp-wb-delete">
+										<span class="dashicons dashicons-trash" aria-hidden="true"></span><?php esc_html_e( 'Delete', 'emcp-tools' ); ?>
 									</button>
 									<a class="button" href="<?php echo esc_url( EMCP_Tools_Admin::sandbox_export_url( 'block', $emcp_tools_bid ) ); ?>">
-										<?php esc_html_e( 'Export', 'emcp-tools' ); ?>
+										<span class="dashicons dashicons-download" aria-hidden="true"></span><?php esc_html_e( 'Export', 'emcp-tools' ); ?>
 									</a>
 									<?php
 									// Cloud/marketplace button state machine. Pre-escaped markup.
@@ -156,7 +157,7 @@ $emcp_tools_bb_import_error = isset( $_GET['import_error'] ) ? sanitize_text_fie
 										data-emcp-code-view
 										data-emcp-code-title="<?php echo esc_attr( $emcp_tools_b['title'] ); ?>"
 										data-emcp-code-filename="<?php echo esc_attr( $emcp_tools_b['block_name'] ); ?>.php"
-									><?php esc_html_e( 'View code', 'emcp-tools' ); ?></button>
+									><span class="dashicons dashicons-editor-code" aria-hidden="true"></span><?php esc_html_e( 'View code', 'emcp-tools' ); ?></button>
 									<pre class="emcp-code-src" hidden><?php echo esc_html( $emcp_tools_bcode ); ?></pre>
 								</td>
 							</tr>

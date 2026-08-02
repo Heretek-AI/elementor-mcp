@@ -603,11 +603,6 @@ class EMCP_Tools_Admin {
 		};
 
 		ob_start();
-		static $printed_style = false;
-		if ( ! $printed_style ) {
-			$printed_style = true;
-			echo '<style>.emcp-sb-cloud .button .dashicons{font-size:16px;width:16px;height:16px;line-height:1.6;vertical-align:text-bottom;margin-right:3px}.emcp-sb-tag{display:inline-block;margin-left:6px;font-size:11px;font-weight:600;color:#8a6d00;background:#fcf3d9;padding:2px 9px;border-radius:10px;vertical-align:middle}.emcp-sb-msg{margin-left:8px;font-size:12px;vertical-align:middle}</style>';
-		}
 		?>
 		<span class="emcp-sb-cloud" data-kind="<?php echo esc_attr( $kind ); ?>" data-id="<?php echo esc_attr( (string) $id ); ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>" data-state="<?php echo esc_attr( (string) wp_json_encode( $s ) ); ?>">
 			<button type="button" class="button emcp-sb-save"<?php echo $hide( $save_show ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><?php disabled( $save_dis ); ?>

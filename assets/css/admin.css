@@ -4443,3 +4443,29 @@ body[data-emcp-auth="app-password"] [data-authfor="oauth"] { display: none; }
 }
 .elementor-mcp-cat-upgrade:hover { background: rgba(138, 43, 226, .12); color: #6d1fb0; }
 .elementor-mcp-cat-upgrade .dashicons { font-size: 14px; width: 14px; height: 14px; }
+
+/* ── Sandbox action buttons: plugin styling over WP .button + dashicons ── */
+.emcp-sb-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.emcp-sb-actions .emcp-sb-cloud { display: contents; }
+.emcp-sb-actions .button,
+.emcp-sb-actions .button:visited {
+	display: inline-flex; align-items: center; gap: 5px;
+	min-height: 30px; padding: 4px 12px; margin: 0;
+	font-size: 12.5px; font-weight: 500; line-height: 1.4;
+	border-radius: var(--mcp-radius-sm);
+	background: var(--mcp-white); color: var(--mcp-gray-600);
+	border: 1px solid var(--mcp-gray-300); box-shadow: none;
+	transition: all var(--mcp-transition);
+}
+.emcp-sb-actions .button:hover { background: var(--mcp-gray-50); border-color: var(--mcp-gray-400); color: var(--mcp-gray-800); }
+.emcp-sb-actions .button:focus { outline: none; border-color: var(--mcp-primary); box-shadow: 0 0 0 2px var(--mcp-primary-light); }
+.emcp-sb-actions .button .dashicons { font-size: 15px; width: 15px; height: 15px; line-height: 1; margin: 0; }
+.emcp-sb-actions .button-primary,
+.emcp-sb-actions .button-primary:visited { background: var(--mcp-primary); color: var(--mcp-white); border-color: var(--mcp-primary); }
+.emcp-sb-actions .button-primary:hover { background: var(--mcp-primary-hover); border-color: var(--mcp-primary-hover); color: var(--mcp-white); }
+.emcp-sb-actions .emcp-sb-danger,
+.emcp-sb-actions .emcp-sb-danger:visited { color: #b32d2e; border-color: #e6b3b2; }
+.emcp-sb-actions .emcp-sb-danger:hover { background: #fbeaea; border-color: #d63638; color: #b32d2e; }
+.emcp-sb-actions .button[disabled], .emcp-sb-actions .button:disabled { opacity: .55; cursor: default; }
+.emcp-sb-tag { display: inline-block; margin-left: 2px; font-size: 11px; font-weight: 600; color: #8a6d00; background: #fcf3d9; padding: 2px 9px; border-radius: 10px; }
+.emcp-sb-msg { font-size: 12px; color: var(--mcp-gray-500); }

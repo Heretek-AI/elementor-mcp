@@ -201,14 +201,15 @@ $emcp_tools_sn_nonce = wp_create_nonce( 'emcp_tools_php_snippets' );
 									<?php echo $emcp_tools_sact ? esc_html__( 'Active', 'emcp-tools' ) : esc_html__( 'Inactive', 'emcp-tools' ); ?>
 								</span>
 							</td>
-							<td>
+							<td class="emcp-sb-actions">
 								<button type="button" class="button elementor-mcp-sn-toggle" data-status="<?php echo esc_attr( $emcp_tools_sact ? 'draft' : 'active' ); ?>">
+									<span class="dashicons dashicons-<?php echo $emcp_tools_sact ? 'controls-pause' : 'controls-play'; ?>" aria-hidden="true"></span>
 									<?php echo $emcp_tools_sact ? esc_html__( 'Deactivate', 'emcp-tools' ) : esc_html__( 'Activate', 'emcp-tools' ); ?>
 								</button>
-								<button type="button" class="button elementor-mcp-sn-edit"><?php esc_html_e( 'Edit', 'emcp-tools' ); ?></button>
-								<button type="button" class="button elementor-mcp-sn-delete"><?php esc_html_e( 'Delete', 'emcp-tools' ); ?></button>
+								<button type="button" class="button elementor-mcp-sn-edit"><span class="dashicons dashicons-edit" aria-hidden="true"></span><?php esc_html_e( 'Edit', 'emcp-tools' ); ?></button>
+								<button type="button" class="button emcp-sb-danger elementor-mcp-sn-delete"><span class="dashicons dashicons-trash" aria-hidden="true"></span><?php esc_html_e( 'Delete', 'emcp-tools' ); ?></button>
 								<a class="button" href="<?php echo esc_url( EMCP_Tools_Admin::sandbox_export_url( 'snippet', $emcp_tools_sid ) ); ?>">
-									<?php esc_html_e( 'Export', 'emcp-tools' ); ?>
+									<span class="dashicons dashicons-download" aria-hidden="true"></span><?php esc_html_e( 'Export', 'emcp-tools' ); ?>
 								</a>
 								<?php
 								// Cloud/marketplace button state machine. Pre-escaped markup.
@@ -221,7 +222,7 @@ $emcp_tools_sn_nonce = wp_create_nonce( 'emcp_tools_php_snippets' );
 									data-emcp-code-view
 									data-emcp-code-title="<?php echo esc_attr( $emcp_tools_s['title'] ); ?>"
 									data-emcp-code-filename="snippet-<?php echo (int) $emcp_tools_sid; ?>.php"
-								><?php esc_html_e( 'View code', 'emcp-tools' ); ?></button>
+								><span class="dashicons dashicons-editor-code" aria-hidden="true"></span><?php esc_html_e( 'View code', 'emcp-tools' ); ?></button>
 								<pre class="emcp-code-src elementor-mcp-sn-code" hidden><?php echo esc_html( $emcp_tools_scode ); ?></pre>
 							</td>
 						</tr>

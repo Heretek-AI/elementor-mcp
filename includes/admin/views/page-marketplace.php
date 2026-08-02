@@ -237,7 +237,8 @@ $emcp_sort     = isset( $_GET['mk_sort'] ) ? sanitize_key( wp_unslash( $_GET['mk
 	.emcp-mk-count { font-size: 12px; color: #787c82; margin: 8px 0 0; }
 	.emcp-mk-grid { display: grid; grid-template-columns: repeat( auto-fill, minmax( 240px, 1fr ) ); gap: 16px; margin-top: 12px; }
 	.emcp-mk-card { display: flex; flex-direction: column; background: #fff; border: 1px solid #dcdcde; border-radius: 10px; overflow: hidden; }
-	.emcp-mk-card__shot { width: 100%; height: 150px; object-fit: cover; border-bottom: 1px solid #f0f0f1; background: #f6f7f7; }
+	/* Artifact screenshots are 1200x630 (1.91:1, OG ratio) — show the full image, uncropped. */
+	.emcp-mk-card__shot { width: 100%; aspect-ratio: 1200 / 630; object-fit: contain; display: block; border-bottom: 1px solid #f0f0f1; background: #f6f7f7; }
 	.emcp-mk-card__shot--empty { display: grid; place-items: center; font-size: 34px; font-weight: 700; color: #c3c4c7; }
 	.emcp-mk-card__body { padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
 	.emcp-mk-card__k { display: flex; align-items: center; gap: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .03em; color: #787c82; }

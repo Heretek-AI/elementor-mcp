@@ -549,27 +549,89 @@ class EMCP_Tools_Admin {
 		);
 	}
 
-	/** Renders the Sandbox cloud/marketplace button cluster (JS controls visibility). */
+	/**
+	 * Renders the Sandbox cloud/marketplace button cluster. The correct buttons
+	 * are shown server-side (works without JS); sandbox-cloud.js refines them
+	 * after refreshing state. Visibility is toggled via inline display because
+	 * WordPress's `.button` (display:inline-block) overrides the [hidden] attr.
+	 */
 	public static function render_sandbox_cloud_actions( string $kind, int $id ): string {
 		if ( ! class_exists( 'EMCP_Tools_Cloud' ) || ! EMCP_Tools_Cloud::is_connected() ) {
 			return '';
 		}
-		$state = self::cloud_action_payload( $kind, $id );
+		$s     = self::cloud_action_payload( $kind, $id );
 		$nonce = wp_create_nonce( self::cloud_nonce_action( $kind ) );
+
+		$pushed    = ! empty( $s['pushed'] );
+		$published = ! empty( $s['published'] );
+		$changed   = ! empty( $s['changed'] );
+		$has_slug  = '' !== (string) $s['slug'];
+		$pending   = ! empty( $s['has_pending_update'] );
+
+		// Save button label/state. Hidden once published (updates go via Push update).
+		$save_show = true;
+		$save_dis  = false;
+		if ( ! $pushed ) {
+			$save_txt = __( 'Save to Cloud', 'emcp-tools' );
+		} elseif ( $published ) {
+			$save_show = false;
+			$save_txt  = __( 'Save to Cloud', 'emcp-tools' );
+		} elseif ( $changed ) {
+			$save_txt = __( 'Update cloud', 'emcp-tools' );
+		} else {
+			$save_txt = __( 'Saved', 'emcp-tools' );
+			$save_dis = true;
+		}
+		$publish_show = $pushed && ! $has_slug;
+		$view_show    = $has_slug;
+		$update_show  = $published && $changed && ! $pending;
+
+		$tag_txt = '';
+		if ( $pending ) {
+			$tag_txt = __( 'Update in review', 'emcp-tools' );
+		} elseif ( $has_slug && 'pending' === (string) $s['status'] ) {
+			$tag_txt = __( 'In review', 'emcp-tools' );
+		} elseif ( $published && ! $changed ) {
+			$tag_txt = __( 'Up to date', 'emcp-tools' );
+		}
+
+		$hide = static function ( bool $show ): string {
+			return $show ? '' : ' style="display:none"';
+		};
+		$icon = static function ( string $d ): string {
+			return '<span class="dashicons dashicons-' . esc_attr( $d ) . '" aria-hidden="true"></span>';
+		};
+
 		ob_start();
+		static $printed_style = false;
+		if ( ! $printed_style ) {
+			$printed_style = true;
+			echo '<style>.emcp-sb-cloud .button .dashicons{font-size:16px;width:16px;height:16px;line-height:1.6;vertical-align:text-bottom;margin-right:3px}.emcp-sb-tag{display:inline-block;margin-left:6px;font-size:11px;font-weight:600;color:#8a6d00;background:#fcf3d9;padding:2px 9px;border-radius:10px;vertical-align:middle}.emcp-sb-msg{margin-left:8px;font-size:12px;vertical-align:middle}</style>';
+		}
 		?>
-		<span class="emcp-sb-cloud" data-kind="<?php echo esc_attr( $kind ); ?>" data-id="<?php echo esc_attr( (string) $id ); ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>" data-state="<?php echo esc_attr( (string) wp_json_encode( $state ) ); ?>">
-			<button type="button" class="button emcp-sb-save" hidden
+		<span class="emcp-sb-cloud" data-kind="<?php echo esc_attr( $kind ); ?>" data-id="<?php echo esc_attr( (string) $id ); ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>" data-state="<?php echo esc_attr( (string) wp_json_encode( $s ) ); ?>">
+			<button type="button" class="button emcp-sb-save"<?php echo $hide( $save_show ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><?php disabled( $save_dis ); ?>
 				data-t-save="<?php echo esc_attr__( 'Save to Cloud', 'emcp-tools' ); ?>"
 				data-t-update="<?php echo esc_attr__( 'Update cloud', 'emcp-tools' ); ?>"
-				data-t-saved="<?php echo esc_attr__( 'Saved ✓', 'emcp-tools' ); ?>"></button>
-			<a class="button emcp-sb-publish" href="#" target="_blank" rel="noopener" hidden><?php esc_html_e( 'Publish to Marketplace ↗', 'emcp-tools' ); ?></a>
-			<a class="button emcp-sb-view" href="#" target="_blank" rel="noopener" hidden><?php esc_html_e( 'View on Marketplace ↗', 'emcp-tools' ); ?></a>
-			<button type="button" class="button emcp-sb-update" hidden><?php esc_html_e( 'Push update', 'emcp-tools' ); ?></button>
-			<span class="emcp-sb-tag" hidden
+				data-t-saved="<?php echo esc_attr__( 'Saved', 'emcp-tools' ); ?>"><?php
+				echo $icon( 'backup' ) . '<span class="emcp-sb-txt">' . esc_html( $save_txt ) . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			?></button>
+			<a class="button button-primary emcp-sb-publish" href="<?php echo esc_url( $s['publish_url'] ); ?>" target="_blank" rel="noopener"<?php echo $hide( $publish_show ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>><?php
+				echo $icon( 'upload' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				esc_html_e( 'Publish to Marketplace', 'emcp-tools' );
+			?></a>
+			<a class="button emcp-sb-view" href="<?php echo esc_url( $s['view_url'] ); ?>" target="_blank" rel="noopener"<?php echo $hide( $view_show ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>><?php
+				echo $icon( 'external' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				esc_html_e( 'View on Marketplace', 'emcp-tools' );
+			?></a>
+			<button type="button" class="button button-primary emcp-sb-update"<?php echo $hide( $update_show ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>><?php
+				echo $icon( 'update' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				esc_html_e( 'Push update', 'emcp-tools' );
+			?></button>
+			<span class="emcp-sb-tag"<?php echo $hide( '' !== $tag_txt ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				data-t-inreview="<?php echo esc_attr__( 'Update in review', 'emcp-tools' ); ?>"
 				data-t-pending="<?php echo esc_attr__( 'In review', 'emcp-tools' ); ?>"
-				data-t-uptodate="<?php echo esc_attr__( 'Up to date', 'emcp-tools' ); ?>"></span>
+				data-t-uptodate="<?php echo esc_attr__( 'Up to date', 'emcp-tools' ); ?>"><?php echo esc_html( $tag_txt ); ?></span>
 			<span class="emcp-sb-msg" aria-live="polite"></span>
 		</span>
 		<?php

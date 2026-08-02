@@ -26,7 +26,16 @@
 		return fetch( ajaxUrl, { method: 'POST', credentials: 'same-origin', body: body } ).then( function ( r ) { return r.json(); } );
 	}
 
-	function show( el, on ) { if ( el ) { el.hidden = ! on; } }
+	// WordPress .button (display:inline-block) overrides the [hidden] attribute,
+	// so toggle inline display instead.
+	function show( el, on ) { if ( el ) { el.style.display = on ? '' : 'none'; } }
+
+	// Update a button's label without wiping its dashicon.
+	function setText( el, text ) {
+		if ( ! el ) { return; }
+		var t = el.querySelector( '.emcp-sb-txt' );
+		if ( t ) { t.textContent = text; } else { el.textContent = text; }
+	}
 
 	function render( cluster, s ) {
 		cluster.__state = s;
@@ -40,17 +49,17 @@
 		// through "Push update" instead.
 		if ( save ) {
 			if ( ! s.pushed ) {
-				save.textContent = save.getAttribute( 'data-t-save' ) || 'Save to Cloud';
+				setText( save, save.getAttribute( 'data-t-save' ) || 'Save to Cloud' );
 				save.disabled = false;
 				show( save, true );
 			} else if ( s.published ) {
 				show( save, false );
 			} else if ( s.changed ) {
-				save.textContent = save.getAttribute( 'data-t-update' ) || 'Update cloud';
+				setText( save, save.getAttribute( 'data-t-update' ) || 'Update cloud' );
 				save.disabled = false;
 				show( save, true );
 			} else {
-				save.textContent = save.getAttribute( 'data-t-saved' ) || 'Saved ✓';
+				setText( save, save.getAttribute( 'data-t-saved' ) || 'Saved' );
 				save.disabled = true;
 				show( save, true );
 			}

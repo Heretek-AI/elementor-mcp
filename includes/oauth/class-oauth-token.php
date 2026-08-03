@@ -21,8 +21,24 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class EMCP_Tools_OAuth_Token {
 
-	const ACCESS_TTL  = 3600;    // 1 hour
+	const ACCESS_TTL  = 3600;    // 1 hour (default; see access_ttl()).
 	const REFRESH_TTL = 2592000; // 30 days
+
+	/**
+	 * Effective access-token lifetime, in seconds.
+	 *
+	 * Overridable via the `EMCP_TOOLS_OAUTH_ACCESS_TTL` constant or the
+	 * `emcp_tools_oauth_access_ttl` filter, so a short TTL can be used to
+	 * exercise the token-refresh path in minutes instead of an hour (e.g. to
+	 * verify a client survives a mid-chat refresh). Floored at 60s.
+	 *
+	 * @return int
+	 */
+	public static function access_ttl(): int {
+		$ttl = defined( 'EMCP_TOOLS_OAUTH_ACCESS_TTL' ) ? (int) EMCP_TOOLS_OAUTH_ACCESS_TTL : self::ACCESS_TTL;
+		$ttl = (int) apply_filters( 'emcp_tools_oauth_access_ttl', $ttl );
+		return max( 60, $ttl );
+	}
 
 	/**
 	 * Register the REST routes.
@@ -87,7 +103,7 @@ class EMCP_Tools_OAuth_Token {
 
 		$pair = self::issue_pair( $client_id, (int) $payload['user_id'], (string) $payload['scopes'] );
 		return new WP_REST_Response(
-			self::token_response( $pair['access'], $pair['refresh'], self::ACCESS_TTL, (string) $payload['scopes'] ),
+			self::token_response( $pair['access'], $pair['refresh'], self::access_ttl(), (string) $payload['scopes'] ),
 			200
 		);
 	}
@@ -114,7 +130,7 @@ class EMCP_Tools_OAuth_Token {
 		$pair = self::issue_pair( $client_id, (int) $row['user_id'], (string) $row['scopes'] );
 
 		return new WP_REST_Response(
-			self::token_response( $pair['access'], $pair['refresh'], self::ACCESS_TTL, (string) $row['scopes'] ),
+			self::token_response( $pair['access'], $pair['refresh'], self::access_ttl(), (string) $row['scopes'] ),
 			200
 		);
 	}
@@ -201,7 +217,7 @@ class EMCP_Tools_OAuth_Token {
 	 */
 	private static function issue_pair( string $client_id, int $user_id, string $scope ): array {
 		$refresh = EMCP_Tools_OAuth_Store::issue_token( 'refresh', $client_id, $user_id, $scope, self::REFRESH_TTL );
-		$access  = EMCP_Tools_OAuth_Store::issue_token( 'access', $client_id, $user_id, $scope, self::ACCESS_TTL, (int) $refresh['id'] );
+		$access  = EMCP_Tools_OAuth_Store::issue_token( 'access', $client_id, $user_id, $scope, self::access_ttl(), (int) $refresh['id'] );
 		return array( 'access' => $access['token'], 'refresh' => $refresh['token'] );
 	}
 

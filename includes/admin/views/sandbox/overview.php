@@ -101,7 +101,7 @@ $emcp_sb_cards = array(
 <div class="emcp-sandbox-overview">
 	<h2><?php esc_html_e( 'Sandbox', 'emcp-tools' ); ?></h2>
 	<p class="description">
-		<?php esc_html_e( 'Code your AI agent generated through the MCP tools lives here, isolated under wp-content/uploads, never in your theme, core, or other plugins.', 'emcp-tools' ); ?>
+		<?php esc_html_e( 'Code your AI agent generated through the MCP tools lives here, isolated under wp-content/emcp-sandbox, never in your theme, core, or other plugins.', 'emcp-tools' ); ?>
 	</p>
 
 	<div class="emcp-sandbox-cards">

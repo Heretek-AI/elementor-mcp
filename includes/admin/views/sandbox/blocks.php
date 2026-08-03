@@ -50,7 +50,7 @@ $emcp_tools_bb_import_error = isset( $_GET['import_error'] ) ? sanitize_text_fie
 					<span class="elementor-mcp-badge elementor-mcp-badge--pro">PRO</span>
 				</h2>
 				<p class="description">
-					<?php esc_html_e( 'Custom Gutenberg blocks your AI agent generated through the MCP tools, starting from a structured spec. Everything lives in an isolated sandbox under wp-content/uploads, never in your theme, core, or other plugins. Active blocks appear in the block editor inserter under "EMCP Custom".', 'emcp-tools' ); ?>
+					<?php esc_html_e( 'Custom Gutenberg blocks your AI agent generated through the MCP tools, starting from a structured spec. Everything lives in an isolated sandbox under wp-content/emcp-sandbox, never in your theme, core, or other plugins. Active blocks appear in the block editor inserter under "EMCP Custom".', 'emcp-tools' ); ?>
 				</p>
 			</div>
 		</div>

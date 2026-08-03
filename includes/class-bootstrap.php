@@ -43,6 +43,12 @@ class EMCP_Tools_Bootstrap {
 		}
 
 		self::load_classes();
+
+		// Relocate the sandbox from the legacy uploads/emcp-widgets location to
+		// wp-content/emcp-sandbox once. Runs here (plugins_loaded) so it completes
+		// before the artifact loaders fire on `init`. Idempotent, option-gated.
+		EMCP_Tools_Sandbox_Paths::maybe_migrate();
+
 		self::wire_hooks();
 
 		if ( is_admin() ) {
@@ -200,6 +206,9 @@ class EMCP_Tools_Bootstrap {
 		// Widget Builder infra (free base). The store + loader load unconditionally
 		// so the MCP surface + CPT registration can reach them; the generator +
 		// builder abilities ship in the Pro overlay (loaded via Pro_Loader).
+		// Central sandbox storage location (wp-content/emcp-sandbox). Every store
+		// resolves paths through this, so it must load before them.
+		require_once EMCP_TOOLS_DIR . 'includes/sandbox/class-sandbox-paths.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-widget-store.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-widget-loader.php';
 		// Sandbox Bundle — portable cloud-ready format for blocks/widgets/snippets.

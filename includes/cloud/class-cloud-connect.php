@@ -14,6 +14,13 @@ class EMCP_Tools_Cloud_Connect {
 	const ACTION_CALLBACK   = 'emcp_tools_cloud_callback';
 	const ACTION_DISCONNECT = 'emcp_tools_cloud_disconnect';
 	const PENDING_TRANSIENT = 'emcp_tools_cloud_pending';
+	// Treat the access token as expired this many seconds early (matches the
+	// client's own leeway) when deciding whether a concurrent request already
+	// refreshed it.
+	const REFRESH_LEEWAY = 60;
+	// Seconds a waiting request blocks on the refresh mutex before giving up and
+	// proceeding best-effort. Kept short so an admin page never stalls.
+	const REFRESH_LOCK_WAIT = 5;
 
 	/**
 	 * Register the admin-post handlers (called from the module's register()).
@@ -136,8 +143,22 @@ class EMCP_Tools_Cloud_Connect {
 	}
 
 	/**
-	 * Refresh the stored access token. Returns false and marks the connection
-	 * unhealthy on failure.
+	 * Refresh the stored access token.
+	 *
+	 * The Cloud provider (Better Auth) ROTATES the refresh token on every
+	 * refresh — each success mints a new refresh token and invalidates the old
+	 * one. Two concurrent WordPress requests (a second admin tab, a heartbeat,
+	 * an MCP call) that both see the access token expired would each POST the
+	 * same refresh token; the first wins and rotates it, the second is rejected
+	 * with invalid_grant. Naively that second request would flip the connection
+	 * to "unhealthy" and overwrite the freshly-rotated token with the dead one,
+	 * which is exactly what surfaces as a spurious "Reconnect needed".
+	 *
+	 * Guards, in order: (1) a best-effort DB mutex serialises refreshes; (2) a
+	 * double-check re-reads the bundle after the lock and bails if another
+	 * request already refreshed; (3) an auth rejection that coincides with a
+	 * concurrent rotation is treated as success and never clobbers the good
+	 * bundle; (4) network/5xx blips are transient and do NOT mark unhealthy.
 	 *
 	 * @return bool
 	 */
@@ -146,27 +167,107 @@ class EMCP_Tools_Cloud_Connect {
 		if ( empty( $c['refresh_token'] ) || empty( $c['client_id'] ) ) {
 			return false;
 		}
-		$res = EMCP_Tools_Cloud_Http::post_form(
+
+		$lock_key = 'emcp_cloud_refresh_' . substr( md5( (string) $c['client_id'] ), 0, 24 );
+		$locked   = self::db_lock( $lock_key, self::REFRESH_LOCK_WAIT );
+
+		// Double-checked locking: a request we waited behind may have already
+		// refreshed. Re-read and short-circuit when the token is fresh again.
+		$c = EMCP_Tools_Cloud::get_connection();
+		if ( empty( $c['refresh_token'] ) || empty( $c['client_id'] ) ) {
+			self::db_unlock( $lock_key, $locked );
+			return false;
+		}
+		if ( self::access_token_fresh( $c ) ) {
+			self::db_unlock( $lock_key, $locked );
+			return true;
+		}
+
+		$used_rt = (string) $c['refresh_token'];
+		$res     = EMCP_Tools_Cloud_Http::post_form(
 			EMCP_Tools_Cloud::base_url() . '/api/auth/oauth2/token',
 			array(
 				'grant_type'    => 'refresh_token',
-				'refresh_token' => (string) $c['refresh_token'],
+				'refresh_token' => $used_rt,
 				'client_id'     => (string) $c['client_id'],
 			),
 			array( 'Origin' => self::origin() )
 		);
-		if ( is_wp_error( $res ) || 200 !== (int) $res['code'] || empty( $res['json']['access_token'] ) ) {
-			$c['unhealthy'] = true;
-			EMCP_Tools_Cloud::save_connection( $c );
+
+		// Transient failure (no response or a server-side 5xx): leave the
+		// connection untouched so the next request retries. Marking it unhealthy
+		// on a blip is a false "Reconnect needed".
+		if ( is_wp_error( $res ) || (int) $res['code'] >= 500 ) {
+			self::db_unlock( $lock_key, $locked );
 			return false;
 		}
-		$j                      = $res['json'];
-		$c['access_token']      = (string) $j['access_token'];
-		$c['refresh_token']     = (string) ( $j['refresh_token'] ?? $c['refresh_token'] );
-		$c['access_expires_at'] = time() + (int) ( $j['expires_in'] ?? 3600 );
-		unset( $c['unhealthy'] );
-		EMCP_Tools_Cloud::save_connection( $c );
+
+		if ( 200 !== (int) $res['code'] || empty( $res['json']['access_token'] ) ) {
+			// Auth rejection. If a concurrent request already rotated the token
+			// (stored RT changed) or the access token is fresh again, this is
+			// just the loser of a race — succeed without touching the bundle.
+			$fresh = EMCP_Tools_Cloud::get_connection();
+			$won   = ( ! empty( $fresh['refresh_token'] ) && (string) $fresh['refresh_token'] !== $used_rt )
+				|| self::access_token_fresh( $fresh );
+			if ( $won ) {
+				self::db_unlock( $lock_key, $locked );
+				return true;
+			}
+			$fresh['unhealthy'] = true;
+			EMCP_Tools_Cloud::save_connection( $fresh );
+			self::db_unlock( $lock_key, $locked );
+			return false;
+		}
+
+		// Success. Merge onto the freshest stored bundle so we never drop a
+		// concurrent write of an unrelated field.
+		$j                         = $res['json'];
+		$save                      = EMCP_Tools_Cloud::get_connection();
+		$save['access_token']      = (string) $j['access_token'];
+		$save['refresh_token']     = (string) ( $j['refresh_token'] ?? ( $save['refresh_token'] ?? $used_rt ) );
+		$save['access_expires_at'] = time() + (int) ( $j['expires_in'] ?? 3600 );
+		unset( $save['unhealthy'] );
+		EMCP_Tools_Cloud::save_connection( $save );
+		self::db_unlock( $lock_key, $locked );
 		return true;
+	}
+
+	/**
+	 * @param array $c Connection bundle.
+	 * @return bool Whether the bundle's access token is still valid beyond the leeway.
+	 */
+	private static function access_token_fresh( array $c ): bool {
+		return ! empty( $c['access_token'] )
+			&& (int) ( $c['access_expires_at'] ?? 0 ) - self::REFRESH_LEEWAY > time();
+	}
+
+	/**
+	 * Best-effort cross-request mutex via MySQL GET_LOCK (per-connection; auto
+	 * released if the request dies). Degrades to a no-op where $wpdb is absent
+	 * (unit tests) — the double-check + anti-clobber guards still hold.
+	 *
+	 * @param string $key     Lock name (<= 64 chars for MySQL).
+	 * @param int    $timeout Seconds to wait for the lock.
+	 * @return bool Whether the lock was actually acquired.
+	 */
+	private static function db_lock( string $key, int $timeout ): bool {
+		global $wpdb;
+		if ( ! is_object( $wpdb ) || ! method_exists( $wpdb, 'get_var' ) || ! method_exists( $wpdb, 'prepare' ) ) {
+			return false;
+		}
+		return '1' === (string) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, %d)', $key, $timeout ) );
+	}
+
+	/**
+	 * @param string $key    Lock name.
+	 * @param bool   $locked Whether db_lock() actually acquired it.
+	 * @return void
+	 */
+	private static function db_unlock( string $key, bool $locked ): void {
+		global $wpdb;
+		if ( $locked && is_object( $wpdb ) && method_exists( $wpdb, 'query' ) && method_exists( $wpdb, 'prepare' ) ) {
+			$wpdb->query( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $key ) );
+		}
 	}
 
 	/**

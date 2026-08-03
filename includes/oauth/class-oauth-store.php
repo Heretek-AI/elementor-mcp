@@ -250,7 +250,9 @@ class EMCP_Tools_OAuth_Store {
 	}
 
 	/**
-	 * Delete a token row and any access token bound to it (refresh rotation).
+	 * Delete a token row and any access token bound to it. Used for explicit
+	 * revocation (RFC 7009 /revoke) and client teardown — there we DO want the
+	 * bound access token gone immediately.
 	 *
 	 * @param int $id Token row id.
 	 */
@@ -258,6 +260,24 @@ class EMCP_Tools_OAuth_Store {
 		global $wpdb;
 		$wpdb->delete( self::tokens_table(), array( 'id' => $id ), array( '%d' ) );
 		$wpdb->delete( self::tokens_table(), array( 'refresh_of' => $id ), array( '%d' ) );
+	}
+
+	/**
+	 * Rotate a refresh token out WITHOUT touching its bound access token.
+	 *
+	 * On refresh the old refresh token must become unusable (rotation), but the
+	 * old ACCESS token is a short-lived bearer credential that in-flight MCP
+	 * requests may still be carrying. Cascade-deleting it (as revoke_token does)
+	 * 401s those requests the instant the client refreshes — which surfaced as
+	 * connections dropping mid-chat. Letting the access token live out its own
+	 * TTL is the standard OAuth behaviour (RFC 6749 §1.5: refreshing does not
+	 * invalidate previously issued access tokens).
+	 *
+	 * @param int $id Refresh token row id.
+	 */
+	public static function rotate_out_refresh( int $id ): void {
+		global $wpdb;
+		$wpdb->delete( self::tokens_table(), array( 'id' => $id ), array( '%d' ) );
 	}
 
 	/**

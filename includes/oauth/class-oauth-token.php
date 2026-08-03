@@ -108,8 +108,9 @@ class EMCP_Tools_OAuth_Token {
 			return self::error( 'invalid_grant', 'Refresh token is invalid or expired.' );
 		}
 
-		// Rotate: revoke the old refresh (+ its access), issue a new pair.
-		EMCP_Tools_OAuth_Store::revoke_token( (int) $row['id'] );
+		// Rotate: retire the old refresh token, but leave its bound access token
+		// to expire on its own TTL so in-flight requests aren't 401'd mid-chat.
+		EMCP_Tools_OAuth_Store::rotate_out_refresh( (int) $row['id'] );
 		$pair = self::issue_pair( $client_id, (int) $row['user_id'], (string) $row['scopes'] );
 
 		return new WP_REST_Response(

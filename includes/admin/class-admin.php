@@ -260,6 +260,7 @@ class EMCP_Tools_Admin {
 		add_action( 'wp_ajax_emcp_tools_backup_artifact', array( $this, 'ajax_backup_artifact' ) );
 		add_action( 'wp_ajax_emcp_tools_push_update', array( $this, 'ajax_push_update' ) );
 		add_action( 'wp_ajax_emcp_tools_marketplace_state', array( $this, 'ajax_marketplace_state' ) );
+		add_action( 'wp_ajax_emcp_tools_resync_cloud', array( $this, 'ajax_resync_cloud' ) );
 		add_action( 'wp_ajax_emcp_tools_memory_set_status', array( $this, 'ajax_memory_set_status' ) );
 		add_action( 'wp_ajax_emcp_tools_memory_save_guidance', array( $this, 'ajax_memory_save_guidance' ) );
 		add_action( 'wp_ajax_emcp_tools_memory_save_settings', array( $this, 'ajax_memory_save_settings' ) );
@@ -531,6 +532,33 @@ class EMCP_Tools_Admin {
 		return $state;
 	}
 
+	/**
+	 * Verify the artifact still exists as a CLOUD BACKUP (separate from any
+	 * marketplace listing). If it was deleted remotely, clear the local
+	 * "pushed" flag so the button reverts from "Saved" to "Save to Cloud".
+	 *
+	 * Only a definitive 404/410 resets the state — transient errors (network,
+	 * 5xx, not-connected) leave it untouched so a blip never drops a real save.
+	 */
+	private static function verify_cloud_backup( string $kind, int $id ): void {
+		if ( ! get_post_meta( $id, '_emcp_cloud_pushed', true ) ) {
+			return; // nothing claims to be pushed.
+		}
+		if ( ! class_exists( 'EMCP_Tools_Cloud_Client' ) || ! class_exists( 'EMCP_Tools_Sandbox_Cloud_Abilities' ) ) {
+			return;
+		}
+		$art  = ( new EMCP_Tools_Sandbox_Cloud_Abilities() )->resolve_artifact( $kind );
+		$uuid = $art ? (string) $art->uuid( $id ) : '';
+		if ( '' === $uuid ) {
+			return;
+		}
+		$res = EMCP_Tools_Cloud_Client::get( '/api/cloud/v1/artifacts/' . rawurlencode( $uuid ) );
+		if ( is_wp_error( $res ) && in_array( $res->get_error_code(), array( 'cloud_http_404', 'cloud_http_410' ), true ) ) {
+			delete_post_meta( $id, '_emcp_cloud_pushed' );
+			delete_post_meta( $id, '_emcp_cloud_checksum' );
+		}
+	}
+
 	/** JS payload describing an artifact's cloud/marketplace state (from cached meta). */
 	public static function cloud_action_payload( string $kind, int $id ): array {
 		$slug   = (string) get_post_meta( $id, '_emcp_marketplace_slug', true );
@@ -675,6 +703,31 @@ class EMCP_Tools_Admin {
 		}
 		self::refresh_marketplace_state( $kind, $id );
 		wp_send_json_success( self::cloud_action_payload( $kind, $id ) );
+	}
+
+	/**
+	 * Full resync of an artifact's cloud state: verify the backup still exists
+	 * remotely (self-heals a stale "Saved" after a cloud-side delete) AND refresh
+	 * its marketplace listing state. Drives the "Refresh cloud status" button.
+	 */
+	public function ajax_resync_cloud(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Forbidden.', 'emcp-tools' ) ), 403 );
+		}
+		$kind = isset( $_POST['kind'] ) ? sanitize_key( wp_unslash( $_POST['kind'] ) ) : '';
+		$na   = self::cloud_nonce_action( $kind );
+		if ( '' === $na || ! check_ajax_referer( $na, 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'emcp-tools' ) ), 403 );
+		}
+		$id = isset( $_POST['id'] ) ? absint( wp_unslash( $_POST['id'] ) ) : 0;
+		if ( ! $id ) {
+			wp_send_json_error( array( 'message' => __( 'Missing id.', 'emcp-tools' ) ) );
+		}
+		self::verify_cloud_backup( $kind, $id );
+		self::refresh_marketplace_state( $kind, $id );
+		$payload            = self::cloud_action_payload( $kind, $id );
+		$payload['message'] = __( 'Cloud status refreshed.', 'emcp-tools' );
+		wp_send_json_success( $payload );
 	}
 
 	/**

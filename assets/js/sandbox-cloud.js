@@ -130,6 +130,60 @@
 		}
 	} );
 
+	// Full resync of one cluster: verifies the cloud backup still exists (heals a
+	// stale "Saved" after a cloud-side delete) and refreshes marketplace state.
+	function resync( cluster ) {
+		return post( 'emcp_tools_resync_cloud', cluster, null ).then( function ( res ) {
+			if ( res && res.success && res.data ) { render( cluster, res.data ); }
+			return res;
+		} );
+	}
+
+	// A page-level "Refresh cloud status" button that resyncs every artifact —
+	// the manual escape hatch when the cloud was changed elsewhere (e.g. an
+	// artifact deleted from the website).
+	function mountRefreshAll( clusters ) {
+		if ( ! clusters.length ) { return; }
+		var anchor = clusters[ 0 ].closest( 'table' ) || clusters[ 0 ];
+		if ( ! anchor || ! anchor.parentNode ) { return; }
+
+		var bar = document.createElement( 'p' );
+		bar.className = 'emcp-sb-refresh-bar';
+		bar.style.margin = '12px 0';
+
+		var btn = document.createElement( 'button' );
+		btn.type = 'button';
+		btn.className = 'button emcp-sb-refresh-all';
+		var ico = document.createElement( 'span' );
+		ico.className = 'dashicons dashicons-update';
+		ico.setAttribute( 'aria-hidden', 'true' );
+		ico.style.verticalAlign = 'text-bottom';
+		btn.appendChild( ico );
+		btn.appendChild( document.createTextNode( ' Refresh cloud status' ) );
+
+		var note = document.createElement( 'span' );
+		note.className = 'emcp-sb-refresh-msg';
+		note.style.marginLeft = '10px';
+		note.style.color = '#2271b1';
+
+		bar.appendChild( btn );
+		bar.appendChild( note );
+		anchor.parentNode.insertBefore( bar, anchor );
+
+		btn.addEventListener( 'click', function () {
+			btn.disabled = true;
+			note.textContent = 'Refreshing…';
+			var jobs = Array.prototype.map.call( clusters, function ( c ) {
+				return resync( c ).catch( function () {} );
+			} );
+			Promise.all( jobs ).then( function () {
+				btn.disabled = false;
+				note.textContent = 'Cloud status up to date.';
+				setTimeout( function () { note.textContent = ''; }, 4000 );
+			} );
+		} );
+	}
+
 	function init() {
 		var clusters = document.querySelectorAll( '.emcp-sb-cloud' );
 		Array.prototype.forEach.call( clusters, function ( cluster ) {
@@ -144,6 +198,7 @@
 				} ).catch( function () {} );
 			}
 		} );
+		mountRefreshAll( clusters );
 	}
 
 	if ( document.readyState === 'loading' ) {

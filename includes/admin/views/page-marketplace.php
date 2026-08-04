@@ -20,6 +20,13 @@ $emcp_kind_label = array(
 );
 $emcp_mk       = isset( $_GET['mk'] ) ? sanitize_key( wp_unslash( $_GET['mk'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 $emcp_mk_id    = isset( $_GET['mk_id'] ) ? absint( wp_unslash( $_GET['mk_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+// A freshly-installed draft is a sandbox CPT with no standard post editor, so
+// get_edit_post_link() is empty. Route to its Sandbox management screen instead.
+$emcp_mk_views = array( 'emcp_widget' => 'widgets', 'emcp_block' => 'blocks', 'emcp_php_snippet' => 'snippets' );
+$emcp_mk_type  = $emcp_mk_id ? get_post_type( $emcp_mk_id ) : '';
+$emcp_mk_edit  = isset( $emcp_mk_views[ $emcp_mk_type ] )
+	? add_query_arg( array( 'page' => 'emcp-tools-widgets', 'view' => $emcp_mk_views[ $emcp_mk_type ] ), admin_url( 'admin.php' ) )
+	: '';
 $emcp_category = isset( $_GET['mk_cat'] ) ? sanitize_text_field( wp_unslash( $_GET['mk_cat'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 $emcp_q        = isset( $_GET['mk_q'] ) ? sanitize_text_field( wp_unslash( $_GET['mk_q'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 $emcp_f_kind   = isset( $_GET['mk_kind'] ) ? sanitize_key( wp_unslash( $_GET['mk_kind'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -35,8 +42,8 @@ $emcp_sort     = isset( $_GET['mk_sort'] ) ? sanitize_key( wp_unslash( $_GET['mk
 	<?php if ( 'installed' === $emcp_mk ) : ?>
 		<div class="notice notice-success inline"><p>
 			<?php esc_html_e( 'Installed as a draft.', 'emcp-tools' ); ?>
-			<?php if ( $emcp_mk_id ) : ?>
-				<a href="<?php echo esc_url( get_edit_post_link( $emcp_mk_id ) ); ?>"><?php esc_html_e( 'Edit it →', 'emcp-tools' ); ?></a>
+			<?php if ( $emcp_mk_edit ) : ?>
+				<a href="<?php echo esc_url( $emcp_mk_edit ); ?>"><?php esc_html_e( 'Review it →', 'emcp-tools' ); ?></a>
 			<?php endif; ?>
 		</p></div>
 	<?php elseif ( 'pro' === $emcp_mk ) : ?>

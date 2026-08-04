@@ -72,8 +72,8 @@ $emcp_tools_sn_nonce = wp_create_nonce( 'emcp_tools_php_snippets' );
 
 	<?php else : ?>
 
-		<details style="margin: 14px 0;">
-			<summary style="cursor:pointer;font-weight:600;"><?php esc_html_e( '+ Import a bundle', 'emcp-tools' ); ?></summary>
+		<details class="emcp-sb-disclosure">
+			<summary><span class="dashicons dashicons-upload" aria-hidden="true"></span><?php esc_html_e( 'Import a bundle', 'emcp-tools' ); ?></summary>
 			<form method="post" enctype="multipart/form-data" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top: 12px;">
 				<?php wp_nonce_field( EMCP_Tools_Admin::NONCE_SANDBOX_BUNDLE ); ?>
 				<input type="hidden" name="action" value="<?php echo esc_attr( EMCP_Tools_Admin::ACTION_IMPORT_ARTIFACT ); ?>" />

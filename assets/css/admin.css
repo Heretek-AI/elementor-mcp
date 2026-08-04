@@ -4522,3 +4522,26 @@ body[data-emcp-auth="app-password"] [data-authfor="oauth"] { display: none; }
 .emcp-dash-promo-note { margin-top: auto; align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.4); color: #fff; font-size: 12.5px; font-weight: 600; padding: 7px 12px; border-radius: 8px; }
 .emcp-dash-promo-note .dashicons { font-size: 16px; width: 16px; height: 16px; }
 @media screen and (max-width: 1200px) { .emcp-dash-row--toolkit { flex-direction: column; } }
+
+/* -------------------------------------------------------------------------
+ * Prominent disclosure cards on the sandbox screens.
+ * Turns the "Import a bundle" and "Cloud Library" <details> into eye-catching
+ * cards instead of plain disclosure-triangle text. Flat colors, no gradients.
+ * ---------------------------------------------------------------------- */
+.emcp-sb-disclosure { margin: 16px 0; border: 1px solid #dcdce1; border-radius: 10px; background: #fff; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+.emcp-sb-disclosure > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 15px 18px; font-size: 15px; font-weight: 600; color: #1d2327; background: #f6f7f9; transition: background .15s ease, color .15s ease; }
+.emcp-sb-disclosure > summary::-webkit-details-marker { display: none; }
+.emcp-sb-disclosure > summary::after { content: "\f347"; font-family: dashicons; margin-left: auto; font-size: 18px; line-height: 1; color: #787c82; transition: transform .15s ease; }
+.emcp-sb-disclosure[open] > summary::after { transform: rotate(180deg); }
+.emcp-sb-disclosure > summary:hover { background: #eef0f3; }
+.emcp-sb-disclosure > summary:focus-visible { outline: 2px solid #2271b1; outline-offset: -2px; }
+.emcp-sb-disclosure > summary .dashicons { font-size: 20px; width: 20px; height: 20px; color: #50575e; flex: 0 0 auto; }
+.emcp-sb-disclosure > *:not(summary) { padding: 4px 18px 16px; }
+
+/* Cloud Library — accent variant (the cross-site highlight). */
+.emcp-sb-disclosure--cloud { border-color: #cbb6ef; }
+.emcp-sb-disclosure--cloud > summary { background: #f4eefc; color: #4a1f8f; }
+.emcp-sb-disclosure--cloud > summary:hover { background: #ece2fb; }
+.emcp-sb-disclosure--cloud > summary .dashicons-cloud { color: #6a11cb; }
+.emcp-sb-disclosure--cloud > summary::after { color: #6a11cb; }
+.emcp-sb-disclosure__badge { margin-left: 6px; font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: #6a11cb; background: #fff; border: 1px solid #cbb6ef; border-radius: 999px; padding: 2px 9px; }

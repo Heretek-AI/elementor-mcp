@@ -690,7 +690,7 @@ class EMCP_Tools_Admin {
 
 		ob_start();
 		?>
-		<details class="emcp-cloud-lib" data-kind="<?php echo esc_attr( $kind ); ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( $na ) ); ?>" data-site="<?php echo esc_attr( EMCP_Tools_Cloud::site_uuid() ); ?>" style="margin: 14px 0;"
+		<details class="emcp-cloud-lib emcp-sb-disclosure emcp-sb-disclosure--cloud" data-kind="<?php echo esc_attr( $kind ); ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( $na ) ); ?>" data-site="<?php echo esc_attr( EMCP_Tools_Cloud::site_uuid() ); ?>"
 			data-t-loading="<?php echo esc_attr__( 'Loading…', 'emcp-tools' ); ?>"
 			data-t-import="<?php echo esc_attr__( 'Import', 'emcp-tools' ); ?>"
 			data-t-importing="<?php echo esc_attr__( 'Importing…', 'emcp-tools' ); ?>"
@@ -701,12 +701,13 @@ class EMCP_Tools_Admin {
 			data-t-error="<?php echo esc_attr__( 'Could not reach the cloud. Try again.', 'emcp-tools' ); ?>"
 			data-t-reloadhint="<?php echo esc_attr__( 'Imported as a new inactive draft below.', 'emcp-tools' ); ?>"
 			data-t-reload="<?php echo esc_attr__( 'Reload to view →', 'emcp-tools' ); ?>">
-			<summary style="cursor:pointer;font-weight:600;">
-				<span class="dashicons dashicons-cloud" aria-hidden="true" style="vertical-align:text-bottom;"></span>
+			<summary>
+				<span class="dashicons dashicons-cloud" aria-hidden="true"></span>
 				<?php
 				/* translators: %s: artifact kind, plural (widgets / blocks / snippets). */
 				echo esc_html( sprintf( __( 'Cloud Library — import %s from your other connected sites', 'emcp-tools' ), $kl ) );
 				?>
+				<span class="emcp-sb-disclosure__badge"><?php esc_html_e( 'Cross-site', 'emcp-tools' ); ?></span>
 			</summary>
 			<div class="emcp-cloud-lib__body" style="margin-top:12px;">
 				<p class="emcp-cloud-lib__status description"><?php esc_html_e( 'Open to load your cloud library…', 'emcp-tools' ); ?></p>

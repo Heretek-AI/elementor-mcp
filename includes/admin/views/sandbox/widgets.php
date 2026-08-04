@@ -92,6 +92,8 @@ $emcp_tools_wb_import_error = isset( $_GET['import_error'] ) ? sanitize_text_fie
 				</form>
 			</details>
 
+			<?php echo EMCP_Tools_Admin::render_cloud_library( 'widget' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built with esc_* internally. ?>
+
 			<?php if ( empty( $emcp_tools_wb_list ) ) : ?>
 
 				<p class="description" style="margin-top: 16px;">

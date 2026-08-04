@@ -261,6 +261,8 @@ class EMCP_Tools_Admin {
 		add_action( 'wp_ajax_emcp_tools_push_update', array( $this, 'ajax_push_update' ) );
 		add_action( 'wp_ajax_emcp_tools_marketplace_state', array( $this, 'ajax_marketplace_state' ) );
 		add_action( 'wp_ajax_emcp_tools_resync_cloud', array( $this, 'ajax_resync_cloud' ) );
+		add_action( 'wp_ajax_emcp_tools_cloud_library', array( $this, 'ajax_cloud_library' ) );
+		add_action( 'wp_ajax_emcp_tools_cloud_import', array( $this, 'ajax_cloud_import' ) );
 		add_action( 'wp_ajax_emcp_tools_memory_set_status', array( $this, 'ajax_memory_set_status' ) );
 		add_action( 'wp_ajax_emcp_tools_memory_save_guidance', array( $this, 'ajax_memory_save_guidance' ) );
 		add_action( 'wp_ajax_emcp_tools_memory_save_settings', array( $this, 'ajax_memory_save_settings' ) );
@@ -659,6 +661,141 @@ class EMCP_Tools_Admin {
 		</span>
 		<?php
 		return (string) ob_get_clean();
+	}
+
+	/**
+	 * Renders the "Cloud Library" panel for a sandbox screen — a collapsible list
+	 * of the whole workspace's cloud artifacts of this kind (across every connected
+	 * site), each importable into THIS site as a new inactive draft. Empty string
+	 * when the site isn't cloud-connected. The list is fetched lazily on first open
+	 * (see assets/js/cloud-library.js); import runs EMCP_Tools_Cloud_Sync::pull().
+	 *
+	 * @param string $kind Artifact kind (widget/block/snippet).
+	 * @return string
+	 */
+	public static function render_cloud_library( string $kind ): string {
+		if ( ! class_exists( 'EMCP_Tools_Cloud' ) || ! EMCP_Tools_Cloud::is_connected() ) {
+			return '';
+		}
+		$na = self::cloud_nonce_action( $kind );
+		if ( '' === $na ) {
+			return '';
+		}
+		$plural = array(
+			'widget'  => __( 'widgets', 'emcp-tools' ),
+			'block'   => __( 'blocks', 'emcp-tools' ),
+			'snippet' => __( 'snippets', 'emcp-tools' ),
+		);
+		$kl = $plural[ $kind ] ?? $kind;
+
+		ob_start();
+		?>
+		<details class="emcp-cloud-lib" data-kind="<?php echo esc_attr( $kind ); ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( $na ) ); ?>" data-site="<?php echo esc_attr( EMCP_Tools_Cloud::site_uuid() ); ?>" style="margin: 14px 0;"
+			data-t-loading="<?php echo esc_attr__( 'Loading…', 'emcp-tools' ); ?>"
+			data-t-import="<?php echo esc_attr__( 'Import', 'emcp-tools' ); ?>"
+			data-t-importing="<?php echo esc_attr__( 'Importing…', 'emcp-tools' ); ?>"
+			data-t-imported="<?php echo esc_attr__( 'Imported', 'emcp-tools' ); ?>"
+			data-t-thissite="<?php echo esc_attr__( 'This site', 'emcp-tools' ); ?>"
+			data-t-othersite="<?php echo esc_attr__( 'Another site', 'emcp-tools' ); ?>"
+			data-t-empty="<?php echo esc_attr__( 'Nothing in your cloud library yet. Save one from another connected site, then it appears here.', 'emcp-tools' ); ?>"
+			data-t-error="<?php echo esc_attr__( 'Could not reach the cloud. Try again.', 'emcp-tools' ); ?>"
+			data-t-reloadhint="<?php echo esc_attr__( 'Imported as a new inactive draft below.', 'emcp-tools' ); ?>"
+			data-t-reload="<?php echo esc_attr__( 'Reload to view →', 'emcp-tools' ); ?>">
+			<summary style="cursor:pointer;font-weight:600;">
+				<span class="dashicons dashicons-cloud" aria-hidden="true" style="vertical-align:text-bottom;"></span>
+				<?php
+				/* translators: %s: artifact kind, plural (widgets / blocks / snippets). */
+				echo esc_html( sprintf( __( 'Cloud Library — import %s from your other connected sites', 'emcp-tools' ), $kl ) );
+				?>
+			</summary>
+			<div class="emcp-cloud-lib__body" style="margin-top:12px;">
+				<p class="emcp-cloud-lib__status description"><?php esc_html_e( 'Open to load your cloud library…', 'emcp-tools' ); ?></p>
+				<table class="widefat striped emcp-cloud-lib__table" style="display:none;">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Title', 'emcp-tools' ); ?></th>
+							<th><?php esc_html_e( 'From', 'emcp-tools' ); ?></th>
+							<th style="width:70px;"><?php esc_html_e( 'Version', 'emcp-tools' ); ?></th>
+							<th style="width:110px;"><?php esc_html_e( 'Updated', 'emcp-tools' ); ?></th>
+							<th style="width:120px;"></th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
+		</details>
+		<?php
+		return (string) ob_get_clean();
+	}
+
+	/**
+	 * List the workspace's cloud artifacts of a kind (across all connected sites).
+	 * Feeds the Cloud Library panel. AJAX.
+	 */
+	public function ajax_cloud_library(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Forbidden.', 'emcp-tools' ) ), 403 );
+		}
+		$kind = isset( $_POST['kind'] ) ? sanitize_key( wp_unslash( $_POST['kind'] ) ) : '';
+		$na   = self::cloud_nonce_action( $kind );
+		if ( '' === $na || ! check_ajax_referer( $na, 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'emcp-tools' ) ), 403 );
+		}
+		if ( ! class_exists( 'EMCP_Tools_Cloud_Sync' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Cloud is unavailable.', 'emcp-tools' ) ) );
+		}
+		$res = EMCP_Tools_Cloud_Sync::list_remote( $kind );
+		if ( is_wp_error( $res ) ) {
+			wp_send_json_error( array( 'message' => $res->get_error_message() ) );
+		}
+		$arts = ( is_array( $res ) && isset( $res['artifacts'] ) && is_array( $res['artifacts'] ) ) ? $res['artifacts'] : array();
+		$out  = array();
+		foreach ( $arts as $a ) {
+			$out[] = array(
+				'uuid'        => (string) ( $a['artifact_uuid'] ?? '' ),
+				'title'       => (string) ( $a['title'] ?? '' ),
+				'version'     => (int) ( $a['version'] ?? 1 ),
+				'origin'      => (string) ( $a['origin_site_uuid'] ?? '' ),
+				'origin_url'  => (string) ( $a['origin_site_url'] ?? '' ),
+				'origin_name' => (string) ( $a['origin_site_name'] ?? '' ),
+				'updated'     => (string) ( $a['updated_at'] ?? '' ),
+			);
+		}
+		wp_send_json_success(
+			array(
+				'artifacts' => $out,
+				'site'      => class_exists( 'EMCP_Tools_Cloud' ) ? EMCP_Tools_Cloud::site_uuid() : '',
+			)
+		);
+	}
+
+	/**
+	 * Pull one cloud artifact into this site as a new inactive draft. AJAX.
+	 * Delegates to EMCP_Tools_Cloud_Sync::pull() (imports the portable bundle).
+	 */
+	public function ajax_cloud_import(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Forbidden.', 'emcp-tools' ) ), 403 );
+		}
+		$kind = isset( $_POST['kind'] ) ? sanitize_key( wp_unslash( $_POST['kind'] ) ) : '';
+		$na   = self::cloud_nonce_action( $kind );
+		if ( '' === $na || ! check_ajax_referer( $na, 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'emcp-tools' ) ), 403 );
+		}
+		$uuid = isset( $_POST['uuid'] ) ? sanitize_text_field( wp_unslash( $_POST['uuid'] ) ) : '';
+		if ( '' === $uuid || ! class_exists( 'EMCP_Tools_Cloud_Sync' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Nothing to import.', 'emcp-tools' ) ) );
+		}
+		$res = EMCP_Tools_Cloud_Sync::pull( $uuid, $kind );
+		if ( is_wp_error( $res ) ) {
+			wp_send_json_error( array( 'message' => $res->get_error_message() ) );
+		}
+		wp_send_json_success(
+			array(
+				'id'      => (int) ( $res['id'] ?? 0 ),
+				'message' => __( 'Imported as a new inactive draft.', 'emcp-tools' ),
+			)
+		);
 	}
 
 	/** Push an update to an already-published marketplace listing. AJAX. */
@@ -1760,6 +1897,13 @@ class EMCP_Tools_Admin {
 		$sb_js = EMCP_TOOLS_DIR . 'assets/js/sandbox-cloud.js';
 		if ( file_exists( $sb_js ) ) {
 			wp_enqueue_script( 'emcp-tools-sandbox-cloud', EMCP_TOOLS_URL . 'assets/js/sandbox-cloud.js', array(), (string) filemtime( $sb_js ), true );
+		}
+
+		// Cloud Library: lazy list + import of the workspace's cloud artifacts
+		// (no-op unless the page renders a .emcp-cloud-lib panel).
+		$cl_js = EMCP_TOOLS_DIR . 'assets/js/cloud-library.js';
+		if ( file_exists( $cl_js ) ) {
+			wp_enqueue_script( 'emcp-tools-cloud-library', EMCP_TOOLS_URL . 'assets/js/cloud-library.js', array(), (string) filemtime( $cl_js ), true );
 		}
 
 		wp_localize_script(

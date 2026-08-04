@@ -85,6 +85,8 @@ $emcp_tools_sn_nonce = wp_create_nonce( 'emcp_tools_php_snippets' );
 			</form>
 		</details>
 
+		<?php echo EMCP_Tools_Admin::render_cloud_library( 'snippet' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built with esc_* internally. ?>
+
 		<details class="elementor-mcp-sn-add" style="margin: 14px 0;">
 			<summary style="cursor:pointer;font-weight:600;"><?php esc_html_e( '+ Add a snippet', 'emcp-tools' ); ?></summary>
 			<form class="elementor-mcp-sn-form" style="margin-top: 12px; max-width: 760px;">

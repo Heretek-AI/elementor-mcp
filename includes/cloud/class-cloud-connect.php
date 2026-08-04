@@ -183,6 +183,18 @@ class EMCP_Tools_Cloud_Connect {
 			return true;
 		}
 
+		// Serialization failed: another request holds the refresh lock and is
+		// still in-flight past our wait. Do NOT present our refresh token
+		// concurrently — the loser reuses a token the provider (Better Auth) has
+		// just rotated out, and reuse of a rotated refresh token trips its theft
+		// detection, which invalidates the ENTIRE token family and hard-forces a
+		// "Reconnect needed". Bail transiently instead: the in-flight winner will
+		// refresh, and the next request short-circuits on the fresh token.
+		// GET_LOCK auto-frees if the winner's connection dies, so this can't wedge.
+		if ( ! $locked ) {
+			return false;
+		}
+
 		$used_rt = (string) $c['refresh_token'];
 		$res     = EMCP_Tools_Cloud_Http::post_form(
 			EMCP_Tools_Cloud::base_url() . '/api/auth/oauth2/token',
@@ -252,8 +264,13 @@ class EMCP_Tools_Cloud_Connect {
 	 */
 	private static function db_lock( string $key, int $timeout ): bool {
 		global $wpdb;
+		// No DB to serialize on (unit tests / single-process CLI): there is no
+		// concurrency to guard, so treat the lock as acquired and let the refresh
+		// proceed. In real WordPress $wpdb is always present, so this branch never
+		// weakens the cross-request mutex — a genuine GET_LOCK timeout still
+		// returns false and makes refresh() bail without reusing a rotated token.
 		if ( ! is_object( $wpdb ) || ! method_exists( $wpdb, 'get_var' ) || ! method_exists( $wpdb, 'prepare' ) ) {
-			return false;
+			return true;
 		}
 		return '1' === (string) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, %d)', $key, $timeout ) );
 	}

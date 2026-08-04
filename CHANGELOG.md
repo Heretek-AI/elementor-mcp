@@ -2,6 +2,15 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.8.1]
+
+### Added
+- **Cloud Library — use your saved artifacts on any connected site.** Each Sandbox screen (Blocks / Widgets / PHP Snippets) gains a **Cloud Library** panel that lists every artifact of that kind saved to your EMCP Cloud account across *all* your connected sites, and imports one into the current site as a new inactive draft to review. This completes the cross-site half of Cloud sync — save on one site, browse and import on another. The **Import a bundle** and **Cloud Library** rows are now prominent cards instead of plain disclosure text.
+
+### Fixed
+- **Marketplace "Review it →" link went nowhere.** After installing a Marketplace item, the success notice's edit link had an empty target — the Sandbox artifact types have no standard WordPress post editor — so it just reloaded the page. It now opens the artifact's Sandbox management screen.
+- **Recurring "Reconnect needed" for EMCP Cloud (follow-up to 3.8.0).** Under heavy concurrency the token-refresh lock could time out and a second request would still present the just-rotated refresh token; the Cloud provider treats a reused refresh token as theft and invalidates the whole token family, so the next refresh failed and forced a reconnect roughly hourly. The plugin now never presents a refresh token when it cannot acquire the refresh lock — it defers to the in-flight refresh instead — closing the last rotation-race hole.
+
 ## [3.8.0]
 
 ### Added

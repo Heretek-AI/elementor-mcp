@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.8.0
+Stable tag: 3.8.1
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,12 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.8.1 =
+Cloud Library — browse and import your saved artifacts on any connected site — plus two reliability fixes.
+* Added: Cloud Library. Each Sandbox screen (Blocks / Widgets / PHP Snippets) gains a Cloud Library panel that lists every artifact of that kind saved to your EMCP Cloud account across all your connected sites, and imports one into this site as a new inactive draft to review — completing the cross-site half of Cloud sync. The Import-a-bundle and Cloud Library rows are now prominent cards.
+* Fixed: the Marketplace "Review it" link after installing an item no longer just reloads the page — it opens the artifact's Sandbox management screen.
+* Fixed: recurring "Reconnect needed" for EMCP Cloud (follow-up to 3.8.0). Under heavy concurrency the refresh lock could time out and a second request would still present the just-rotated refresh token, which the provider treats as reuse and invalidates the whole token family. The plugin now never presents a refresh token when it can't acquire the refresh lock, closing the last rotation-race hole.
 
 = 3.8.0 =
 EMCP Cloud — back up, sync, and share your work — plus OAuth/connector reliability fixes and Forminator support.

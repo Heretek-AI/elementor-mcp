@@ -180,6 +180,7 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 Fixes a fatal error when activating Elementor after EMCP Tools, plus OAuth token/client housekeeping.
 * Fixed: activating Elementor after EMCP Tools no longer triggers a fatal error. Elementor's activation creates its default kit before its document manager is ready; the EMCP search indexer now skips cleanly until Elementor is fully initialized instead of dereferencing a null manager (#105).
 * Fixed: OAuth housekeeping. Expired tokens are now purged on a schedule (they previously accumulated indefinitely); repeat connections from an MCP client reuse their existing client registration instead of creating a new row every time; orphaned registrations are pruned after a grace period; and the OAuth timestamp columns are now 2038-safe.
+* Fixed: connection reliability. On sites with error display enabled, a stray PHP notice printed into an MCP/OAuth JSON response could corrupt it and drop the connection. The MCP and OAuth routes now force on-screen error display off for the request (errors still log), so the JSON response is always clean.
 
 = 3.8.1 =
 Cloud Library — browse and import your saved artifacts on any connected site — plus two reliability fixes.

@@ -21,6 +21,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 class EMCP_Tools_Data {
 
 	/**
+	 * Whether Elementor's document manager is available.
+	 *
+	 * False during Elementor's own activation/early boot (before its `init`
+	 * builds `\Elementor\Plugin::$instance->documents`). Callers must check this
+	 * before touching the document manager to avoid a null-deref fatal (#105).
+	 *
+	 * @since 3.8.2
+	 *
+	 * @return bool
+	 */
+	public static function elementor_documents_ready(): bool {
+		if ( ! class_exists( '\\Elementor\\Plugin' ) ) {
+			return false;
+		}
+		$instance = \Elementor\Plugin::$instance;
+		if ( ! $instance ) {
+			return false;
+		}
+		// `?? null` tolerates the property being unset/null during activation.
+		return (bool) ( $instance->documents ?? null );
+	}
+
+	/**
 	 * Gets the Elementor document for a post.
 	 *
 	 * @since 1.0.0
@@ -29,6 +52,18 @@ class EMCP_Tools_Data {
 	 * @return \Elementor\Core\Base\Document|\WP_Error The document instance or WP_Error.
 	 */
 	public function get_document( int $post_id ) {
+		// Elementor's document manager is built during its `init`, not during
+		// activation. When Elementor is being activated it inserts its default
+		// kit (a save_post that reaches our indexer) before that manager exists —
+		// dereferencing `->documents->get()` then would fatal. Guard for it and
+		// return a WP_Error the callers already handle (#105).
+		if ( ! self::elementor_documents_ready() ) {
+			return new \WP_Error(
+				'elementor_not_ready',
+				__( 'Elementor is not fully initialized yet.', 'emcp-tools' )
+			);
+		}
+
 		$document = \Elementor\Plugin::$instance->documents->get( $post_id );
 
 		if ( ! $document ) {

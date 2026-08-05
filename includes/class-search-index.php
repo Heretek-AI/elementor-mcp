@@ -331,6 +331,13 @@ class EMCP_Tools_Search_Index {
 		if ( (int) get_option( self::DB_VERSION_OPTION, 0 ) < self::DB_VERSION ) {
 			return;
 		}
+		// Elementor inserts its default kit during its OWN activation (a save_post
+		// that lands here) before its document manager exists — indexing then would
+		// dereference a null manager and fatal on activation (#105). Skip until
+		// Elementor is fully initialized; the reindex tool covers anything missed.
+		if ( class_exists( 'EMCP_Tools_Data' ) && ! EMCP_Tools_Data::elementor_documents_ready() ) {
+			return;
+		}
 		$ptype = $post && isset( $post->post_type ) ? $post->post_type : ( function_exists( 'get_post_type' ) ? get_post_type( $post_id ) : '' );
 		if ( 'elementor_library' === $ptype ) {
 			self::index_post_ids( array( $post_id ), 'template' );

@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.8.1
+Stable tag: 3.8.2
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,10 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.8.2 =
+Fixes a fatal error when activating Elementor after EMCP Tools on a fresh site.
+* Fixed: activating Elementor after EMCP Tools no longer triggers a fatal error. Elementor's activation creates its default kit before its document manager is ready; the EMCP search indexer now detects that and skips cleanly until Elementor is fully initialized, instead of dereferencing a null manager (#105).
 
 = 3.8.1 =
 Cloud Library — browse and import your saved artifacts on any connected site — plus two reliability fixes.

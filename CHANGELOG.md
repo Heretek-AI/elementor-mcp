@@ -2,6 +2,11 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.8.2]
+
+### Fixed
+- **Fatal error when activating Elementor after EMCP Tools.** On a fresh site — install and activate EMCP Tools, then install and activate Elementor — Elementor's activation creates its default kit *before* its document manager is ready. That reached the EMCP search indexer, which dereferenced the not-yet-built manager and fataled the whole activation (#105). The indexer now detects that Elementor isn't fully initialized and skips cleanly instead of crashing.
+
 ## [3.8.1]
 
 ### Added

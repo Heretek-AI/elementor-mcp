@@ -2,6 +2,12 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.8.2]
+
+### Fixed
+- **Fatal error when activating Elementor after EMCP Tools.** On a fresh site — install and activate EMCP Tools, then install and activate Elementor — Elementor's activation creates its default kit *before* its document manager is ready. That reached the EMCP search indexer, which dereferenced the not-yet-built manager and fataled the whole activation (#105). The indexer now detects that Elementor isn't fully initialized and skips cleanly instead of crashing.
+- **OAuth housekeeping — expired tokens and orphaned client registrations were never cleaned up.** The token garbage-collector existed but was never scheduled, so expired access/refresh tokens accumulated indefinitely; it now runs on a daily cron plus an opportunistic once-a-day pass so low-traffic sites still clean up. Repeated connections from an MCP client (which re-register on every connect) no longer add a new client row each time — an existing registration with the same name and redirect URIs is reused — and leftover token-less client rows are pruned after a grace period. The OAuth timestamp columns were widened to be 2038-safe and the refresh-token chain is now indexed.
+
 ## [3.8.1]
 
 ### Added

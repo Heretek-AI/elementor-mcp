@@ -26,7 +26,6 @@ class EMCP_Tools_OAuth_Server {
 	const REST_NAMESPACE = 'emcp-tools/oauth/v1';
 	const SCOPE          = 'mcp';
 	const GC_HOOK        = 'emcp_tools_oauth_gc';
-	const GC_TRANSIENT   = 'emcp_tools_oauth_gc_ran';
 
 	/**
 	 * Wire hooks. Called from the bootstrap.
@@ -45,18 +44,15 @@ class EMCP_Tools_OAuth_Server {
 		}
 		EMCP_Tools_OAuth_Store::maybe_install();
 
-		// Housekeeping: purge expired tokens + orphan client rows. A daily cron
-		// covers hosts with reliable WP-Cron; a transient-throttled opportunistic
-		// run (once/day, on the first request after the window) covers low-traffic
-		// sites where WP-Cron rarely spawns. Runs even when the toggle is off so
-		// leftover tokens from a previous enable still get cleaned up.
+		// Housekeeping: purge expired tokens + orphan client rows. The primary
+		// path is "clean at validation time" — EMCP_Tools_OAuth_Store::gc_throttled()
+		// runs from the bearer callback on OAuth-authenticated MCP traffic (see
+		// EMCP_Tools_OAuth_Bearer), so an active site stays tidy within minutes. A
+		// daily WP-Cron is the backstop for sites with traffic but little MCP use.
+		// Runs even when the toggle is off so leftover tokens still get cleaned.
 		add_action( self::GC_HOOK, array( 'EMCP_Tools_OAuth_Store', 'gc' ) );
 		if ( ! wp_next_scheduled( self::GC_HOOK ) ) {
 			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', self::GC_HOOK );
-		}
-		if ( ! get_transient( self::GC_TRANSIENT ) ) {
-			set_transient( self::GC_TRANSIENT, 1, DAY_IN_SECONDS );
-			EMCP_Tools_OAuth_Store::gc();
 		}
 
 		if ( ! self::is_enabled() ) {

@@ -34,6 +34,11 @@ class EMCP_Tools_OAuth_Bearer {
 		$token = self::bearer_token( $request );
 
 		if ( '' !== $token ) {
+			// Clean at validation time: an OAuth-authenticated MCP request is the
+			// natural, high-frequency point to purge expired tokens/orphans. Kept
+			// throttled so it is not a DELETE per request; this keeps the tables
+			// tidy on active sites within minutes, not waiting on a daily WP-Cron.
+			EMCP_Tools_OAuth_Store::gc_throttled();
 			$row = EMCP_Tools_OAuth_Store::find_token( $token, 'access' );
 			if ( null !== $row ) {
 				wp_set_current_user( (int) $row['user_id'] );

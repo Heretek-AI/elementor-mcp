@@ -25,6 +25,10 @@ class EMCP_Tools_OAuth_Store {
 	// finishes authorizing, so orphan-client pruning only touches rows older
 	// than this grace window.
 	const ORPHAN_CLIENT_GRACE = DAY_IN_SECONDS;
+	// Throttle for gc_throttled(): the shortest gap between sweeps when gc is
+	// driven from a hot path (bearer validation on every MCP request).
+	const GC_THROTTLE_OPTION   = 'emcp_tools_oauth_gc_throttle';
+	const GC_THROTTLE_INTERVAL = 900; // 15 min
 	// Authorization-code lifetime. Kept short per the OAuth spec (RFC 6749
 	// §4.1.2 recommends a maximum of ~10 min), but generous enough for CLI MCP
 	// clients that print the URL and require a manual copy-paste of the code
@@ -397,5 +401,24 @@ class EMCP_Tools_OAuth_Store {
 				$now - self::ORPHAN_CLIENT_GRACE
 			) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		);
+	}
+
+	/**
+	 * Run gc() at most once per interval (transient-guarded), so it can be called
+	 * cheaply from a hot path — bearer validation on every MCP request — without a
+	 * DELETE per request. This is the "clean at validation time" path: any site
+	 * actively serving MCP traffic sweeps expired tokens/orphans within the
+	 * interval, independent of WP-Cron reliability. Returns whether it swept.
+	 *
+	 * @param int $interval Minimum seconds between sweeps.
+	 * @return bool
+	 */
+	public static function gc_throttled( int $interval = self::GC_THROTTLE_INTERVAL ): bool {
+		if ( get_transient( self::GC_THROTTLE_OPTION ) ) {
+			return false;
+		}
+		set_transient( self::GC_THROTTLE_OPTION, 1, max( 60, $interval ) );
+		self::gc();
+		return true;
 	}
 }

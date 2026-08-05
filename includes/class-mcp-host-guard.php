@@ -54,6 +54,31 @@ class EMCP_Tools_MCP_Host_Guard {
 		return 0 === strpos( $route, '/mcp/emcp-tools-server' );
 	}
 
+	/** Whether a REST route is (under) the EMCP OAuth namespace. */
+	public static function is_oauth_route( string $route ): bool {
+		return 0 === strpos( $route, '/emcp-tools/oauth/' );
+	}
+
+	/**
+	 * Guarantee a clean JSON body on our MCP + OAuth routes by forcing PHP's
+	 * display_errors OFF for the request. A stray notice/warning printed into the
+	 * response — e.g. WordPress's own `_doing_it_wrong` HTML for a not-yet-
+	 * registered ability, or any deprecation notice from another plugin — corrupts
+	 * the JSON-RPC / OAuth JSON, and the client drops the connection ("OAuth
+	 * connection terminated"). This runs regardless of WP_DEBUG_DISPLAY; errors
+	 * still go to the log. rest_pre_dispatch fires before the route callback and
+	 * response serialization, so this covers where such output would land.
+	 *
+	 * @param string $route Requested REST route.
+	 * @return void
+	 */
+	private static function harden_json_output( string $route ): void {
+		if ( self::is_mcp_route( $route ) || self::is_oauth_route( $route ) ) {
+			// phpcs:ignore WordPress.PHP.IniSet.display_errors_Disallowed -- deliberately silencing on-screen errors so they cannot corrupt this JSON response; they still log.
+			@ini_set( 'display_errors', '0' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		}
+	}
+
 	/**
 	 * rest_pre_serve_request filter — tell LiteSpeed / proxies not to cache or
 	 * buffer MCP responses (the leading suspect for intermittent "connector isn't
@@ -86,7 +111,10 @@ class EMCP_Tools_MCP_Host_Guard {
 		if ( ! is_object( $request ) || ! method_exists( $request, 'get_route' ) ) {
 			return $result;
 		}
-		if ( ! self::is_mcp_route( (string) $request->get_route() ) ) {
+		$route = (string) $request->get_route();
+		// Keep our JSON responses clean on both MCP and OAuth routes.
+		self::harden_json_output( $route );
+		if ( ! self::is_mcp_route( $route ) ) {
 			return $result;
 		}
 		/**

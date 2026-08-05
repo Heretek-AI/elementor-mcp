@@ -19,8 +19,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class EMCP_Tools_OAuth_Store {
 
-	const DB_VERSION        = 1;
+	const DB_VERSION        = 2; // v2: BIGINT timestamps (2038-safe) + refresh_of index.
 	const DB_VERSION_OPTION = 'emcp_tools_oauth_db_version';
+	// A freshly-registered client legitimately has no tokens until the user
+	// finishes authorizing, so orphan-client pruning only touches rows older
+	// than this grace window.
+	const ORPHAN_CLIENT_GRACE = DAY_IN_SECONDS;
 	// Authorization-code lifetime. Kept short per the OAuth spec (RFC 6749
 	// §4.1.2 recommends a maximum of ~10 min), but generous enough for CLI MCP
 	// clients that print the URL and require a manual copy-paste of the code
@@ -75,7 +79,7 @@ class EMCP_Tools_OAuth_Store {
 					client_name VARCHAR(191) NOT NULL,
 					redirect_uris TEXT NOT NULL,
 					created_by BIGINT UNSIGNED NOT NULL DEFAULT 0,
-					created_at INT NOT NULL,
+					created_at BIGINT NOT NULL,
 					PRIMARY KEY (client_id)
 				) {$charset};"
 			);
@@ -87,14 +91,15 @@ class EMCP_Tools_OAuth_Store {
 					client_id VARCHAR(64) NOT NULL,
 					user_id BIGINT UNSIGNED NOT NULL,
 					scopes VARCHAR(191) NOT NULL DEFAULT '',
-					expires_at INT NOT NULL,
+					expires_at BIGINT NOT NULL,
 					refresh_of BIGINT UNSIGNED NULL DEFAULT NULL,
-					created_at INT NOT NULL,
+					created_at BIGINT NOT NULL,
 					PRIMARY KEY (id),
 					UNIQUE KEY token_hash (token_hash),
 					KEY client_id (client_id),
 					KEY user_id (user_id),
-					KEY expires_at (expires_at)
+					KEY expires_at (expires_at),
+					KEY refresh_of (refresh_of)
 				) {$charset};"
 			);
 		}
@@ -115,8 +120,20 @@ class EMCP_Tools_OAuth_Store {
 	 */
 	public static function create_client( string $name, array $redirect_uris, int $user_id = 0 ): array {
 		global $wpdb;
+		$uris = array_values( array_unique( array_filter( array_map( 'strval', $redirect_uris ) ) ) );
+
+		// Reuse an existing public client with the same name + redirect URIs
+		// instead of minting a fresh row on every connect. MCP clients (Claude,
+		// Codex) re-run Dynamic Client Registration each time they connect; without
+		// this the clients table grows unbounded (one dead row per connect). These
+		// are public PKCE clients (no secret), and tokens are bound to the
+		// authorizing user, so sharing a client_id across connects is safe.
+		$existing = self::find_client_by_registration( $name, $uris );
+		if ( $existing ) {
+			return $existing;
+		}
+
 		$client_id = EMCP_Tools_OAuth_Util::generate_client_id();
-		$uris      = array_values( array_unique( array_filter( array_map( 'strval', $redirect_uris ) ) ) );
 
 		$wpdb->insert(
 			self::clients_table(),
@@ -135,6 +152,27 @@ class EMCP_Tools_OAuth_Store {
 			'client_name'   => $name,
 			'redirect_uris' => $uris,
 		);
+	}
+
+	/**
+	 * Find an existing client whose name + normalized redirect URIs match a
+	 * registration request, so repeat DCR from the same MCP client reuses it.
+	 *
+	 * @param string   $name Client name.
+	 * @param string[] $uris Normalized (unique, filtered) redirect URIs.
+	 * @return array{client_id:string,client_name:string,redirect_uris:string[]}|null
+	 */
+	public static function find_client_by_registration( string $name, array $uris ): ?array {
+		global $wpdb;
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT client_id FROM ' . self::clients_table() . ' WHERE client_name = %s AND redirect_uris = %s LIMIT 1',
+				mb_substr( $name, 0, 191 ),
+				(string) wp_json_encode( $uris )
+			),
+			ARRAY_A
+		);
+		return $row ? self::get_client( (string) $row['client_id'] ) : null;
 	}
 
 	/**
@@ -335,10 +373,29 @@ class EMCP_Tools_OAuth_Store {
 	}
 
 	/**
-	 * Delete expired tokens (housekeeping).
+	 * Housekeeping: delete expired tokens, then delete orphan client rows (no
+	 * tokens and older than the grace window). Runs on the daily cron and
+	 * opportunistically; idempotent.
 	 */
 	public static function gc(): void {
 		global $wpdb;
-		$wpdb->query( $wpdb->prepare( 'DELETE FROM ' . self::tokens_table() . ' WHERE expires_at < %d', time() ) );
+		$now     = time();
+		$clients = self::clients_table();
+		$tokens  = self::tokens_table();
+
+		// 1) Expired access/refresh tokens.
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$tokens} WHERE expires_at < %d", $now ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		// 2) Orphan clients — repeat DCR (or an abandoned registration retry)
+		// leaves token-less rows; drop those older than the grace window. A
+		// just-registered client is protected until it finishes authorizing.
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE c FROM {$clients} c
+				 LEFT JOIN {$tokens} t ON t.client_id = c.client_id
+				 WHERE t.id IS NULL AND c.created_at < %d",
+				$now - self::ORPHAN_CLIENT_GRACE
+			) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		);
 	}
 }

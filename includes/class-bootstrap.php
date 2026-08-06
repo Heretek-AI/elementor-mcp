@@ -244,6 +244,7 @@ class EMCP_Tools_Bootstrap {
 		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-atomic-layout-abilities.php';
 		// Global Classes (Class Manager) reader — self-gates on Elementor 4.0+.
 		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-global-classes-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-global-classes-write-abilities.php';
 		// Background library refresh.
 		require_once EMCP_TOOLS_DIR . 'includes/class-library-refresher.php';
 		// Modules framework (free) + built-in modules. The registry boots active

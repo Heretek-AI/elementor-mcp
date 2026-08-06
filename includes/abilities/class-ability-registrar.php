@@ -495,6 +495,13 @@ class EMCP_Tools_Ability_Registrar {
 				$this->ability_names = array_merge( $this->ability_names, $global_classes->get_ability_names() );
 			}
 
+			// Global Classes writer (create/update/delete) — self-gates on 4.0+.
+			if ( class_exists( 'EMCP_Tools_Global_Classes_Write_Abilities' ) ) {
+				$global_classes_write = new EMCP_Tools_Global_Classes_Write_Abilities();
+				$global_classes_write->register();
+				$this->ability_names = array_merge( $this->ability_names, $global_classes_write->get_ability_names() );
+			}
+
 			// Brand kit / system-kit (Pro; self-guards on license).
 			if ( class_exists( 'EMCP_Tools_System_Kit_Abilities' ) ) {
 				$brand_kits = new EMCP_Tools_System_Kit_Abilities();

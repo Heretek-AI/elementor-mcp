@@ -1,0 +1,436 @@
+<?php
+/**
+ * Global Classes (Class Manager) WRITE abilities — Elementor 4.0+.
+ *
+ * The read counterpart (`list-global-classes`) resolves the opaque `g-` class IDs
+ * back to names + CSS. These tools let an agent AUTHOR the design system: create a
+ * new `g-` class with styles, update its label/styles, or delete it (GitHub #108).
+ *
+ * Writes go through Elementor's own repository — read the full class set with
+ * `Global_Classes_Repository::make()->all()`, mutate the id→item map, then
+ * `put($items, $order)` (Elementor computes the add/modify/delete diff and handles
+ * relations + usage cleanup). Each class stores one or more variants
+ * `{ meta:{breakpoint,state}, props:{ css-prop: $$type } }`; props are the atomic
+ * typed props our atomic tools already build (`EMCP_Tools_Atomic_Styles` /
+ * `EMCP_Tools_Atomic_Props`), so callers pass friendly flat `styles` (background,
+ * color, padding, margin, border-radius, flex…) plus a raw `props` escape hatch.
+ *
+ * Registers only when Elementor's Global Classes repository is present (4.0+).
+ * Writes gated on Elementor's own `elementor_global_classes_update_class`
+ * capability (administrator), falling back to `manage_options`. All three tools
+ * ship disabled-by-default; `delete-global-class` also requires `confirm:true`.
+ *
+ * @package EMCP_Tools
+ * @since   3.9.0
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Create / update / delete Elementor Global Classes over MCP.
+ */
+class EMCP_Tools_Global_Classes_Write_Abilities {
+
+	const REPOSITORY  = '\\Elementor\\Modules\\GlobalClasses\\Global_Classes_Repository';
+	const UPDATE_CAP  = 'elementor_global_classes_update_class';
+
+	/** Elementor v4 breakpoint ids a variant may target. */
+	const BREAKPOINTS = array( 'desktop', 'widescreen', 'laptop', 'tablet_extra', 'tablet', 'mobile_extra', 'mobile' );
+
+	/**
+	 * @return bool Whether the Global Classes repository is available (4.0+).
+	 */
+	public static function is_available(): bool {
+		return class_exists( 'EMCP_Tools_Global_Classes_Abilities' )
+			? EMCP_Tools_Global_Classes_Abilities::is_available()
+			: class_exists( self::REPOSITORY );
+	}
+
+	/**
+	 * @return string[]
+	 */
+	public function get_ability_names(): array {
+		return self::is_available()
+			? array( 'emcp-tools/create-global-class', 'emcp-tools/update-global-class', 'emcp-tools/delete-global-class' )
+			: array();
+	}
+
+	/**
+	 * Register the three write abilities.
+	 */
+	public function register(): void {
+		if ( ! self::is_available() ) {
+			return;
+		}
+
+		$styles_schema = array(
+			'type'        => 'object',
+			'description' => __( 'Friendly flat styles, mapped to Elementor atomic props: background_color, color, width, min_height, border_radius, padding|padding_top|padding_right|padding_bottom|padding_left, margin(+ per-side), direction, justify, align, wrap, gap, row_gap, column_gap (each size accepts a <key>_unit). Anything not covered goes in "props".', 'emcp-tools' ),
+		);
+		$props_schema  = array(
+			'type'        => 'object',
+			'description' => __( 'Raw escape hatch: CSS-property => $$type-wrapped value (e.g. {"border-radius":{"$$type":"size","value":{"size":8,"unit":"px"}}}). Merged over the built styles.', 'emcp-tools' ),
+		);
+		$bp_schema     = array(
+			'type'        => 'string',
+			'enum'        => self::BREAKPOINTS,
+			'description' => __( 'Breakpoint this variant targets (default desktop). Call update per breakpoint to build responsive styles.', 'emcp-tools' ),
+		);
+		$state_schema  = array(
+			'type'        => 'string',
+			'description' => __( 'Optional state for this variant, e.g. hover, focus, active. Omit for the normal state.', 'emcp-tools' ),
+		);
+
+		emcp_tools_register_ability(
+			'emcp-tools/create-global-class',
+			array(
+				'label'               => __( 'Create Global Class', 'emcp-tools' ),
+				'description'         => __( 'Create an Elementor v4 Global Class (Class Manager) with a label and styles. Returns the new g- id to apply to elements. Pass friendly "styles" and/or raw "props"; optional breakpoint/state.', 'emcp-tools' ),
+				'category'            => 'emcp-tools',
+				'execute_callback'    => array( $this, 'execute_create_global_class' ),
+				'permission_callback' => array( $this, 'check_write_permission' ),
+				'input_schema'        => array(
+					'type'       => 'object',
+					'properties' => array(
+						'label'      => array( 'type' => 'string', 'description' => __( 'Human-readable class name, e.g. "card-base".', 'emcp-tools' ) ),
+						'styles'     => $styles_schema,
+						'props'      => $props_schema,
+						'breakpoint' => $bp_schema,
+						'state'      => $state_schema,
+					),
+					'required'   => array( 'label' ),
+				),
+				'meta'                => array( 'annotations' => array( 'destructive' => false, 'idempotent' => false ), 'show_in_rest' => true ),
+			)
+		);
+
+		emcp_tools_register_ability(
+			'emcp-tools/update-global-class',
+			array(
+				'label'               => __( 'Update Global Class', 'emcp-tools' ),
+				'description'         => __( 'Update a Global Class by g- id: change its label and/or merge styles/props into the variant for a breakpoint+state (replace_variant:true replaces that variant instead of merging).', 'emcp-tools' ),
+				'category'            => 'emcp-tools',
+				'execute_callback'    => array( $this, 'execute_update_global_class' ),
+				'permission_callback' => array( $this, 'check_write_permission' ),
+				'input_schema'        => array(
+					'type'       => 'object',
+					'properties' => array(
+						'id'              => array( 'type' => 'string', 'description' => __( 'The g- class id to update.', 'emcp-tools' ) ),
+						'label'           => array( 'type' => 'string', 'description' => __( 'New label (optional).', 'emcp-tools' ) ),
+						'styles'          => $styles_schema,
+						'props'           => $props_schema,
+						'breakpoint'      => $bp_schema,
+						'state'           => $state_schema,
+						'replace_variant' => array( 'type' => 'boolean', 'description' => __( 'Replace the target variant\'s props instead of merging into them.', 'emcp-tools' ) ),
+					),
+					'required'   => array( 'id' ),
+				),
+				'meta'                => array( 'annotations' => array( 'destructive' => false, 'idempotent' => false ), 'show_in_rest' => true ),
+			)
+		);
+
+		emcp_tools_register_ability(
+			'emcp-tools/delete-global-class',
+			array(
+				'label'               => __( 'Delete Global Class', 'emcp-tools' ),
+				'description'         => __( 'Delete a Global Class by g- id. Destructive — also removes the class from every element that uses it. Requires confirm:true.', 'emcp-tools' ),
+				'category'            => 'emcp-tools',
+				'execute_callback'    => array( $this, 'execute_delete_global_class' ),
+				'permission_callback' => array( $this, 'check_write_permission' ),
+				'input_schema'        => array(
+					'type'       => 'object',
+					'properties' => array(
+						'id'      => array( 'type' => 'string', 'description' => __( 'The g- class id to delete.', 'emcp-tools' ) ),
+						'confirm' => array( 'type' => 'boolean', 'description' => __( 'Must be true to delete.', 'emcp-tools' ) ),
+					),
+					'required'   => array( 'id' ),
+				),
+				'meta'                => array( 'annotations' => array( 'destructive' => true, 'idempotent' => false ), 'show_in_rest' => true ),
+			)
+		);
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function check_write_permission(): bool {
+		return current_user_can( self::UPDATE_CAP ) || current_user_can( 'manage_options' );
+	}
+
+	/**
+	 * @param array $input { label, styles?, props?, breakpoint?, state? }.
+	 * @return array|\WP_Error
+	 */
+	public function execute_create_global_class( $input ) {
+		if ( ! self::is_available() ) {
+			return $this->unavailable();
+		}
+		$label = sanitize_text_field( (string) ( $input['label'] ?? '' ) );
+		if ( '' === $label ) {
+			return new \WP_Error( 'missing_label', __( 'A "label" is required.', 'emcp-tools' ), array( 'status' => 400 ) );
+		}
+		$state = $this->read_state();
+		if ( is_wp_error( $state ) ) {
+			return $state;
+		}
+		list( $items, $order ) = $state;
+
+		$id = $this->mint_id( $items );
+		$items[ $id ] = array(
+			'id'       => $id,
+			'type'     => 'class',
+			'label'    => $label,
+			'variants' => array(
+				array(
+					'meta'  => $this->variant_meta( $input ),
+					'props' => $this->build_variant_props( $input ),
+				),
+			),
+		);
+		$order[] = $id;
+
+		$saved = $this->write_state( $items, $order );
+		if ( is_wp_error( $saved ) ) {
+			return $saved;
+		}
+		return array( 'id' => $id, 'label' => $label );
+	}
+
+	/**
+	 * @param array $input { id, label?, styles?, props?, breakpoint?, state?, replace_variant? }.
+	 * @return array|\WP_Error
+	 */
+	public function execute_update_global_class( $input ) {
+		if ( ! self::is_available() ) {
+			return $this->unavailable();
+		}
+		$id = sanitize_text_field( (string) ( $input['id'] ?? '' ) );
+		if ( '' === $id ) {
+			return new \WP_Error( 'missing_id', __( 'A class "id" is required.', 'emcp-tools' ), array( 'status' => 400 ) );
+		}
+		$state = $this->read_state();
+		if ( is_wp_error( $state ) ) {
+			return $state;
+		}
+		list( $items, $order ) = $state;
+		if ( ! isset( $items[ $id ] ) ) {
+			return new \WP_Error( 'not_found', sprintf( __( 'Global class not found: %s', 'emcp-tools' ), $id ), array( 'status' => 404 ) );
+		}
+
+		$item = (array) $items[ $id ];
+		if ( isset( $input['label'] ) ) {
+			$item['label'] = sanitize_text_field( (string) $input['label'] );
+		}
+
+		$has_styles = ( isset( $input['styles'] ) && is_array( $input['styles'] ) ) || ( isset( $input['props'] ) && is_array( $input['props'] ) );
+		if ( $has_styles ) {
+			$meta     = $this->variant_meta( $input );
+			$new_props = $this->build_variant_props( $input );
+			$variants = isset( $item['variants'] ) ? (array) $item['variants'] : array();
+			$idx      = $this->find_variant_index( $variants, $meta );
+			$replace  = ! empty( $input['replace_variant'] );
+			if ( null === $idx ) {
+				$variants[] = array( 'meta' => $meta, 'props' => $new_props );
+			} elseif ( $replace ) {
+				$variants[ $idx ]['props'] = $new_props;
+			} else {
+				$existing = isset( $variants[ $idx ]['props'] ) ? (array) $variants[ $idx ]['props'] : array();
+				$variants[ $idx ]['props'] = array_merge( $existing, $new_props );
+			}
+			$item['variants'] = array_values( $variants );
+		}
+
+		$items[ $id ] = $item;
+		$saved        = $this->write_state( $items, $order );
+		if ( is_wp_error( $saved ) ) {
+			return $saved;
+		}
+		return array( 'id' => $id, 'label' => (string) ( $item['label'] ?? '' ), 'variants' => count( (array) ( $item['variants'] ?? array() ) ) );
+	}
+
+	/**
+	 * @param array $input { id, confirm }.
+	 * @return array|\WP_Error
+	 */
+	public function execute_delete_global_class( $input ) {
+		if ( ! self::is_available() ) {
+			return $this->unavailable();
+		}
+		$id = sanitize_text_field( (string) ( $input['id'] ?? '' ) );
+		if ( '' === $id ) {
+			return new \WP_Error( 'missing_id', __( 'A class "id" is required.', 'emcp-tools' ), array( 'status' => 400 ) );
+		}
+		if ( empty( $input['confirm'] ) ) {
+			return new \WP_Error( 'confirm_required', __( 'Deleting a global class also removes it from every element using it. Pass confirm:true to proceed.', 'emcp-tools' ), array( 'status' => 400 ) );
+		}
+		$state = $this->read_state();
+		if ( is_wp_error( $state ) ) {
+			return $state;
+		}
+		list( $items, $order ) = $state;
+		if ( ! isset( $items[ $id ] ) ) {
+			return new \WP_Error( 'not_found', sprintf( __( 'Global class not found: %s', 'emcp-tools' ), $id ), array( 'status' => 404 ) );
+		}
+		unset( $items[ $id ] );
+		$order = array_values( array_filter( $order, static function ( $oid ) use ( $id ) {
+			return $oid !== $id;
+		} ) );
+
+		$saved = $this->write_state( $items, $order );
+		if ( is_wp_error( $saved ) ) {
+			return $saved;
+		}
+		return array( 'deleted' => $id );
+	}
+
+	// ── helpers ────────────────────────────────────────────────────────────────
+
+	/**
+	 * @return \WP_Error
+	 */
+	private function unavailable(): \WP_Error {
+		return new \WP_Error( 'unavailable', __( 'Global Classes are not available; Elementor 4.0+ is required.', 'emcp-tools' ), array( 'status' => 501 ) );
+	}
+
+	/**
+	 * A fresh repository instance.
+	 *
+	 * @return object
+	 */
+	private function repo() {
+		$repo = self::REPOSITORY;
+		return $repo::make();
+	}
+
+	/**
+	 * Read the current class set as [ id=>item map, order[] ].
+	 *
+	 * @return array|\WP_Error [ items, order ].
+	 */
+	private function read_state() {
+		try {
+			$repo  = $this->repo();
+			$all   = $repo->all();
+			$items = method_exists( $all, 'get_items' ) ? $all->get_items() : $all;
+			if ( is_object( $items ) && method_exists( $items, 'all' ) ) {
+				$items = $items->all();
+			}
+			$items = (array) $items;
+			// Normalize each item to an array.
+			foreach ( $items as $k => $v ) {
+				$items[ $k ] = (array) $v;
+			}
+			$order = (array) $repo->get_order();
+			if ( empty( $order ) ) {
+				$order = array_keys( $items );
+			}
+			return array( $items, array_values( $order ) );
+		} catch ( \Throwable $e ) {
+			return new \WP_Error( 'read_failed', $e->getMessage(), array( 'status' => 500 ) );
+		}
+	}
+
+	/**
+	 * Persist the class set to the frontend context, and best-effort to preview so
+	 * the editor reflects the change.
+	 *
+	 * @param array $items id=>item map.
+	 * @param array $order Ordered id list.
+	 * @return true|\WP_Error
+	 */
+	private function write_state( array $items, array $order ) {
+		try {
+			$this->repo()->put( $items, $order );
+		} catch ( \Throwable $e ) {
+			return new \WP_Error( 'write_failed', $e->getMessage(), array( 'status' => 500 ) );
+		}
+		try {
+			$preview = $this->repo();
+			if ( method_exists( $preview, 'set_preview' ) ) {
+				$preview->set_preview( true )->put( $items, $order );
+			}
+		} catch ( \Throwable $e ) {
+			// Preview mirror is best-effort; the frontend write is authoritative.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( '[EMCP Tools] global-class preview mirror failed: ' . $e->getMessage() );
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Build a variant's props from friendly `styles` + raw `props`.
+	 *
+	 * @param array $input Tool input.
+	 * @return array CSS prop => $$type map.
+	 */
+	private function build_variant_props( array $input ): array {
+		$styles = ( isset( $input['styles'] ) && is_array( $input['styles'] ) ) ? $input['styles'] : array();
+		$props  = array();
+		if ( ! empty( $styles ) && class_exists( 'EMCP_Tools_Atomic_Styles' ) ) {
+			$props = array_merge(
+				EMCP_Tools_Atomic_Styles::build_common_props( $styles ),
+				EMCP_Tools_Atomic_Styles::build_flex_props( $styles )
+			);
+		}
+		if ( isset( $input['props'] ) && is_array( $input['props'] ) ) {
+			// Raw escape hatch wins over built styles for the same key.
+			$props = array_merge( $props, $input['props'] );
+		}
+		return $props;
+	}
+
+	/**
+	 * The variant meta from input (validated breakpoint, optional state).
+	 *
+	 * @param array $input Tool input.
+	 * @return array { breakpoint, state }.
+	 */
+	private function variant_meta( array $input ): array {
+		$bp = isset( $input['breakpoint'] ) ? sanitize_key( (string) $input['breakpoint'] ) : 'desktop';
+		if ( ! in_array( $bp, self::BREAKPOINTS, true ) ) {
+			$bp = 'desktop';
+		}
+		$state = null;
+		if ( isset( $input['state'] ) && '' !== trim( (string) $input['state'] ) ) {
+			$state = preg_replace( '/[^a-z-]/', '', strtolower( (string) $input['state'] ) );
+			$state = '' !== $state ? $state : null;
+		}
+		return array( 'breakpoint' => $bp, 'state' => $state );
+	}
+
+	/**
+	 * Index of the variant matching a meta, or null.
+	 *
+	 * @param array $variants Variants.
+	 * @param array $meta     { breakpoint, state }.
+	 * @return int|null
+	 */
+	private function find_variant_index( array $variants, array $meta ): ?int {
+		foreach ( array_values( $variants ) as $i => $v ) {
+			$vm = (array) ( ( (array) $v )['meta'] ?? array() );
+			$bp = $vm['breakpoint'] ?? 'desktop';
+			$st = $vm['state'] ?? null;
+			if ( $bp === $meta['breakpoint'] && $st === $meta['state'] ) {
+				return $i;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Mint a unique g- class id not colliding with existing items.
+	 *
+	 * @param array $items Existing items.
+	 * @return string
+	 */
+	private function mint_id( array $items ): string {
+		do {
+			$id = 'g-' . substr( bin2hex( random_bytes( 4 ) ), 0, 7 );
+		} while ( isset( $items[ $id ] ) );
+		return $id;
+	}
+}

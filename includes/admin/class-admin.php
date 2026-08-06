@@ -995,7 +995,7 @@ class EMCP_Tools_Admin {
 	 *
 	 * @since 1.8.0
 	 */
-	const DEFAULTS_VERSION = 27;
+	const DEFAULTS_VERSION = 28;
 
 	/**
 	 * SEO/A11y Pro MCP tool slugs that ship disabled-by-default (v2 defaults).
@@ -1482,6 +1482,13 @@ class EMCP_Tools_Admin {
 		if ( $applied < 27 ) {
 			$add[] = 'emcp-tools/kadence-write';
 			$add[] = 'emcp-tools/kadence-blocks-write';
+		}
+
+		// v28 — Elementor v4 Global Class write tools disabled-by-default.
+		if ( $applied < 28 ) {
+			$add[] = 'emcp-tools/create-global-class';
+			$add[] = 'emcp-tools/update-global-class';
+			$add[] = 'emcp-tools/delete-global-class';
 		}
 
 		$merged = array_values( array_unique( array_merge( $existing, $add ) ) );
@@ -4958,6 +4965,21 @@ class EMCP_Tools_Admin {
 						'label'       => __( 'List Global Classes', 'emcp-tools' ),
 						'description' => __( 'Resolves Class Manager "g-" class IDs to their names and CSS properties.', 'emcp-tools' ),
 						'badges'      => array( 'read-only' ),
+					),
+					'emcp-tools/create-global-class'      => array(
+						'label'       => __( 'Create Global Class', 'emcp-tools' ),
+						'description' => __( 'Create an Elementor v4 Global Class with a label + styles; returns the new g- id.', 'emcp-tools' ),
+						'badges'      => array(),
+					),
+					'emcp-tools/update-global-class'      => array(
+						'label'       => __( 'Update Global Class', 'emcp-tools' ),
+						'description' => __( 'Update a Global Class label and/or its styles (per breakpoint/state).', 'emcp-tools' ),
+						'badges'      => array(),
+					),
+					'emcp-tools/delete-global-class'      => array(
+						'label'       => __( 'Delete Global Class', 'emcp-tools' ),
+						'description' => __( 'Delete a Global Class by g- id (also removes it from elements using it); requires confirm:true.', 'emcp-tools' ),
+						'badges'      => array( 'destructive' ),
 					),
 					'emcp-tools/add-flexbox'              => array(
 						'label'       => __( 'Add Flexbox', 'emcp-tools' ),

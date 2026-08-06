@@ -2,6 +2,16 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.9.0]
+
+### Added
+- **Kadence support — build pages with Kadence + Kadence Blocks over MCP.** A new Themes-tab integration for the Kadence theme and the Kadence Blocks plugin. Read and write the theme's design settings — the global 9-colour palette, typography, layout, buttons, and header/footer backgrounds (`kadence-read` / `kadence-write`, active when Kadence is the theme). Discover and inspect all 32 top-level Kadence blocks with their real attributes and defaults, then insert them (`kadence-blocks-read` / `kadence-blocks-write`). Best of all, **build whole sections from Kadence's Design Library patterns**: `list-patterns` browses the 350+ free patterns by category (Hero, Testimonials, Counter / Stats, Call to Action, Media & Text, …) and `insert-pattern` drops in Kadence's own professionally-designed, palette-matched markup — optionally downloading the pattern's images into your Media Library. The pattern route inserts Kadence's canonical block markup, so the result is fully editable in the block editor. Everything registers automatically when Kadence and/or Kadence Blocks are active; the write tools ship disabled-by-default. Ships with a new **emcp-kadence** agent skill.
+- **Write Elementor 4 Global Classes (#108).** The read-only Class Manager tool gains a write counterpart. `create-global-class`, `update-global-class`, and `delete-global-class` let an AI author your Elementor v4 design system — create a reusable `g-` class with styles (background, colour, padding, margin, border-radius, flex, …), merge or replace its styles per breakpoint and state, or delete it. Accepts friendly flat styles plus a raw props escape hatch, is gated on Elementor's own class-editing capability, and ships disabled-by-default (delete is confirm-gated).
+
+### Fixed
+- **Widget Builder media controls can now select audio and video (#107).** A media control in a generated custom widget defaulted to Elementor's image-only picker, so it could not choose an MP3/WAV (or a video). A control can now declare `media_types` — for example `["audio"]` — to open the correct Media Library filter, including for a media control nested inside a repeater. This also fixes the bundled Audio Player widget, whose audio-file control was opening the image library.
+- **Sandbox "Push update" now appears for older published artifacts.** A custom block, widget, or snippet that was published to the Marketplace before update-tracking existed showed "Up to date" forever, with no way to publish a new version. Such artifacts now correctly offer **Push update**, and the state self-heals after the first push.
+
 ## [3.8.2]
 
 ### Fixed

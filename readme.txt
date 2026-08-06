@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.8.2
+Stable tag: 3.9.0
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,13 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.9.0 =
+Kadence support (theme settings, blocks, and Design Library patterns), writing Elementor 4 Global Classes, and two fixes.
+* Added: Kadence support. A new Themes-tab integration for the Kadence theme and Kadence Blocks — read/write the theme's palette, typography, layout and buttons; discover and insert all 32 Kadence blocks; and build whole sections from Kadence's Design Library patterns (list-patterns / insert-pattern), which drop in Kadence's own palette-matched, fully-editable markup and can pull the pattern's images into your Media Library. Registers automatically when Kadence and/or Kadence Blocks are active; write tools disabled-by-default. Includes a new emcp-kadence agent skill.
+* Added: write Elementor 4 Global Classes (#108). create-global-class / update-global-class / delete-global-class let an AI author your v4 design system — create a reusable g- class with styles, update them per breakpoint/state, or delete it. Friendly flat styles plus a raw props escape hatch; gated on Elementor's own class-editing capability; disabled-by-default.
+* Fixed: Widget Builder media controls can now select audio and video (#107). Add media_types (e.g. ["audio"]) to a media control to open the right Media Library picker instead of Elementor's image-only default — including for a media control inside a repeater. Also fixes the bundled Audio Player widget.
+* Fixed: the Sandbox "Push update" button now appears for artifacts published before update-tracking existed (they previously showed "Up to date" forever); the state self-heals after the first push.
 
 = 3.8.2 =
 Fixes a fatal error when activating Elementor after EMCP Tools, plus OAuth token/client housekeeping.

@@ -504,7 +504,12 @@ class EMCP_Tools_Admin {
 		}
 		$pushed = (string) get_post_meta( $id, '_emcp_cloud_checksum', true );
 		if ( '' === $pushed ) {
-			return false; // unknown baseline → treat as unchanged
+			// No recorded baseline — e.g. the artifact was pushed/published before
+			// checksum tracking existed. We can't prove the content is unchanged,
+			// so allow an update rather than hide "Push update" forever. Pushing (or
+			// re-saving) records a fresh baseline via store_artifact_checksum(),
+			// which self-heals the state back to "Up to date".
+			return true;
 		}
 		return self::artifact_checksum( $kind, $id ) !== $pushed;
 	}

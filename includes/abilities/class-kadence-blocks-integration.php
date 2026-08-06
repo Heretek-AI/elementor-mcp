@@ -140,6 +140,7 @@ class EMCP_Tools_Kadence_Blocks_Integration extends EMCP_Tools_Theme_Integration
 			'added'     => $name,
 			'unique_id' => $block['attrs']['uniqueID'],
 			'post_id'   => $post_id,
+			'note'      => __( 'Renders correctly on the front end. Kadence blocks use a static JS save(), so the block editor may show "Attempt recovery" on this block — one click regenerates valid markup and preserves the content.', 'emcp-tools' ),
 		);
 	}
 
@@ -235,7 +236,8 @@ class EMCP_Tools_Kadence_Blocks_Integration extends EMCP_Tools_Theme_Integration
 			$entry['structure_note'] = $structure['note'];
 		}
 
-		$entry['example'] = $this->example_markup( $name );
+		$entry['example']     = $this->example_markup( $name );
+		$entry['editor_note'] = __( 'Kadence blocks use a static JS save(), so a headlessly-inserted block renders correctly on the front end but the block editor may flag it "Attempt recovery" (one click regenerates valid markup, content preserved).', 'emcp-tools' );
 
 		if ( $full ) {
 			$entry['full_attributes'] = $real;

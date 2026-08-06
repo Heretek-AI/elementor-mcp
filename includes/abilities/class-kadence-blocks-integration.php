@@ -68,6 +68,18 @@ class EMCP_Tools_Kadence_Blocks_Integration extends EMCP_Tools_Theme_Integration
 				'perm' => array( $this, 'can_write' ),
 				'desc' => __( 'Insert a Kadence block into a post ({ post_id, block, attributes?, position? }); a uniqueID is generated and container inner blocks (columns, buttons, list items) are scaffolded. position: { mode: append|prepend|before|after|inside, path?: [..] }.', 'emcp-tools' ),
 			),
+			'list-patterns'    => array(
+				'mode' => 'read',
+				'run'  => array( $this, 'execute_list_patterns' ),
+				'perm' => array( $this, 'can_read' ),
+				'desc' => __( 'List Kadence Design Library patterns (professionally-designed, editor-VALID sections). Optional { category (e.g. Hero, Testimonials, "Counter or Stats", "Call to Action", "Media and Text"), search, include_pro }. Call { categories: true } to list category names. PREFER a pattern over hand-building a whole section.', 'emcp-tools' ),
+			),
+			'insert-pattern'   => array(
+				'mode' => 'write',
+				'run'  => array( $this, 'execute_insert_pattern' ),
+				'perm' => array( $this, 'can_write' ),
+				'desc' => __( 'Insert a Kadence Design Library pattern into a post by id ({ post_id, pattern, position?, localize_images? }). Inserts Kadence\'s own canonical block markup (editor-valid, palette-harmonized). localize_images:true downloads the pattern images into the Media Library (needs upload_files). Patterns ship with placeholder copy — edit the headings/text (RichText) afterward.', 'emcp-tools' ),
+			),
 		);
 	}
 
@@ -141,6 +153,78 @@ class EMCP_Tools_Kadence_Blocks_Integration extends EMCP_Tools_Theme_Integration
 			'unique_id' => $block['attrs']['uniqueID'],
 			'post_id'   => $post_id,
 			'note'      => __( 'Renders correctly on the front end. Kadence blocks use a static JS save(), so the block editor may show "Attempt recovery" on this block — one click regenerates valid markup and preserves the content.', 'emcp-tools' ),
+		);
+	}
+
+	/**
+	 * @param array $input { category?, search?, include_pro?, categories? }.
+	 * @return array|WP_Error
+	 */
+	public function execute_list_patterns( $input ) {
+		if ( ! EMCP_Tools_Kadence_Pattern_Library::is_available() ) {
+			return new WP_Error( 'kadence_library_unavailable', __( 'The Kadence Prebuilt Library is not available on this site.', 'emcp-tools' ), array( 'status' => 501 ) );
+		}
+		if ( ! empty( $input['categories'] ) ) {
+			// Category discovery lists all category names by default (incl. pro).
+			$include_pro = array_key_exists( 'include_pro', $input ) ? ! empty( $input['include_pro'] ) : true;
+			return array( 'categories' => EMCP_Tools_Kadence_Pattern_Library::categories( $include_pro ) );
+		}
+		$category    = isset( $input['category'] ) ? (string) $input['category'] : '';
+		$search      = isset( $input['search'] ) ? (string) $input['search'] : '';
+		$include_pro = ! empty( $input['include_pro'] );
+		$patterns    = EMCP_Tools_Kadence_Pattern_Library::list_patterns( $category, $search, $include_pro );
+		$out         = array(
+			'count'    => count( $patterns ),
+			'patterns' => $patterns,
+		);
+		if ( empty( $patterns ) && empty( EMCP_Tools_Kadence_Pattern_Library::raw_catalog() ) ) {
+			$out['note'] = __( 'The pattern catalog is empty. Open Kadence → Design Library once (any block editor) to populate the local pattern cache, then retry.', 'emcp-tools' );
+		}
+		return $out;
+	}
+
+	/**
+	 * @param array $input { post_id, pattern, position?, localize_images? }.
+	 * @return array|WP_Error
+	 */
+	public function execute_insert_pattern( $input ) {
+		$post_id = absint( $input['post_id'] ?? 0 );
+		$pattern = (string) ( $input['pattern'] ?? '' );
+
+		$post = $post_id ? get_post( $post_id ) : null;
+		if ( ! $post ) {
+			return new WP_Error( 'not_found', __( 'Post not found.', 'emcp-tools' ), array( 'status' => 404 ) );
+		}
+		if ( '' === $pattern ) {
+			return new WP_Error( 'missing_pattern', __( 'Provide a "pattern" id (from list-patterns).', 'emcp-tools' ), array( 'status' => 400 ) );
+		}
+
+		$markup = EMCP_Tools_Kadence_Pattern_Library::get_markup( $pattern, ! empty( $input['localize_images'] ) );
+		if ( is_wp_error( $markup ) ) {
+			return $markup;
+		}
+
+		$new_blocks = array_values( array_filter( parse_blocks( (string) $markup ), static function ( $b ) {
+			return ! empty( $b['blockName'] );
+		} ) );
+		if ( empty( $new_blocks ) ) {
+			return new WP_Error( 'empty_pattern', __( 'The pattern produced no blocks.', 'emcp-tools' ), array( 'status' => 422 ) );
+		}
+
+		$position = ( isset( $input['position'] ) && is_array( $input['position'] ) ) ? $input['position'] : array( 'mode' => 'append' );
+		$tree     = EMCP_Tools_Block_Tree::from_markup( (string) $post->post_content );
+		$tree     = EMCP_Tools_Block_Tree::insert( $tree, $new_blocks, $position );
+		$out      = EMCP_Tools_Block_Tree::to_markup( $tree );
+
+		$result = wp_update_post( array( 'ID' => $post_id, 'post_content' => wp_slash( $out ) ), true );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		return array(
+			'inserted'     => $pattern,
+			'blocks_added' => count( $new_blocks ),
+			'post_id'      => $post_id,
+			'note'         => __( 'Inserted Kadence canonical markup (editor-valid). Patterns ship with placeholder copy — edit the headings/text (RichText fields) to your content.', 'emcp-tools' ),
 		);
 	}
 

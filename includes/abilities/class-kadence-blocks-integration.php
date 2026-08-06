@@ -256,6 +256,16 @@ class EMCP_Tools_Kadence_Blocks_Integration extends EMCP_Tools_Theme_Integration
 		$attrs['uniqueID'] = $attrs['uniqueID'] ?? EMCP_Tools_Id_Generator::generate();
 		$structure         = EMCP_Tools_Kadence_Blocks_Catalog::structure( $name );
 
+		// Container defaults the editor requires (e.g. rowlayout colLayout), only
+		// when the caller didn't set them.
+		if ( ! empty( $structure['container_attrs'] ) ) {
+			foreach ( $structure['container_attrs'] as $ck => $cv ) {
+				if ( ! array_key_exists( $ck, $attrs ) ) {
+					$attrs[ $ck ] = $cv;
+				}
+			}
+		}
+
 		// Container inner-block template.
 		$inner_blocks = array();
 		if ( ! empty( $structure['inner'] ) ) {

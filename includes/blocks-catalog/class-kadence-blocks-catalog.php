@@ -157,7 +157,14 @@ class EMCP_Tools_Kadence_Blocks_Catalog {
 	 * @var array<string,array>
 	 */
 	const STRUCTURE = array(
-		'kadence/rowlayout'    => array( 'inner' => array( 'child' => 'kadence/column', 'count_attr' => 'columns', 'default_count' => 2 ) ),
+		// colLayout MUST be non-empty or the editor shows Kadence's "Select Your
+		// Layout" picker instead of the columns (the frontend renders regardless).
+		// "equal" = equal-width columns for any count; verified against the block's
+		// own `!colLayout` gate in blocks-rowlayout.js.
+		'kadence/rowlayout'    => array(
+			'inner'           => array( 'child' => 'kadence/column', 'count_attr' => 'columns', 'default_count' => 2 ),
+			'container_attrs' => array( 'colLayout' => 'equal' ),
+		),
 		'kadence/advancedbtn'  => array( 'inner' => array( 'child' => 'kadence/singlebtn', 'default_count' => 1 ) ),
 		'kadence/icon'         => array( 'inner' => array( 'child' => 'kadence/single-icon', 'default_count' => 1 ) ),
 		'kadence/iconlist'     => array( 'inner' => array( 'child' => 'kadence/listitem', 'default_count' => 3 ) ),

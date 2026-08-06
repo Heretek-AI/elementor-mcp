@@ -160,6 +160,9 @@ class EMCP_Tools_Bootstrap {
 		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-astra-integration.php';
 		require_once EMCP_TOOLS_DIR . 'includes/blocks-catalog/class-spectra-catalog.php';
 		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-spectra-integration.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-kadence-integration.php';
+		require_once EMCP_TOOLS_DIR . 'includes/blocks-catalog/class-kadence-blocks-catalog.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-kadence-blocks-integration.php';
 		// Forms-tab integrations — abstract base + CF7 (free). Pro form adapters
 		// (WPForms/Gravity/Fluent/Ninja/Formidable) load via EMCP_Tools_Pro_Loader.
 		require_once EMCP_TOOLS_DIR . 'includes/abilities/forms/class-form-integration.php';

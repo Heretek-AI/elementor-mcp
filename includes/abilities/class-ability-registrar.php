@@ -324,6 +324,12 @@ class EMCP_Tools_Ability_Registrar {
 		if ( class_exists( 'EMCP_Tools_Spectra_Integration' ) ) {
 			$theme_integrations[] = new EMCP_Tools_Spectra_Integration();
 		}
+		if ( class_exists( 'EMCP_Tools_Kadence_Integration' ) ) {
+			$theme_integrations[] = new EMCP_Tools_Kadence_Integration();
+		}
+		if ( class_exists( 'EMCP_Tools_Kadence_Blocks_Integration' ) ) {
+			$theme_integrations[] = new EMCP_Tools_Kadence_Blocks_Integration();
+		}
 		foreach ( $theme_integrations as $theme_integration ) {
 			if ( $theme_integration->is_available() ) {
 				$theme_integration->register();

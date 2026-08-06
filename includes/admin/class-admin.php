@@ -995,7 +995,7 @@ class EMCP_Tools_Admin {
 	 *
 	 * @since 1.8.0
 	 */
-	const DEFAULTS_VERSION = 26;
+	const DEFAULTS_VERSION = 27;
 
 	/**
 	 * SEO/A11y Pro MCP tool slugs that ship disabled-by-default (v2 defaults).
@@ -1294,6 +1294,10 @@ class EMCP_Tools_Admin {
 			'emcp-tools/astra-write',
 			'emcp-tools/spectra-read',
 			'emcp-tools/spectra-write',
+			'emcp-tools/kadence-read',
+			'emcp-tools/kadence-write',
+			'emcp-tools/kadence-blocks-read',
+			'emcp-tools/kadence-blocks-write',
 		);
 	}
 
@@ -1472,6 +1476,12 @@ class EMCP_Tools_Admin {
 		// v26 — Forminator write (delete-entry) disabled-by-default.
 		if ( $applied < 26 ) {
 			$add[] = 'emcp-tools/forminator-write';
+		}
+
+		// v27 — Kadence theme + Kadence Blocks write dispatchers disabled-by-default.
+		if ( $applied < 27 ) {
+			$add[] = 'emcp-tools/kadence-write';
+			$add[] = 'emcp-tools/kadence-blocks-write';
 		}
 
 		$merged = array_values( array_unique( array_merge( $existing, $add ) ) );
@@ -3205,6 +3215,29 @@ class EMCP_Tools_Admin {
 	}
 
 	/**
+	 * Whether the Kadence theme integration's tools are available (Kadence is the
+	 * active theme). When false the admin greys out + disables the Kadence
+	 * theme-settings toggles.
+	 *
+	 * @since 3.9.0
+	 * @return bool
+	 */
+	public static function kadence_available(): bool {
+		return function_exists( 'get_template' ) && 'kadence' === get_template();
+	}
+
+	/**
+	 * Whether the Kadence Blocks integration's tools are available (the Kadence
+	 * Blocks plugin is active — independent of the active theme).
+	 *
+	 * @since 3.9.0
+	 * @return bool
+	 */
+	public static function kadence_blocks_available(): bool {
+		return class_exists( 'EMCP_Tools_Kadence_Blocks_Catalog' ) && EMCP_Tools_Kadence_Blocks_Catalog::is_active();
+	}
+
+	/**
 	 * Whether the WooCommerce integration's tools are available (WooCommerce
 	 * installed and active).
 	 *
@@ -4595,6 +4628,45 @@ class EMCP_Tools_Admin {
 						'operations'       => array( 'add-block' ),
 						'available'        => self::spectra_available(),
 						'unavailable_note' => __( 'Install & activate the Spectra plugin to enable this tool.', 'emcp-tools' ),
+					),
+				),
+			),
+			'theme_kadence'    => array(
+				'platform' => 'themes',
+				'label'    => __( 'Kadence + Kadence Blocks', 'emcp-tools' ),
+				'note'     => __( 'The Kadence theme and its Kadence Blocks companion, grouped as one pack. Kadence tools manage the theme\'s settings (enabled only when Kadence is the active theme); Kadence Blocks tools give the block catalog + insertion (enabled only when the Kadence Blocks plugin is active). Toggles for an inactive component are disabled until you install and activate it.', 'emcp-tools' ),
+				'tools'    => array(
+					'emcp-tools/kadence-read'         => array(
+						'label'            => __( 'Kadence Read', 'emcp-tools' ),
+						'description'      => __( 'Read Kadence settings (palette, colors, typography, layout, buttons, header/footer) with value + type/label/group/shape metadata.', 'emcp-tools' ),
+						'badges'           => array( 'read-only' ),
+						'operations'       => array( 'get-settings' ),
+						'available'        => self::kadence_available(),
+						'unavailable_note' => __( 'Activate the Kadence theme to enable this tool.', 'emcp-tools' ),
+					),
+					'emcp-tools/kadence-write'        => array(
+						'label'            => __( 'Kadence Write', 'emcp-tools' ),
+						'description'      => __( 'Write Kadence settings as theme_mods; non-allowlisted keys are reported in skipped[].', 'emcp-tools' ),
+						'badges'           => array(),
+						'operations'       => array( 'update-settings' ),
+						'available'        => self::kadence_available(),
+						'unavailable_note' => __( 'Activate the Kadence theme to enable this tool.', 'emcp-tools' ),
+					),
+					'emcp-tools/kadence-blocks-read'  => array(
+						'label'            => __( 'Kadence Blocks Read', 'emcp-tools' ),
+						'description'      => __( 'Catalog of available Kadence blocks (list-blocks) and each block\'s real attributes + example markup (get-block-schema).', 'emcp-tools' ),
+						'badges'           => array( 'read-only' ),
+						'operations'       => array( 'list-blocks', 'get-block-schema' ),
+						'available'        => self::kadence_blocks_available(),
+						'unavailable_note' => __( 'Install & activate the Kadence Blocks plugin to enable this tool.', 'emcp-tools' ),
+					),
+					'emcp-tools/kadence-blocks-write' => array(
+						'label'            => __( 'Kadence Blocks Write', 'emcp-tools' ),
+						'description'      => __( 'Insert a Kadence block into a post with a generated uniqueID + scaffolded inner blocks (add-block).', 'emcp-tools' ),
+						'badges'           => array(),
+						'operations'       => array( 'add-block' ),
+						'available'        => self::kadence_blocks_available(),
+						'unavailable_note' => __( 'Install & activate the Kadence Blocks plugin to enable this tool.', 'emcp-tools' ),
 					),
 				),
 			),

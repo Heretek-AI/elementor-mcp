@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.9.0
+Stable tag: 3.9.1
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,13 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.9.1 =
+GeneratePress + GenerateBlocks support and Blocksy support (both Pro), plus reordering Elementor 4 Global Classes.
+* Added: GeneratePress + GenerateBlocks support (Pro). Read/write GeneratePress settings (palette, colours, layout, typography); discover the GenerateBlocks V2 blocks; and insert them with a friendly flat styles map that's turned into the styles object with the CSS compiled for you. New emcp-generatepress skill.
+* Added: Blocksy support (Pro). Insert Blocksy's dynamic blocks (query/tax-query loops with auto-scaffolded template child, dynamic-data, about-me, socials, contact info, share box, breadcrumbs, search, quote, widgets area) and manage Blocksy Companion extensions (list + activate/deactivate). New emcp-blocksy skill.
+* Added: reorder-global-classes (#110). Set the Elementor 4 Class Manager order (= CSS source order / specificity); omitted classes are appended, never dropped. Completes create/update/delete/reorder for v4 global classes.
+* The new Pro theme integrations' write tools ship disabled-by-default (enable on the Tools tab).
 
 = 3.9.0 =
 Kadence support (theme settings, blocks, and Design Library patterns), writing Elementor 4 Global Classes, and two fixes.

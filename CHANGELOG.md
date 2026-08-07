@@ -2,6 +2,16 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.9.1]
+
+### Added
+- **GeneratePress + GenerateBlocks support (Pro).** A Themes-tab integration for the GeneratePress theme and GenerateBlocks. Read and write GeneratePress settings — global colour palette, colours, layout, typography (`generatepress-read` / `generatepress-write`, active when GeneratePress is the theme). Discover the GenerateBlocks V2 blocks (element, text, media, shape, looper, query) and their styles model (`generateblocks-read`), and insert them (`generateblocks-write`): a friendly flat `styles` map is turned into GenerateBlocks' `styles` object and the matching CSS is compiled for you, so a block renders styled with no manual CSS. New **emcp-generatepress** agent skill.
+- **Blocksy support (Pro).** A Themes-tab integration for the Blocksy theme and Blocksy Companion. Insert Blocksy's dynamic content blocks — the query / tax-query loops (which get their template child scaffolded automatically), dynamic-data, and the content widgets (about-me, socials, contact-info, share box, breadcrumbs, search, quote, widgets area) — via `blocksy-blocks-read` / `blocksy-blocks-write`. Manage Blocksy Companion extensions — list them with their active status and activate or deactivate them — via `blocksy-extensions-read` / `blocksy-extensions-write`. New **emcp-blocksy** agent skill.
+- **Reorder Elementor 4 Global Classes (#110).** A new `reorder-global-classes` tool sets the Class Manager order, which is the CSS source order that decides which class wins at equal specificity. Pass the desired order of `g-` ids; any classes you omit are appended in their current order, so none are ever dropped. Completes the v4 design-system authoring set (create / update / delete / reorder).
+
+### Notes
+- The GeneratePress + GenerateBlocks and Blocksy integrations are Pro features. Their write tools ship disabled-by-default; enable them on the EMCP Tools → Tools tab. All theme-integration write tools remain disabled-by-default.
+
 ## [3.9.0]
 
 ### Added

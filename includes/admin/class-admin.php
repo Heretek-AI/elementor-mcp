@@ -1000,7 +1000,7 @@ class EMCP_Tools_Admin {
 	 *
 	 * @since 1.8.0
 	 */
-	const DEFAULTS_VERSION = 28;
+	const DEFAULTS_VERSION = 29;
 
 	/**
 	 * SEO/A11y Pro MCP tool slugs that ship disabled-by-default (v2 defaults).
@@ -1494,6 +1494,11 @@ class EMCP_Tools_Admin {
 			$add[] = 'emcp-tools/create-global-class';
 			$add[] = 'emcp-tools/update-global-class';
 			$add[] = 'emcp-tools/delete-global-class';
+		}
+
+		// v29 — reorder-global-classes write tool disabled-by-default.
+		if ( $applied < 29 ) {
+			$add[] = 'emcp-tools/reorder-global-classes';
 		}
 
 		$merged = array_values( array_unique( array_merge( $existing, $add ) ) );
@@ -4985,6 +4990,11 @@ class EMCP_Tools_Admin {
 						'label'       => __( 'Delete Global Class', 'emcp-tools' ),
 						'description' => __( 'Delete a Global Class by g- id (also removes it from elements using it); requires confirm:true.', 'emcp-tools' ),
 						'badges'      => array( 'destructive' ),
+					),
+					'emcp-tools/reorder-global-classes'   => array(
+						'label'       => __( 'Reorder Global Classes', 'emcp-tools' ),
+						'description' => __( 'Set the Class Manager order (= CSS source order / specificity) of the v4 Global Classes.', 'emcp-tools' ),
+						'badges'      => array(),
 					),
 					'emcp-tools/add-flexbox'              => array(
 						'label'       => __( 'Add Flexbox', 'emcp-tools' ),

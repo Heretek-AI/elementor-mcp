@@ -53,7 +53,7 @@ class EMCP_Tools_Global_Classes_Write_Abilities {
 	 */
 	public function get_ability_names(): array {
 		return self::is_available()
-			? array( 'emcp-tools/create-global-class', 'emcp-tools/update-global-class', 'emcp-tools/delete-global-class' )
+			? array( 'emcp-tools/create-global-class', 'emcp-tools/update-global-class', 'emcp-tools/delete-global-class', 'emcp-tools/reorder-global-classes' )
 			: array();
 	}
 
@@ -148,6 +148,29 @@ class EMCP_Tools_Global_Classes_Write_Abilities {
 					'required'   => array( 'id' ),
 				),
 				'meta'                => array( 'annotations' => array( 'destructive' => true, 'idempotent' => false ), 'show_in_rest' => true ),
+			)
+		);
+
+		emcp_tools_register_ability(
+			'emcp-tools/reorder-global-classes',
+			array(
+				'label'               => __( 'Reorder Global Classes', 'emcp-tools' ),
+				'description'         => __( 'Set the order of the Elementor v4 Global Classes. The Class Manager order IS the CSS source order, so it decides which class wins when two apply (later overrides earlier at equal specificity). Pass { order: [g-id, ...] }; any existing classes you omit are appended after, keeping their current relative order.', 'emcp-tools' ),
+				'category'            => 'emcp-tools',
+				'execute_callback'    => array( $this, 'execute_reorder_global_classes' ),
+				'permission_callback' => array( $this, 'check_write_permission' ),
+				'input_schema'        => array(
+					'type'       => 'object',
+					'properties' => array(
+						'order' => array(
+							'type'        => 'array',
+							'items'       => array( 'type' => 'string' ),
+							'description' => __( 'The desired top-to-bottom order of g- class ids. Classes omitted here are appended after, in their current order.', 'emcp-tools' ),
+						),
+					),
+					'required'   => array( 'order' ),
+				),
+				'meta'                => array( 'annotations' => array( 'destructive' => false, 'idempotent' => true ), 'show_in_rest' => true ),
 			)
 		);
 	}
@@ -285,7 +308,104 @@ class EMCP_Tools_Global_Classes_Write_Abilities {
 		return array( 'deleted' => $id );
 	}
 
+	/**
+	 * @param array $input { order: string[] }.
+	 * @return array|\WP_Error
+	 */
+	public function execute_reorder_global_classes( $input ) {
+		if ( ! self::is_available() ) {
+			return $this->unavailable();
+		}
+		$requested = ( isset( $input['order'] ) && is_array( $input['order'] ) )
+			? array_values( array_map( 'sanitize_text_field', array_map( 'strval', $input['order'] ) ) )
+			: array();
+		if ( empty( $requested ) ) {
+			return new \WP_Error( 'missing_order', __( 'Provide an "order" array of g- class ids.', 'emcp-tools' ), array( 'status' => 400 ) );
+		}
+
+		$state = $this->read_state();
+		if ( is_wp_error( $state ) ) {
+			return $state;
+		}
+		list( $items, $current_order ) = $state;
+
+		// The set of existing classes is the UNION of the current order and the
+		// items map — either source may be momentarily incomplete, and reorder must
+		// never drop a class from the Class Manager. `known_order` keeps a stable
+		// baseline order (current order first, then any items not yet in it).
+		$known_order = array();
+		$known       = array();
+		foreach ( array_merge( $current_order, array_keys( $items ) ) as $id ) {
+			$id = (string) $id;
+			if ( '' !== $id && ! isset( $known[ $id ] ) ) {
+				$known[ $id ]  = true;
+				$known_order[] = $id;
+			}
+		}
+
+		$unknown = array();
+		foreach ( $requested as $id ) {
+			if ( ! isset( $known[ $id ] ) ) {
+				$unknown[] = $id;
+			}
+		}
+		if ( ! empty( $unknown ) ) {
+			return new \WP_Error(
+				'unknown_class',
+				sprintf( __( 'Unknown global class id(s): %s', 'emcp-tools' ), implode( ', ', $unknown ) ),
+				array( 'status' => 404 )
+			);
+		}
+
+		// Final order = the requested ids (deduped), then every other known class
+		// the caller omitted — appended in the baseline order so none drop out.
+		$seen  = array();
+		$final = array();
+		foreach ( array_merge( $requested, $known_order ) as $id ) {
+			if ( isset( $known[ $id ] ) && ! isset( $seen[ $id ] ) ) {
+				$seen[ $id ] = true;
+				$final[]     = $id;
+			}
+		}
+
+		$saved = $this->write_order( $final );
+		if ( is_wp_error( $saved ) ) {
+			return $saved;
+		}
+		return array( 'order' => $final );
+	}
+
 	// ── helpers ────────────────────────────────────────────────────────────────
+
+	/**
+	 * Persist a new class order (order only — no class content change). Uses
+	 * Elementor's dedicated order API, which mirrors to preview itself.
+	 *
+	 * @param array $order Ordered id list.
+	 * @return true|\WP_Error
+	 */
+	private function write_order( array $order ) {
+		try {
+			$repo = $this->repo();
+			if ( method_exists( $repo, 'update_order_and_labels' ) ) {
+				$repo->update_order_and_labels( $order, array() );
+				return true;
+			}
+			// Fallback for older Elementor: rewrite via put (also mirrored to preview).
+			$state = $this->read_state();
+			if ( is_wp_error( $state ) ) {
+				return $state;
+			}
+			list( $items ) = $state;
+			$this->repo()->put( $items, $order );
+			if ( method_exists( $repo, 'set_preview' ) ) {
+				$this->repo()->set_preview( true )->put( $items, $order );
+			}
+		} catch ( \Throwable $e ) {
+			return new \WP_Error( 'reorder_failed', $e->getMessage(), array( 'status' => 500 ) );
+		}
+		return true;
+	}
 
 	/**
 	 * @return \WP_Error

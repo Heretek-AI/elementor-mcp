@@ -330,6 +330,13 @@ class EMCP_Tools_Ability_Registrar {
 		if ( class_exists( 'EMCP_Tools_Kadence_Blocks_Integration' ) ) {
 			$theme_integrations[] = new EMCP_Tools_Kadence_Blocks_Integration();
 		}
+		// GeneratePress + GenerateBlocks (Pro; classes only present when Pro loaded).
+		if ( class_exists( 'EMCP_Tools_GeneratePress_Integration' ) ) {
+			$theme_integrations[] = new EMCP_Tools_GeneratePress_Integration();
+		}
+		if ( class_exists( 'EMCP_Tools_GenerateBlocks_Integration' ) ) {
+			$theme_integrations[] = new EMCP_Tools_GenerateBlocks_Integration();
+		}
 		foreach ( $theme_integrations as $theme_integration ) {
 			if ( $theme_integration->is_available() ) {
 				$theme_integration->register();

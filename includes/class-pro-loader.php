@@ -63,6 +63,10 @@ final class EMCP_Tools_Pro_Loader {
 		'includes/abilities/seo/class-seopress-integration.php',
 		'includes/abilities/seo/class-seoframework-integration.php',
 		'includes/abilities/seo/class-surerank-integration.php',
+		// GeneratePress + GenerateBlocks theme integration (Pro).
+		'includes/blocks-catalog/class-generateblocks-catalog.php',
+		'includes/abilities/class-generatepress-integration.php',
+		'includes/abilities/class-generateblocks-integration.php',
 		'includes/class-skill-catalog.php',
 		'includes/abilities/class-skill-abilities.php',
 		'includes/class-page-snapshot-pro.php',

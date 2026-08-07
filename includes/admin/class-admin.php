@@ -1000,7 +1000,7 @@ class EMCP_Tools_Admin {
 	 *
 	 * @since 1.8.0
 	 */
-	const DEFAULTS_VERSION = 29;
+	const DEFAULTS_VERSION = 30;
 
 	/**
 	 * SEO/A11y Pro MCP tool slugs that ship disabled-by-default (v2 defaults).
@@ -1303,6 +1303,10 @@ class EMCP_Tools_Admin {
 			'emcp-tools/kadence-write',
 			'emcp-tools/kadence-blocks-read',
 			'emcp-tools/kadence-blocks-write',
+			'emcp-tools/generatepress-read',
+			'emcp-tools/generatepress-write',
+			'emcp-tools/generateblocks-read',
+			'emcp-tools/generateblocks-write',
 		);
 	}
 
@@ -1499,6 +1503,12 @@ class EMCP_Tools_Admin {
 		// v29 — reorder-global-classes write tool disabled-by-default.
 		if ( $applied < 29 ) {
 			$add[] = 'emcp-tools/reorder-global-classes';
+		}
+
+		// v30 — GeneratePress + GenerateBlocks write dispatchers disabled-by-default.
+		if ( $applied < 30 ) {
+			$add[] = 'emcp-tools/generatepress-write';
+			$add[] = 'emcp-tools/generateblocks-write';
 		}
 
 		$merged = array_values( array_unique( array_merge( $existing, $add ) ) );
@@ -3255,6 +3265,28 @@ class EMCP_Tools_Admin {
 	}
 
 	/**
+	 * Whether the GeneratePress theme integration's tools are available
+	 * (GeneratePress is the active theme; Pro).
+	 *
+	 * @since 3.9.1
+	 * @return bool
+	 */
+	public static function generatepress_available(): bool {
+		return function_exists( 'get_template' ) && 'generatepress' === get_template();
+	}
+
+	/**
+	 * Whether the GenerateBlocks integration's tools are available (the
+	 * GenerateBlocks plugin is active; Pro).
+	 *
+	 * @since 3.9.1
+	 * @return bool
+	 */
+	public static function generateblocks_available(): bool {
+		return class_exists( 'EMCP_Tools_GenerateBlocks_Catalog' ) && EMCP_Tools_GenerateBlocks_Catalog::is_active();
+	}
+
+	/**
 	 * Whether the WooCommerce integration's tools are available (WooCommerce
 	 * installed and active).
 	 *
@@ -4684,6 +4716,45 @@ class EMCP_Tools_Admin {
 						'operations'       => array( 'add-block' ),
 						'available'        => self::kadence_blocks_available(),
 						'unavailable_note' => __( 'Install & activate the Kadence Blocks plugin to enable this tool.', 'emcp-tools' ),
+					),
+				),
+			),
+			'theme_generatepress' => array(
+				'platform' => 'themes',
+				'label'    => __( 'GeneratePress + GenerateBlocks', 'emcp-tools' ),
+				'note'     => __( 'The GeneratePress theme and its GenerateBlocks companion (Pro). GeneratePress tools manage the theme\'s settings (enabled only when GeneratePress is the active theme); GenerateBlocks tools give the block catalog + insertion (enabled only when the GenerateBlocks plugin is active). Toggles for an inactive component are disabled until you install and activate it.', 'emcp-tools' ),
+				'tools'    => array(
+					'emcp-tools/generatepress-read'   => array(
+						'label'            => __( 'GeneratePress Read', 'emcp-tools' ),
+						'description'      => __( 'Read GeneratePress settings (global palette, colors, layout, typography) with value + type/label/group/shape metadata.', 'emcp-tools' ),
+						'badges'           => array( 'read-only', 'pro' ),
+						'operations'       => array( 'get-settings' ),
+						'available'        => self::generatepress_available(),
+						'unavailable_note' => __( 'Activate the GeneratePress theme to enable this tool.', 'emcp-tools' ),
+					),
+					'emcp-tools/generatepress-write'  => array(
+						'label'            => __( 'GeneratePress Write', 'emcp-tools' ),
+						'description'      => __( 'Write GeneratePress settings; non-allowlisted keys are reported in skipped[].', 'emcp-tools' ),
+						'badges'           => array( 'pro' ),
+						'operations'       => array( 'update-settings' ),
+						'available'        => self::generatepress_available(),
+						'unavailable_note' => __( 'Activate the GeneratePress theme to enable this tool.', 'emcp-tools' ),
+					),
+					'emcp-tools/generateblocks-read'  => array(
+						'label'            => __( 'GenerateBlocks Read', 'emcp-tools' ),
+						'description'      => __( 'Catalog of the GenerateBlocks V2 blocks (list-blocks) and each block\'s attributes + styles model (get-block-schema).', 'emcp-tools' ),
+						'badges'           => array( 'read-only', 'pro' ),
+						'operations'       => array( 'list-blocks', 'get-block-schema' ),
+						'available'        => self::generateblocks_available(),
+						'unavailable_note' => __( 'Install & activate the GenerateBlocks plugin to enable this tool.', 'emcp-tools' ),
+					),
+					'emcp-tools/generateblocks-write' => array(
+						'label'            => __( 'GenerateBlocks Write', 'emcp-tools' ),
+						'description'      => __( 'Insert a GenerateBlocks V2 block with a generated uniqueId, styles object + compiled css, and content (add-block).', 'emcp-tools' ),
+						'badges'           => array( 'pro' ),
+						'operations'       => array( 'add-block' ),
+						'available'        => self::generateblocks_available(),
+						'unavailable_note' => __( 'Install & activate the GenerateBlocks plugin to enable this tool.', 'emcp-tools' ),
 					),
 				),
 			),

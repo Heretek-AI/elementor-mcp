@@ -67,6 +67,10 @@ final class EMCP_Tools_Pro_Loader {
 		'includes/blocks-catalog/class-generateblocks-catalog.php',
 		'includes/abilities/class-generatepress-integration.php',
 		'includes/abilities/class-generateblocks-integration.php',
+		// Blocksy theme integration (Pro): blocks + Companion extensions.
+		'includes/blocks-catalog/class-blocksy-blocks-catalog.php',
+		'includes/abilities/class-blocksy-blocks-integration.php',
+		'includes/abilities/class-blocksy-extensions-integration.php',
 		'includes/class-skill-catalog.php',
 		'includes/abilities/class-skill-abilities.php',
 		'includes/class-page-snapshot-pro.php',

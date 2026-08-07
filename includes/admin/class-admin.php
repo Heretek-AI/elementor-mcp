@@ -1000,7 +1000,7 @@ class EMCP_Tools_Admin {
 	 *
 	 * @since 1.8.0
 	 */
-	const DEFAULTS_VERSION = 30;
+	const DEFAULTS_VERSION = 31;
 
 	/**
 	 * SEO/A11y Pro MCP tool slugs that ship disabled-by-default (v2 defaults).
@@ -1307,6 +1307,10 @@ class EMCP_Tools_Admin {
 			'emcp-tools/generatepress-write',
 			'emcp-tools/generateblocks-read',
 			'emcp-tools/generateblocks-write',
+			'emcp-tools/blocksy-blocks-read',
+			'emcp-tools/blocksy-blocks-write',
+			'emcp-tools/blocksy-extensions-read',
+			'emcp-tools/blocksy-extensions-write',
 		);
 	}
 
@@ -1509,6 +1513,12 @@ class EMCP_Tools_Admin {
 		if ( $applied < 30 ) {
 			$add[] = 'emcp-tools/generatepress-write';
 			$add[] = 'emcp-tools/generateblocks-write';
+		}
+
+		// v31 — Blocksy write dispatchers disabled-by-default.
+		if ( $applied < 31 ) {
+			$add[] = 'emcp-tools/blocksy-blocks-write';
+			$add[] = 'emcp-tools/blocksy-extensions-write';
 		}
 
 		$merged = array_values( array_unique( array_merge( $existing, $add ) ) );
@@ -3287,6 +3297,28 @@ class EMCP_Tools_Admin {
 	}
 
 	/**
+	 * Whether the Blocksy blocks integration's tools are available (Blocksy
+	 * Companion active; Pro).
+	 *
+	 * @since 3.9.1
+	 * @return bool
+	 */
+	public static function blocksy_blocks_available(): bool {
+		return class_exists( 'EMCP_Tools_Blocksy_Blocks_Catalog' ) && EMCP_Tools_Blocksy_Blocks_Catalog::is_active();
+	}
+
+	/**
+	 * Whether the Blocksy extensions integration's tools are available (the Blocksy
+	 * ExtensionsManager exists; Pro).
+	 *
+	 * @since 3.9.1
+	 * @return bool
+	 */
+	public static function blocksy_extensions_available(): bool {
+		return class_exists( '\\Blocksy\\ExtensionsManager' );
+	}
+
+	/**
 	 * Whether the WooCommerce integration's tools are available (WooCommerce
 	 * installed and active).
 	 *
@@ -4755,6 +4787,45 @@ class EMCP_Tools_Admin {
 						'operations'       => array( 'add-block' ),
 						'available'        => self::generateblocks_available(),
 						'unavailable_note' => __( 'Install & activate the GenerateBlocks plugin to enable this tool.', 'emcp-tools' ),
+					),
+				),
+			),
+			'theme_blocksy'    => array(
+				'platform' => 'themes',
+				'label'    => __( 'Blocksy', 'emcp-tools' ),
+				'note'     => __( 'Blocksy (Pro): its dynamic content blocks (query/tax-query loops, dynamic-data, about-me, socials, share-box, breadcrumbs, …) and its Blocksy Companion extensions (activate/deactivate). Enabled when Blocksy Companion is active. Theme settings are reachable via the free Active Theme tools (theme-read/theme-write).', 'emcp-tools' ),
+				'tools'    => array(
+					'emcp-tools/blocksy-blocks-read'      => array(
+						'label'            => __( 'Blocksy Blocks Read', 'emcp-tools' ),
+						'description'      => __( 'Catalog of the Blocksy blocks (list-blocks) and each block\'s attributes (get-block-schema).', 'emcp-tools' ),
+						'badges'           => array( 'read-only', 'pro' ),
+						'operations'       => array( 'list-blocks', 'get-block-schema' ),
+						'available'        => self::blocksy_blocks_available(),
+						'unavailable_note' => __( 'Install & activate Blocksy Companion to enable this tool.', 'emcp-tools' ),
+					),
+					'emcp-tools/blocksy-blocks-write'     => array(
+						'label'            => __( 'Blocksy Blocks Write', 'emcp-tools' ),
+						'description'      => __( 'Insert a Blocksy block into a post (add-block); query/tax-query get a scaffolded template child.', 'emcp-tools' ),
+						'badges'           => array( 'pro' ),
+						'operations'       => array( 'add-block' ),
+						'available'        => self::blocksy_blocks_available(),
+						'unavailable_note' => __( 'Install & activate Blocksy Companion to enable this tool.', 'emcp-tools' ),
+					),
+					'emcp-tools/blocksy-extensions-read'  => array(
+						'label'            => __( 'Blocksy Extensions Read', 'emcp-tools' ),
+						'description'      => __( 'List Blocksy Companion extensions with name, description, pro flag, and active status (list-extensions).', 'emcp-tools' ),
+						'badges'           => array( 'read-only', 'pro' ),
+						'operations'       => array( 'list-extensions' ),
+						'available'        => self::blocksy_extensions_available(),
+						'unavailable_note' => __( 'Install & activate Blocksy Companion to enable this tool.', 'emcp-tools' ),
+					),
+					'emcp-tools/blocksy-extensions-write' => array(
+						'label'            => __( 'Blocksy Extensions Write', 'emcp-tools' ),
+						'description'      => __( 'Activate or deactivate a Blocksy Companion extension by slug.', 'emcp-tools' ),
+						'badges'           => array( 'pro' ),
+						'operations'       => array( 'activate-extension', 'deactivate-extension' ),
+						'available'        => self::blocksy_extensions_available(),
+						'unavailable_note' => __( 'Install & activate Blocksy Companion to enable this tool.', 'emcp-tools' ),
 					),
 				),
 			),

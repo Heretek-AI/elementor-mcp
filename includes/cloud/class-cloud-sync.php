@@ -133,13 +133,30 @@ class EMCP_Tools_Cloud_Sync {
 	 * Browse published marketplace listings (public; no connection required, but
 	 * we still route through the client for a consistent base URL).
 	 *
-	 * @param string $category Optional category filter.
+	 * Accepts either a bare category string (legacy) or an options array:
+	 * `q`, `kind`, `category`, `access`, `sort`, `page`, `per_page`. When `page`
+	 * or `per_page` is present the endpoint returns one page plus
+	 * `{ page, per_page, total, pages }` meta; the response always carries a
+	 * `facets` block ({ kinds, categories }).
+	 *
+	 * @param array|string $args Options array, or a bare category string (legacy).
 	 * @return array|\WP_Error
 	 */
-	public static function marketplace_list( string $category = '' ) {
-		return EMCP_Tools_Cloud_Client::get(
-			'/api/cloud/v1/marketplace' . ( '' !== $category ? '?category=' . rawurlencode( $category ) : '' )
-		);
+	public static function marketplace_list( $args = array() ) {
+		if ( is_string( $args ) ) {
+			$args = ( '' !== $args ) ? array( 'category' => $args ) : array();
+		}
+		$query = array();
+		foreach ( array( 'q', 'kind', 'category', 'access', 'sort', 'page', 'per_page' ) as $key ) {
+			if ( isset( $args[ $key ] ) && '' !== (string) $args[ $key ] ) {
+				$query[ $key ] = $args[ $key ];
+			}
+		}
+		$path = '/api/cloud/v1/marketplace';
+		if ( ! empty( $query ) ) {
+			$path .= '?' . http_build_query( $query );
+		}
+		return EMCP_Tools_Cloud_Client::get( $path );
 	}
 
 	/**

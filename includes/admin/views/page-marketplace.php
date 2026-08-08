@@ -32,6 +32,8 @@ $emcp_q        = isset( $_GET['mk_q'] ) ? sanitize_text_field( wp_unslash( $_GET
 $emcp_f_kind   = isset( $_GET['mk_kind'] ) ? sanitize_key( wp_unslash( $_GET['mk_kind'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 $emcp_f_access = isset( $_GET['mk_access'] ) ? sanitize_key( wp_unslash( $_GET['mk_access'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 $emcp_sort     = isset( $_GET['mk_sort'] ) ? sanitize_key( wp_unslash( $_GET['mk_sort'] ) ) : 'newest'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+$emcp_page     = isset( $_GET['mk_page'] ) ? max( 1, absint( wp_unslash( $_GET['mk_page'] ) ) ) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+$emcp_per_page = 24;
 ?>
 <div class="elementor-mcp-section">
 	<h2><?php esc_html_e( 'Marketplace', 'emcp-tools' ); ?></h2>
@@ -64,67 +66,60 @@ $emcp_sort     = isset( $_GET['mk_sort'] ) ? sanitize_key( wp_unslash( $_GET['mk
 		return;
 	endif;
 
-	// Fetch the full published set once; filter/sort client-side (small catalog).
-	$emcp_res = EMCP_Tools_Cloud_Sync::marketplace_list( '' );
-	$emcp_all = ( ! is_wp_error( $emcp_res ) && isset( $emcp_res['listings'] ) && is_array( $emcp_res['listings'] ) ) ? $emcp_res['listings'] : array();
-
-	// Facet options from the full set (so choosing one filter never hides the rest).
-	$emcp_cats  = array();
-	$emcp_kinds = array();
-	foreach ( $emcp_all as $emcp_row ) {
-		if ( ! empty( $emcp_row['category'] ) ) {
-			$emcp_cats[ (string) $emcp_row['category'] ] = true;
-		}
-		if ( ! empty( $emcp_row['kind'] ) ) {
-			$emcp_kinds[ (string) $emcp_row['kind'] ] = true;
-		}
-	}
-	$emcp_cats = array_keys( $emcp_cats );
-	sort( $emcp_cats );
-	$emcp_kinds = array_keys( $emcp_kinds );
-	sort( $emcp_kinds );
-
-	// Apply filters.
-	$emcp_q_lc     = strtolower( $emcp_q );
-	$emcp_listings = array_values(
-		array_filter(
-			$emcp_all,
-			static function ( $row ) use ( $emcp_f_kind, $emcp_category, $emcp_f_access, $emcp_q_lc ) {
-				if ( '' !== $emcp_f_kind && (string) ( $row['kind'] ?? '' ) !== $emcp_f_kind ) {
-					return false;
-				}
-				if ( '' !== $emcp_category && (string) ( $row['category'] ?? '' ) !== $emcp_category ) {
-					return false;
-				}
-				if ( '' !== $emcp_f_access && (string) ( $row['access'] ?? 'community' ) !== $emcp_f_access ) {
-					return false;
-				}
-				if ( '' !== $emcp_q_lc ) {
-					$hay = strtolower( (string) ( $row['title'] ?? '' ) . ' ' . (string) ( $row['summary'] ?? '' ) . ' ' . (string) ( $row['category'] ?? '' ) );
-					if ( false === strpos( $hay, $emcp_q_lc ) ) {
-						return false;
-					}
-				}
-				return true;
-			}
+	// Fetch one page, filtered + sorted server-side. Facets come back with the
+	// response so the dropdowns always list every kind/category.
+	$emcp_res = EMCP_Tools_Cloud_Sync::marketplace_list(
+		array(
+			'q'        => $emcp_q,
+			'kind'     => $emcp_f_kind,
+			'category' => $emcp_category,
+			'access'   => $emcp_f_access,
+			'sort'     => $emcp_sort,
+			'page'     => $emcp_page,
+			'per_page' => $emcp_per_page,
 		)
 	);
+	$emcp_listings = ( ! is_wp_error( $emcp_res ) && isset( $emcp_res['listings'] ) && is_array( $emcp_res['listings'] ) ) ? $emcp_res['listings'] : array();
 
-	if ( 'popular' === $emcp_sort ) {
-		usort(
-			$emcp_listings,
-			static function ( $a, $b ) {
-				return (int) ( $b['install_count'] ?? 0 ) <=> (int) ( $a['install_count'] ?? 0 );
-			}
-		);
-	}
+	// Facet options from the response (full distinct set, filter-agnostic).
+	$emcp_facets = ( ! is_wp_error( $emcp_res ) && isset( $emcp_res['facets'] ) && is_array( $emcp_res['facets'] ) ) ? $emcp_res['facets'] : array();
+	$emcp_kinds  = ( isset( $emcp_facets['kinds'] ) && is_array( $emcp_facets['kinds'] ) ) ? $emcp_facets['kinds'] : array();
+	$emcp_cats   = ( isset( $emcp_facets['categories'] ) && is_array( $emcp_facets['categories'] ) ) ? $emcp_facets['categories'] : array();
 
+	// Pagination meta (present only when the endpoint paginated the response).
+	$emcp_total       = isset( $emcp_res['total'] ) ? (int) $emcp_res['total'] : count( $emcp_listings );
+	$emcp_pages       = isset( $emcp_res['pages'] ) ? max( 1, (int) $emcp_res['pages'] ) : 1;
+	$emcp_cur_page    = isset( $emcp_res['page'] ) ? max( 1, (int) $emcp_res['page'] ) : $emcp_page;
 	$emcp_active_filters = ( '' !== $emcp_q ) + ( '' !== $emcp_f_kind ) + ( '' !== $emcp_category ) + ( '' !== $emcp_f_access );
+
+	// Base URL that preserves the active filters, swapping only the page number.
+	$emcp_page_href = static function ( $n ) use ( $emcp_q, $emcp_f_kind, $emcp_category, $emcp_f_access, $emcp_sort ) {
+		$args = array( 'page' => 'emcp-tools-marketplace' );
+		if ( '' !== $emcp_q ) {
+			$args['mk_q'] = $emcp_q;
+		}
+		if ( '' !== $emcp_f_kind ) {
+			$args['mk_kind'] = $emcp_f_kind;
+		}
+		if ( '' !== $emcp_category ) {
+			$args['mk_cat'] = $emcp_category;
+		}
+		if ( '' !== $emcp_f_access ) {
+			$args['mk_access'] = $emcp_f_access;
+		}
+		if ( 'newest' !== $emcp_sort && '' !== $emcp_sort ) {
+			$args['mk_sort'] = $emcp_sort;
+		}
+		if ( (int) $n > 1 ) {
+			$args['mk_page'] = (int) $n;
+		}
+		return admin_url( 'admin.php?' . http_build_query( $args ) );
+	};
 	?>
 
 	<?php if ( is_wp_error( $emcp_res ) ) : ?>
 		<div class="notice notice-error inline"><p><?php echo esc_html( $emcp_res->get_error_message() ); ?></p></div>
-	<?php elseif ( empty( $emcp_all ) ) : ?>
+	<?php elseif ( 0 === $emcp_total && 0 === (int) $emcp_active_filters ) : ?>
 		<div class="notice notice-info inline"><p><?php esc_html_e( 'No published items yet. Check back soon.', 'emcp-tools' ); ?></p></div>
 	<?php else : ?>
 
@@ -161,7 +156,13 @@ $emcp_sort     = isset( $_GET['mk_sort'] ) ? sanitize_key( wp_unslash( $_GET['mk
 		</form>
 
 		<p class="emcp-mk-count">
-			<?php echo esc_html( sprintf( _n( '%d result', '%d results', count( $emcp_listings ), 'emcp-tools' ), count( $emcp_listings ) ) ); ?>
+			<?php
+			echo esc_html( sprintf( _n( '%d result', '%d results', $emcp_total, 'emcp-tools' ), $emcp_total ) );
+			if ( $emcp_pages > 1 ) {
+				/* translators: 1: current page number, 2: total number of pages. */
+				echo ' · ' . esc_html( sprintf( __( 'page %1$d of %2$d', 'emcp-tools' ), $emcp_cur_page, $emcp_pages ) );
+			}
+			?>
 		</p>
 
 		<?php if ( empty( $emcp_listings ) ) : ?>
@@ -233,6 +234,61 @@ $emcp_sort     = isset( $_GET['mk_sort'] ) ? sanitize_key( wp_unslash( $_GET['mk
 				</div>
 			<?php endforeach; ?>
 		</div>
+
+		<?php if ( $emcp_pages > 1 ) : ?>
+			<nav class="emcp-mk-pager" aria-label="<?php esc_attr_e( 'Pagination', 'emcp-tools' ); ?>">
+				<?php if ( $emcp_cur_page > 1 ) : ?>
+					<a class="button emcp-mk-pager__edge" href="<?php echo esc_url( $emcp_page_href( $emcp_cur_page - 1 ) ); ?>">&larr; <?php esc_html_e( 'Prev', 'emcp-tools' ); ?></a>
+				<?php else : ?>
+					<span class="button disabled emcp-mk-pager__edge">&larr; <?php esc_html_e( 'Prev', 'emcp-tools' ); ?></span>
+				<?php endif; ?>
+
+				<?php
+				// Windowed page numbers: first, last, current ±1, ellipses.
+				$emcp_nums = array();
+				if ( $emcp_pages <= 7 ) {
+					for ( $i = 1; $i <= $emcp_pages; $i++ ) {
+						$emcp_nums[] = $i;
+					}
+				} else {
+					$emcp_nums[] = 1;
+					$emcp_lo     = max( 2, $emcp_cur_page - 1 );
+					$emcp_hi     = min( $emcp_pages - 1, $emcp_cur_page + 1 );
+					if ( $emcp_lo > 2 ) {
+						$emcp_nums[] = 0;
+					}
+					for ( $i = $emcp_lo; $i <= $emcp_hi; $i++ ) {
+						$emcp_nums[] = $i;
+					}
+					if ( $emcp_hi < $emcp_pages - 1 ) {
+						$emcp_nums[] = 0;
+					}
+					$emcp_nums[] = $emcp_pages;
+				}
+				foreach ( $emcp_nums as $emcp_n ) :
+					if ( 0 === $emcp_n ) :
+						?>
+						<span class="emcp-mk-pager__gap" aria-hidden="true">…</span>
+						<?php
+					elseif ( $emcp_n === $emcp_cur_page ) :
+						?>
+						<span class="button button-primary emcp-mk-pager__num" aria-current="page"><?php echo esc_html( (string) $emcp_n ); ?></span>
+						<?php
+					else :
+						?>
+						<a class="button emcp-mk-pager__num" href="<?php echo esc_url( $emcp_page_href( $emcp_n ) ); ?>"><?php echo esc_html( (string) $emcp_n ); ?></a>
+						<?php
+					endif;
+				endforeach;
+				?>
+
+				<?php if ( $emcp_cur_page < $emcp_pages ) : ?>
+					<a class="button emcp-mk-pager__edge" href="<?php echo esc_url( $emcp_page_href( $emcp_cur_page + 1 ) ); ?>"><?php esc_html_e( 'Next', 'emcp-tools' ); ?> &rarr;</a>
+				<?php else : ?>
+					<span class="button disabled emcp-mk-pager__edge"><?php esc_html_e( 'Next', 'emcp-tools' ); ?> &rarr;</span>
+				<?php endif; ?>
+			</nav>
+		<?php endif; ?>
 		<?php endif; ?>
 	<?php endif; ?>
 </div>
@@ -261,4 +317,8 @@ $emcp_sort     = isset( $_GET['mk_sort'] ) ? sanitize_key( wp_unslash( $_GET['mk
 	.emcp-mk-card__ver { flex: none; width: 15px; height: 15px; display: block; }
 	.emcp-mk-card__foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: #787c82; margin-top: 4px; }
 	.emcp-mk-card__cta { margin-top: 8px; }
+	.emcp-mk-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; margin: 24px 0 4px; }
+	.emcp-mk-pager__num { min-width: 34px; text-align: center; justify-content: center; }
+	.emcp-mk-pager__gap { padding: 0 4px; color: #787c82; }
+	.emcp-mk-pager .button.disabled { pointer-events: none; opacity: .5; }
 </style>

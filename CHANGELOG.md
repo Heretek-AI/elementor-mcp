@@ -2,7 +2,20 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
-## [3.9.2]
+## [3.10.0]
+
+### Added
+- **Project-memory guardrails are now enforced.** An approved `block`-severity memory entry with a concrete target (a tool, a post id, or a post type) now actually refuses a matching write — `severity=block` was advisory before. The Memory tab shows a count badge for agent proposals awaiting your review.
+- **AI Chat cost guard.** A per-user per-minute and per-day tool-call budget stops a runaway agent loop from hammering your site (filter/const overridable).
+- **Themer dynamic fields.** New custom-field (ACF-aware) and featured-image dynamic elements for Gutenberg/Elementor templates, and the archive-loop editor preview now honours query args (post type / ordering / taxonomy term).
+- **Bulk cloud sync.** Push every local sandbox artifact to EMCP Cloud in one call, instead of one at a time.
+- **Multi-site per-call routing.** In the Node proxy, pass `site: "<alias>"` in any tool's arguments to run just that call against that site, without switching the active site (proxy 1.10.0).
+- **Normalized theme-pack capabilities.** Every theme/block pack's read catalog now advertises a `{ supports_patterns, supports_preview, styles_model }` descriptor, so an agent learns what a pack supports without special-casing each.
+
+### Fixed
+- **Page snapshot SEO** now reads Yoast, Rank Math *and* SEOPress meta, with a filter seam so table-based plugins (All in One SEO) can supply accurate values — previously those sites reported empty SEO meta.
+- **build-page** flags unknown widget types in its warnings instead of silently building a page that renders nothing.
+- **Corrupt `_elementor_data`** is backed up before an edit overwrites it, so an edit built on top of unreadable data can't destroy the original.
 
 ### Added
 - **Every AI change is now reversible.** The change ledger (History tab + `list-changes` / `get-change` / `rollback-change`) now records and can undo writes across **every** domain — pages, content (create/update/delete-post), site settings, global colours & typography, the Media Library (including a **reversible delete** that trashes the files first so an attachment can be fully restored), Gutenberg blocks, ACF fields, users, the filesystem, and the database. Before-images are stored durably out-of-band, so a page's undo point is never evicted by a couple of later edits.

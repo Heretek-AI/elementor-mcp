@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.9.2
+Stable tag: 3.10.0
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -176,8 +176,13 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 
 == Changelog ==
 
-= 3.9.2 =
-Every AI change is now reversible, safer OAuth connections, and the default-on read tools no longer expose secrets.
+= 3.10.0 =
+Every AI change is reversible, project-memory guardrails are enforced, safer OAuth connections, and the default-on read tools no longer expose secrets — plus a batch of intelligence, theme, and cloud improvements.
+* Added: project-memory guardrails are now ENFORCED — an approved block-severity memory entry with a target (tool/post/post-type) refuses a matching write. The Memory tab shows a pending-proposal count badge.
+* Added: AI Chat cost guard — a per-user per-minute and per-day tool-call budget stops runaway loops.
+* Added: Themer dynamic custom-field (ACF-aware) and featured-image elements, plus query-args on the archive-loop preview.
+* Added: bulk cloud sync (push all local sandbox artifacts at once); multi-site per-call routing in the proxy (pass site:"alias"); normalized theme-pack capabilities descriptor.
+* Fixed: page-snapshot SEO reads Yoast/Rank Math/SEOPress (+ AIOSEO seam); build-page flags unknown widget types; corrupt _elementor_data is backed up before overwrite.
 * Added: the change ledger now records and can roll back writes across every domain — pages, content, settings, global colours/typography, the Media Library (including a reversible delete that trashes the files first), Gutenberg blocks, ACF, users, filesystem, and database. Before-images are stored durably so undo points aren't evicted.
 * Added: rollback won't clobber newer edits — it detects that a target changed since and asks you to confirm (force) before overwriting; the History tab shows a "roll back anyway" button.
 * Added: OAuth connections survive a dropped refresh-token response (grace window on rotation), fixing the intermittent mid-chat reconnect for site-hosted OAuth.

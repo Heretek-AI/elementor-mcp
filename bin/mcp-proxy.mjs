@@ -17,6 +17,8 @@
  *   EMCP_SITES_FILE      Path to a JSON file with the same shape.
  *   EMCP_DEFAULT_SITE    Alias to start on (defaults to the first key).
  *   When >1 site is configured, two extra tools appear: emcp_list_sites, emcp_use_site.
+ *   Per-call routing: pass `site: "<alias>"` in ANY tool's arguments to run just
+ *   that call against that site, without switching the active site.
  *
  * Common (all modes):
  *   MCP_LOG_FILE         (optional) Path to a log file for debugging.
@@ -172,6 +174,33 @@ function jsonRpcError(id, message) {
   return { jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: message }], isError: true } };
 }
 
+/**
+ * Route a single tools/call to a per-call `site` argument when present + valid,
+ * stripping `site` from the forwarded arguments. This is the per-call fan-out
+ * companion to the session-switch `emcp_use_site` tool: pass `site: "<alias>"`
+ * in any tool's arguments to run just that call against that site, without
+ * changing the active site. Falls back to the active site otherwise.
+ *
+ * @param {Object} message JSON-RPC message.
+ * @param {Object} state   Proxy state ({ sites, active }).
+ * @returns {{ alias: string, message: Object }}
+ */
+export function resolveCallSite(message, state) {
+  if (
+    message?.method === 'tools/call' &&
+    message.params?.arguments &&
+    typeof message.params.arguments === 'object' &&
+    !Array.isArray(message.params.arguments)
+  ) {
+    const site = message.params.arguments.site;
+    if (typeof site === 'string' && site && state.sites[site]) {
+      const { site: _drop, ...rest } = message.params.arguments;
+      return { alias: site, message: { ...message, params: { ...message.params, arguments: rest } } };
+    }
+  }
+  return { alias: state.active, message };
+}
+
 // ---------------------------------------------------------------------------
 // Everything below is the running proxy — skipped when imported for tests.
 // ---------------------------------------------------------------------------
@@ -279,8 +308,11 @@ function runProxy() {
     }
 
     try {
-      if (method !== 'initialize') await ensureSession(state.active);
-      const { body, headers, statusCode } = await sendToSite(state.active, message);
+      // Per-call routing: a `site` arg on a tools/call targets that site for this
+      // call only (stripped before forwarding); everything else uses the active site.
+      const { alias: targetAlias, message: outMessage } = resolveCallSite(message, state);
+      if (method !== 'initialize') await ensureSession(targetAlias);
+      const { body, headers, statusCode } = await sendToSite(targetAlias, outMessage);
 
       if (id === null && !method.startsWith('initialize')) return; // notification
 

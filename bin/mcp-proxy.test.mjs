@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 process.env.EMCP_PROXY_NO_MAIN = '1';
-const { loadSites, META_TOOLS, isMetaCall, injectMetaTools, handleMetaCall, sitePath } = await import('./mcp-proxy.mjs');
+const { loadSites, META_TOOLS, isMetaCall, injectMetaTools, handleMetaCall, sitePath, resolveCallSite } = await import('./mcp-proxy.mjs');
 
 test('loadSites: single-site env → one default site', () => {
   const { sites, defaultSite } = loadSites({
@@ -93,4 +93,25 @@ test('handleMetaCall: list + switch', () => {
   const bad = handleMetaCall('emcp_use_site', { site: 'nope' }, state, 3);
   assert.ok(bad.result.isError);
   assert.equal(state.active, 'b'); // unchanged on bad switch
+});
+
+test('resolveCallSite: per-call site arg routes to that site and strips it', () => {
+  const state = { sites: { a: { url: 'x' }, b: { url: 'y' } }, active: 'a' };
+  const msg = { method: 'tools/call', params: { name: 'emcp-tools-list-pages', arguments: { site: 'b', foo: 1 } } };
+  const { alias, message } = resolveCallSite(msg, state);
+  assert.equal(alias, 'b');
+  assert.deepEqual(message.params.arguments, { foo: 1 });
+});
+
+test('resolveCallSite: unknown site falls back to active and keeps args', () => {
+  const state = { sites: { a: {} }, active: 'a' };
+  const msg = { method: 'tools/call', params: { name: 't', arguments: { site: 'nope', foo: 1 } } };
+  const { alias, message } = resolveCallSite(msg, state);
+  assert.equal(alias, 'a');
+  assert.deepEqual(message.params.arguments, { site: 'nope', foo: 1 });
+});
+
+test('resolveCallSite: non-tools/call uses the active site', () => {
+  const state = { sites: { a: {} }, active: 'a' };
+  assert.equal(resolveCallSite({ method: 'tools/list' }, state).alias, 'a');
 });

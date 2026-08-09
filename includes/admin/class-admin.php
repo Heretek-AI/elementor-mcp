@@ -129,6 +129,20 @@ class EMCP_Tools_Admin {
 	}
 
 	/**
+	 * Number of agent-proposed project-memory entries awaiting review (0 when the
+	 * Memory tab is hidden or the store is unavailable). Surfaced as a count badge
+	 * on the Memory submenu + in-page nav so pending proposals aren't forgotten.
+	 *
+	 * @return int
+	 */
+	public function memory_pending_count(): int {
+		if ( ! $this->memory_tab_visible() || ! class_exists( 'EMCP_Tools_Memory_Store' ) ) {
+			return 0;
+		}
+		return EMCP_Tools_Memory_Store::instance()->pending_count();
+	}
+
+	/**
 	 * Dashicon class for a tab id, used by the in-header nav. Falls back to a
 	 * generic marker for unknown ids.
 	 *
@@ -1588,10 +1602,18 @@ class EMCP_Tools_Admin {
 		);
 
 		foreach ( $this->get_submenus() as $slug => $label ) {
+			$menu_title = $label;
+			// Native WordPress count bubble on the Memory submenu for pending proposals.
+			if ( self::PAGE_SLUG . '-memory' === $slug ) {
+				$pending = $this->memory_pending_count();
+				if ( $pending > 0 ) {
+					$menu_title = $label . ' <span class="awaiting-mod"><span class="pending-count" aria-hidden="true">' . (int) $pending . '</span></span>';
+				}
+			}
 			$this->hook_suffixes[] = add_submenu_page(
 				self::PAGE_SLUG,
 				$label,
-				$label,
+				$menu_title,
 				'manage_options',
 				$slug,
 				array( $this, 'render_page' )
@@ -2885,6 +2907,14 @@ class EMCP_Tools_Admin {
 						<?php echo $emcp_is_on ? 'aria-current="page"' : ''; ?>>
 						<span class="dashicons <?php echo esc_attr( self::tab_icon( $emcp_tab_id ) ); ?>" aria-hidden="true"></span>
 						<span class="emcp-appnav-label"><?php echo esc_html( $emcp_label ); ?></span>
+						<?php
+						if ( self::PAGE_SLUG . '-memory' === $emcp_slug ) {
+							$emcp_pending = $this->memory_pending_count();
+							if ( $emcp_pending > 0 ) {
+								echo '<span class="emcp-appnav-badge" title="' . esc_attr__( 'Pending memory proposals awaiting review', 'emcp-tools' ) . '">' . (int) $emcp_pending . '</span>';
+							}
+						}
+						?>
 					</a>
 				<?php endforeach; ?>
 			</nav>

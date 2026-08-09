@@ -4545,3 +4545,6 @@ body[data-emcp-auth="app-password"] [data-authfor="oauth"] { display: none; }
 .emcp-sb-disclosure--cloud > summary .dashicons-cloud { color: #6a11cb; }
 .emcp-sb-disclosure--cloud > summary::after { color: #6a11cb; }
 .emcp-sb-disclosure__badge { margin-left: 6px; font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: #6a11cb; background: #fff; border: 1px solid #cbb6ef; border-radius: 999px; padding: 2px 9px; }
+
+/* Pending-count badge on the Memory app-nav tab (project-memory proposals awaiting review). */
+.emcp-appnav-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px; border-radius: 9px; background: #d63638; color: #fff; font-size: 11px; font-weight: 700; line-height: 1; }

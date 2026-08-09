@@ -55,7 +55,8 @@ class EMCP_Tools_Schema_Compat {
 		}
 
 		if ( isset( $args['execute_callback'] ) && is_callable( $args['execute_callback'] ) ) {
-			$args['execute_callback'] = self::wrap_execute_callback( $args['execute_callback'] );
+			$readonly = ! empty( $args['meta']['annotations']['readonly'] );
+			$args['execute_callback'] = self::wrap_execute_callback( $args['execute_callback'], $name, $readonly );
 		}
 
 		return wp_register_ability( $name, $args );
@@ -82,12 +83,36 @@ class EMCP_Tools_Schema_Compat {
 	 *
 	 * @since 3.6.1
 	 *
+	 * For non-read-only abilities the wrapper also runs the `emcp_tools_before_write`
+	 * veto filter first: a listener (the Pro Memory Enforcer) can return a WP_Error
+	 * to block the write — this is how approved `block`-severity project-memory
+	 * guardrails are actually enforced. The default (no listener) allows the write.
+	 *
 	 * @param callable $callback The ability's execute callback.
+	 * @param string   $name     Ability name (e.g. emcp-tools/delete-media).
+	 * @param bool     $readonly Whether the ability is read-only (no write veto).
 	 * @return callable
 	 */
-	protected static function wrap_execute_callback( callable $callback ): callable {
-		return static function () use ( $callback ) {
-			return self::normalize_result( $callback( ...func_get_args() ) );
+	protected static function wrap_execute_callback( callable $callback, string $name = '', bool $readonly = false ): callable {
+		return static function () use ( $callback, $name, $readonly ) {
+			$call_args = func_get_args();
+			if ( ! $readonly && function_exists( 'apply_filters' ) ) {
+				$input = ( isset( $call_args[0] ) && is_array( $call_args[0] ) ) ? $call_args[0] : array();
+				/**
+				 * Veto a write before it runs. Return a WP_Error to block it (the
+				 * Pro Memory Enforcer hooks this to honor approved `block`-severity
+				 * project-memory guardrails). Default null = allow.
+				 *
+				 * @param null|WP_Error $veto  Null to allow; WP_Error to block.
+				 * @param string        $name  Ability name.
+				 * @param array         $input The ability input.
+				 */
+				$veto = apply_filters( 'emcp_tools_before_write', null, $name, $input );
+				if ( is_wp_error( $veto ) ) {
+					return $veto;
+				}
+			}
+			return self::normalize_result( $callback( ...$call_args ) );
 		};
 	}
 

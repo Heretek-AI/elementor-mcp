@@ -32,6 +32,7 @@ final class EMCP_Tools_Pro_Loader {
 		'includes/memory/class-memory-store.php',
 		'includes/memory/class-memory-digest.php',
 		'includes/memory/class-memory-injector.php',
+		'includes/memory/class-memory-enforcer.php',
 		'includes/memory/class-memory-summarizer.php',
 		'includes/abilities/class-memory-abilities.php',
 		'includes/class-widget-generator.php',

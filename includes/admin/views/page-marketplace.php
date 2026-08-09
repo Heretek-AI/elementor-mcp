@@ -56,12 +56,16 @@ $emcp_per_page = 24;
 
 	<?php
 	if ( ! $emcp_connected ) :
-		$emcp_connect_url = class_exists( 'EMCP_Tools_Cloud_Connect' ) ? EMCP_Tools_Cloud_Connect::connect_url() : admin_url( 'admin.php?page=emcp-tools-connection' );
 		?>
-		<div class="notice notice-info inline" style="margin-top:12px;"><p>
-			<?php esc_html_e( 'Connect this site to EMCP Cloud to browse and install marketplace items.', 'emcp-tools' ); ?>
-			<a href="<?php echo esc_url( $emcp_connect_url ); ?>" class="button button-primary" style="margin-left:8px;"><?php esc_html_e( 'Connect to EMCP Cloud', 'emcp-tools' ); ?></a>
-		</p></div>
+		<div class="notice notice-info inline" style="margin-top:12px;">
+			<p><?php esc_html_e( 'Connect this site to EMCP Cloud to browse and install marketplace items.', 'emcp-tools' ); ?></p>
+			<?php if ( class_exists( 'EMCP_Tools_Cloud_Connect' ) ) :
+				$emcp_connect_label = __( 'Connect to EMCP Cloud', 'emcp-tools' );
+				require EMCP_TOOLS_DIR . 'includes/admin/views/partials/cloud-connect-form.php';
+			else : ?>
+				<p><a href="<?php echo esc_url( admin_url( 'admin.php?page=emcp-tools-connection' ) ); ?>" class="button button-primary"><?php esc_html_e( 'Connect to EMCP Cloud', 'emcp-tools' ); ?></a></p>
+			<?php endif; ?>
+		</div>
 		<?php
 		return;
 	endif;

@@ -345,6 +345,47 @@ class EMCP_Tools_Themer_Dynamic {
 	}
 
 	/**
+	 * A custom field of the queried post (ACF-aware). Fills the "no dynamic-field
+	 * tags" gap for Gutenberg/Elementor dynamic templates.
+	 *
+	 * @param array $args { key (required), before, after, fallback }.
+	 * @return string
+	 */
+	public static function custom_field( array $args = array() ): string {
+		$id  = self::queried_id();
+		$key = isset( $args['key'] ) ? (string) $args['key'] : '';
+		if ( $id <= 0 || '' === $key ) {
+			return '';
+		}
+		$value = function_exists( 'get_field' ) ? get_field( $key, $id ) : get_post_meta( $id, $key, true );
+		if ( is_array( $value ) ) {
+			$value = implode( ', ', array_map( 'strval', $value ) );
+		}
+		$value = trim( (string) $value );
+		if ( '' === $value ) {
+			return isset( $args['fallback'] ) ? '<span class="emcp-dyn emcp-dyn-field">' . esc_html( (string) $args['fallback'] ) . '</span>' : '';
+		}
+		$before = isset( $args['before'] ) ? esc_html( (string) $args['before'] ) : '';
+		$after  = isset( $args['after'] ) ? esc_html( (string) $args['after'] ) : '';
+		return '<span class="emcp-dyn emcp-dyn-field">' . $before . esc_html( $value ) . $after . '</span>';
+	}
+
+	/**
+	 * The featured image of the queried post.
+	 *
+	 * @param array $args { size (default 'large') }.
+	 * @return string
+	 */
+	public static function featured_image( array $args = array() ): string {
+		$id = self::queried_id();
+		if ( $id <= 0 || ! has_post_thumbnail( $id ) ) {
+			return '';
+		}
+		$size = isset( $args['size'] ) ? sanitize_key( (string) $args['size'] ) : 'large';
+		return '<figure class="emcp-dyn emcp-dyn-featured-image">' . get_the_post_thumbnail( $id, $size ) . '</figure>';
+	}
+
+	/**
 	 * Archive posts loop (list / grid) with optional pagination.
 	 *
 	 * On a real front-end archive it loops the MAIN query (that archive's posts).
@@ -379,14 +420,31 @@ class EMCP_Tools_Themer_Dynamic {
 			$own      = false;
 			$paginate = ! empty( $args['pagination'] );
 		} else {
-			$query = new WP_Query(
-				array(
-					'post_type'           => 'post',
-					'posts_per_page'      => max( 3, $columns * 2 ),
-					'ignore_sticky_posts' => true,
-					'no_found_rows'       => true,
-				)
+			// Sample query for the editor/preview — honor optional query args so the
+			// preview can reflect a specific CPT / ordering / taxonomy term instead
+			// of always showing recent posts.
+			$sample = array(
+				'post_type'           => ! empty( $args['query_post_type'] ) ? sanitize_key( (string) $args['query_post_type'] ) : 'post',
+				'posts_per_page'      => ! empty( $args['query_posts_per_page'] ) ? max( 1, (int) $args['query_posts_per_page'] ) : max( 3, $columns * 2 ),
+				'ignore_sticky_posts' => true,
+				'no_found_rows'       => true,
 			);
+			if ( ! empty( $args['query_orderby'] ) ) {
+				$sample['orderby'] = sanitize_key( (string) $args['query_orderby'] );
+			}
+			if ( ! empty( $args['query_order'] ) ) {
+				$sample['order'] = ( 'ASC' === strtoupper( (string) $args['query_order'] ) ) ? 'ASC' : 'DESC';
+			}
+			if ( ! empty( $args['query_tax'] ) && ! empty( $args['query_term'] ) ) {
+				$sample['tax_query'] = array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- bounded preview sample.
+					array(
+						'taxonomy' => sanitize_key( (string) $args['query_tax'] ),
+						'field'    => 'slug',
+						'terms'    => array_map( 'sanitize_title', (array) $args['query_term'] ),
+					),
+				);
+			}
+			$query    = new WP_Query( $sample );
 			$own      = true;
 			$paginate = false;
 		}

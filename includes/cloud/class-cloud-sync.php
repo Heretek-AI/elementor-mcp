@@ -74,6 +74,63 @@ class EMCP_Tools_Cloud_Sync {
 	}
 
 	/**
+	 * The sandbox CPT post type for each artifact kind.
+	 *
+	 * @return array<string,string>
+	 */
+	private static function kind_post_types(): array {
+		return array(
+			'snippet' => class_exists( 'EMCP_Tools_PHP_Snippet_Store' ) ? EMCP_Tools_PHP_Snippet_Store::POST_TYPE : 'emcp_php_snippet',
+			'widget'  => class_exists( 'EMCP_Tools_Widget_Store' ) ? EMCP_Tools_Widget_Store::POST_TYPE : 'emcp_widget',
+			'block'   => class_exists( 'EMCP_Tools_Block_Store' ) ? EMCP_Tools_Block_Store::POST_TYPE : 'emcp_block',
+		);
+	}
+
+	/**
+	 * Back up every local sandbox artifact (optionally only the given kinds) to
+	 * the cloud in one call — the bulk counterpart to backup(). Reuses the
+	 * per-artifact backup() so each push keeps its checksum/validation.
+	 *
+	 * @param string[] $kinds Kinds to sync (block/widget/snippet); empty = all.
+	 * @return array|\WP_Error { pushed, failed, items:[{kind,id,ok,error?}] }.
+	 */
+	public static function bulk_backup( array $kinds = array() ) {
+		if ( ! EMCP_Tools_Cloud::is_connected() ) {
+			return self::not_connected();
+		}
+		$map     = self::kind_post_types();
+		$kinds   = empty( $kinds ) ? array_keys( $map ) : array_values( array_intersect( $kinds, array_keys( $map ) ) );
+		$results = array( 'pushed' => 0, 'failed' => 0, 'items' => array() );
+
+		foreach ( $kinds as $kind ) {
+			// Skip a kind whose store isn't available (e.g. block on a free build).
+			if ( ! self::abilities()->resolve_artifact( $kind ) ) {
+				continue;
+			}
+			$ids = get_posts(
+				array(
+					'post_type'      => $map[ $kind ],
+					'post_status'    => array( 'publish', 'draft', 'pending' ),
+					'posts_per_page' => 500,
+					'fields'         => 'ids',
+					'no_found_rows'  => true,
+				)
+			);
+			foreach ( (array) $ids as $id ) {
+				$res = self::backup( $kind, (int) $id );
+				if ( is_wp_error( $res ) ) {
+					$results['failed']++;
+					$results['items'][] = array( 'kind' => $kind, 'id' => (int) $id, 'ok' => false, 'error' => $res->get_error_message() );
+				} else {
+					$results['pushed']++;
+					$results['items'][] = array( 'kind' => $kind, 'id' => (int) $id, 'ok' => true );
+				}
+			}
+		}
+		return $results;
+	}
+
+	/**
 	 * Pull a cloud artifact into this site (imports as a new local draft).
 	 *
 	 * @param string $artifact_uuid Cloud artifact uuid.

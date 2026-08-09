@@ -948,6 +948,12 @@ class EMCP_Tools_Admin {
 		$client_id = isset( $_GET['client'] ) ? sanitize_text_field( wp_unslash( $_GET['client'] ) ) : '';
 		check_admin_referer( self::ACTION_REVOKE_OAUTH . '_' . $client_id );
 
+		if ( '' !== $client_id && class_exists( 'EMCP_Tools_Gateway_Credential' ) ) {
+			// Must run BEFORE revoke_client() below — once the client row's tokens
+			// are gone, this client can no longer be identified as the gateway client.
+			EMCP_Tools_Gateway_Credential::handle_client_revoked( $client_id );
+		}
+
 		if ( '' !== $client_id && class_exists( 'EMCP_Tools_OAuth_Store' ) ) {
 			EMCP_Tools_OAuth_Store::revoke_client( $client_id );
 		}

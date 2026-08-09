@@ -22,6 +22,19 @@ class EMCP_Tools_Gateway_Credential {
 	const OPTION_FLAG  = 'emcp_tools_gateway_provisioned';
 
 	/**
+	 * The gateway client's id if it already exists, else '' — a non-creating
+	 * lookup (unlike ensure_client(), never registers a new client). Used by
+	 * the teardown paths so a disconnect/revoke can never re-provision.
+	 *
+	 * @return string
+	 */
+	private static function existing_client_id(): string {
+		$uris = array( EMCP_Tools_Cloud::base_url() . '/gateway/callback' ); // registration identity only.
+		$c    = EMCP_Tools_OAuth_Store::find_client_by_registration( self::CLIENT_NAME, $uris );
+		return ( $c && ! empty( $c['client_id'] ) ) ? (string) $c['client_id'] : '';
+	}
+
+	/**
 	 * Ensure the stable "EMCP Gateway" OAuth client exists and return its
 	 * client_id. Idempotent: reuses an existing registration (matched by
 	 * name + redirect URIs) instead of minting a new client every call.
@@ -29,13 +42,12 @@ class EMCP_Tools_Gateway_Credential {
 	 * @return string The gateway client's client_id ('' on failure).
 	 */
 	public static function ensure_client(): string {
-		$uris = array( EMCP_Tools_Cloud::base_url() . '/gateway/callback' ); // registration identity only.
-
-		$existing = EMCP_Tools_OAuth_Store::find_client_by_registration( self::CLIENT_NAME, $uris );
-		if ( $existing && ! empty( $existing['client_id'] ) ) {
-			return (string) $existing['client_id'];
+		$id = self::existing_client_id();
+		if ( '' !== $id ) {
+			return $id;
 		}
 
+		$uris   = array( EMCP_Tools_Cloud::base_url() . '/gateway/callback' ); // registration identity only.
 		$client = EMCP_Tools_OAuth_Store::create_client( self::CLIENT_NAME, $uris, 0 );
 		return (string) ( $client['client_id'] ?? '' );
 	}
@@ -79,5 +91,43 @@ class EMCP_Tools_Gateway_Credential {
 		}
 		update_option( self::OPTION_FLAG, 1, false );
 		return true;
+	}
+
+	/**
+	 * Full local + Cloud teardown of the gateway credential. The local revoke
+	 * always runs (offline-proof kill switch); the Cloud delete is
+	 * best-effort (it needs a live Cloud access token, which may already be
+	 * gone by the time this runs). Idempotent — safe to call repeatedly.
+	 *
+	 * @return void
+	 */
+	public static function deprovision(): void {
+		if ( class_exists( 'EMCP_Tools_Cloud_Client' ) ) {
+			EMCP_Tools_Cloud_Client::delete_gateway_credential(); // best-effort; needs a live Cloud token.
+		}
+		$client_id = self::existing_client_id();
+		if ( '' !== $client_id ) {
+			EMCP_Tools_OAuth_Store::revoke_client( $client_id ); // local kill switch.
+		}
+		delete_option( self::OPTION_FLAG );
+	}
+
+	/**
+	 * Called from the Authorized-Apps revoke handler BEFORE the target client
+	 * is deleted. If $client_id is the gateway client, clears the provisioned
+	 * marker and best-effort deletes the credential from Cloud. Does NOT
+	 * revoke tokens itself — the caller's own revoke_client() does that.
+	 *
+	 * @param string $client_id The client_id about to be revoked.
+	 * @return void
+	 */
+	public static function handle_client_revoked( string $client_id ): void {
+		if ( '' === $client_id || $client_id !== self::existing_client_id() ) {
+			return;
+		}
+		if ( class_exists( 'EMCP_Tools_Cloud_Client' ) ) {
+			EMCP_Tools_Cloud_Client::delete_gateway_credential();
+		}
+		delete_option( self::OPTION_FLAG );
 	}
 }

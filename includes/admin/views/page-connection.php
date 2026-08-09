@@ -308,7 +308,12 @@ $emcp_tools_server_enabled = class_exists( 'EMCP_Tools_Plugin' )
 						);
 						?>
 						<tr>
-							<td><?php echo esc_html( $emcp_oc['client_name'] ); ?></td>
+							<td>
+								<?php echo esc_html( $emcp_oc['client_name'] ); ?>
+								<?php if ( class_exists( 'EMCP_Tools_Gateway_Credential' ) && EMCP_Tools_Gateway_Credential::CLIENT_NAME === $emcp_oc['client_name'] ) : ?>
+									<span class="description" style="display:block;"><?php esc_html_e( 'Used to manage this site from EMCP Cloud across your other sites.', 'emcp-tools' ); ?></span>
+								<?php endif; ?>
+							</td>
 							<td><?php echo esc_html( $emcp_oc_user ? $emcp_oc_user->user_login : '#' . (int) $emcp_oc['user_id'] ); ?></td>
 							<td><?php echo (int) $emcp_oc['active_tokens']; ?></td>
 							<td><a href="<?php echo esc_url( $emcp_revoke ); ?>" class="button button-small"><?php esc_html_e( 'Revoke', 'emcp-tools' ); ?></a></td>

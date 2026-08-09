@@ -402,6 +402,9 @@ class EMCP_Tools_Cloud_Connect {
 	public static function handle_disconnect(): void {
 		self::guard_cap();
 		check_admin_referer( self::ACTION_DISCONNECT );
+		if ( class_exists( 'EMCP_Tools_Gateway_Credential' ) ) {
+			EMCP_Tools_Gateway_Credential::deprovision(); // Cloud delete needs the live connection → before clear_connection().
+		}
 		self::revoke_remote();
 		EMCP_Tools_Cloud::clear_connection();
 		self::back( 'cloud_disconnected=1' );

@@ -16,10 +16,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class EMCP_Tools_Gateway_Credential {
-	const CLIENT_NAME = 'EMCP Gateway';
-	const SCOPE       = 'gateway'; // provenance/revocation label.
-	const REFRESH_TTL = 0;         // 0 = non-expiring refresh.
-	const OPTION_FLAG = 'emcp_tools_gateway_provisioned';
+	const CLIENT_NAME  = 'EMCP Gateway';
+	const SCOPE        = 'gateway'; // provenance/revocation label.
+	const REFRESH_TTL  = 315360000; // 10y — effectively non-expiring; store computes expires_at = now+ttl (no 0-sentinel), and each gateway refresh rotates a fresh token resetting the clock. 0 would expire immediately (find_token filters expires_at > now).
+	const OPTION_FLAG  = 'emcp_tools_gateway_provisioned';
 
 	/**
 	 * Ensure the stable "EMCP Gateway" OAuth client exists and return its
@@ -38,5 +38,21 @@ class EMCP_Tools_Gateway_Credential {
 
 		$client = EMCP_Tools_OAuth_Store::create_client( self::CLIENT_NAME, $uris, 0 );
 		return (string) ( $client['client_id'] ?? '' );
+	}
+
+	/**
+	 * Self-issue a gateway-scoped refresh token bound to $user_id.
+	 * The plaintext refresh token is returned once — the caller must upload it and not persist it.
+	 *
+	 * @param int $user_id User the token acts as.
+	 * @return array{client_id:string,refresh_token:string}
+	 */
+	public static function issue_for_user( int $user_id ): array {
+		$client_id = self::ensure_client();
+		$tok       = EMCP_Tools_OAuth_Store::issue_token( 'refresh', $client_id, $user_id, self::SCOPE, self::REFRESH_TTL );
+		return array(
+			'client_id'     => $client_id,
+			'refresh_token' => (string) ( $tok['token'] ?? '' ),
+		);
 	}
 }

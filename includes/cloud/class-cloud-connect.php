@@ -334,7 +334,18 @@ class EMCP_Tools_Cloud_Connect {
 		}
 		$verifier = EMCP_Tools_OAuth_Util::generate_code_verifier();
 		$csrf     = EMCP_Tools_OAuth_Util::generate_token();
-		set_transient( self::PENDING_TRANSIENT, array( 'verifier' => $verifier, 'csrf' => $csrf, 'client_id' => $client_id ), 600 );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce already checked by check_admin_referer() above.
+		$gateway_optin = isset( $_POST['emcp_gateway_optin'] );
+		set_transient(
+			self::PENDING_TRANSIENT,
+			array(
+				'verifier'  => $verifier,
+				'csrf'      => $csrf,
+				'client_id' => $client_id,
+				'gateway'   => $gateway_optin,
+			),
+			600
+		);
 		// The authorize URL is on the Cloud host, not this site. wp_safe_redirect()
 		// blocks off-site hosts (falling back to wp-admin), so allow the Cloud host
 		// for this one deliberate redirect to our own service.
@@ -374,6 +385,12 @@ class EMCP_Tools_Cloud_Connect {
 			self::back( 'cloud_error=state' );
 		}
 		$bundle = self::exchange_code( $code, (string) $pending['verifier'], (string) $pending['client_id'] );
+		if ( ! is_wp_error( $bundle ) && ! empty( $pending['gateway'] ) && class_exists( 'EMCP_Tools_Gateway_Credential' ) ) {
+			// Best-effort: the Cloud connection has already succeeded above, so a
+			// gateway provisioning failure here must never turn into a user-facing
+			// error — it just leaves the gateway un-provisioned for this site.
+			EMCP_Tools_Gateway_Credential::provision( get_current_user_id() );
+		}
 		self::back( is_wp_error( $bundle ) ? 'cloud_error=token' : 'cloud_connected=1' );
 	}
 

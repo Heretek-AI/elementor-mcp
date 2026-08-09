@@ -55,4 +55,29 @@ class EMCP_Tools_Gateway_Credential {
 			'refresh_token' => (string) ( $tok['token'] ?? '' ),
 		);
 	}
+
+	/**
+	 * Issue a gateway credential for $user_id and upload it to Cloud. Best-effort:
+	 * on upload failure, revokes the just-issued token so no orphan lingers, and does
+	 * not set the provisioned marker.
+	 *
+	 * @param int $user_id User the gateway acts as.
+	 * @return bool True when a credential is live in Cloud.
+	 */
+	public static function provision( int $user_id ): bool {
+		$cred = self::issue_for_user( $user_id );
+		if ( empty( $cred['refresh_token'] ) ) {
+			return false;
+		}
+		$ok = EMCP_Tools_Cloud_Client::put_gateway_credential( $cred['client_id'], $cred['refresh_token'] );
+		if ( ! $ok ) {
+			$row = EMCP_Tools_OAuth_Store::find_token( $cred['refresh_token'], 'refresh' );
+			if ( $row ) {
+				EMCP_Tools_OAuth_Store::revoke_token( (int) $row['id'] );
+			}
+			return false;
+		}
+		update_option( self::OPTION_FLAG, 1, false );
+		return true;
+	}
 }

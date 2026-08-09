@@ -542,7 +542,18 @@ SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1</pre>
 							</p>
 						<?php else : ?>
 							<p class="elementor-mcp-activate-note"><?php esc_html_e( 'Connect this site to your EMCP Cloud account to back up and sync your work.', 'emcp-tools' ); ?></p>
-							<p><a href="<?php echo esc_url( EMCP_Tools_Cloud_Connect::connect_url() ); ?>" class="button button-primary"><?php esc_html_e( 'Connect to EMCP Cloud', 'emcp-tools' ); ?></a></p>
+							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+								<input type="hidden" name="action" value="<?php echo esc_attr( EMCP_Tools_Cloud_Connect::ACTION_CONNECT ); ?>" />
+								<?php wp_nonce_field( EMCP_Tools_Cloud_Connect::ACTION_CONNECT ); ?>
+								<label class="emcp-gateway-optin">
+									<input type="checkbox" name="emcp_gateway_optin" value="1" checked="checked" />
+									<?php esc_html_e( 'Also let me manage this site through the EMCP gateway (recommended)', 'emcp-tools' ); ?>
+									<span class="description">
+										<?php esc_html_e( 'Authorizes the EMCP gateway to run MCP tools on this site on your behalf, so you can manage all your sites from a single AI connection. It never gets your password — it uses a revocable token, and only the tools you have enabled. Revoke anytime from Users → Authorized Apps or your EMCP Cloud dashboard.', 'emcp-tools' ); ?>
+									</span>
+								</label>
+								<p><button type="submit" class="button button-primary"><?php esc_html_e( 'Connect to EMCP Cloud', 'emcp-tools' ); ?></button></p>
+							</form>
 						<?php endif; ?>
 					</div>
 

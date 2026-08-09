@@ -247,6 +247,14 @@ class EMCP_Tools_Data {
 		// Capture the prior Elementor data so the change ledger can offer a rollback.
 		$emcp_before_raw = get_post_meta( $post_id, '_elementor_data', true );
 
+		// Safety net: if the current _elementor_data is a non-empty string that
+		// does not decode to an array, it is corrupt/unreadable. get_page_data()
+		// treats that as an empty page, so an edit built on top would overwrite
+		// the original for good — preserve it first so it stays recoverable.
+		if ( is_string( $emcp_before_raw ) && '' !== $emcp_before_raw && ! is_array( json_decode( $emcp_before_raw, true ) ) ) {
+			update_post_meta( $post_id, '_elementor_data_emcp_corrupt', wp_slash( $emcp_before_raw ) );
+		}
+
 		// Attempt native Elementor save (handles CSS regen, cache busting).
 		// Elementor 4.0 atomic widgets THROW on invalid settings instead of
 		// returning false, so catch it and return a clean error rather than

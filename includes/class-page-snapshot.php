@@ -112,7 +112,9 @@ class EMCP_Tools_Page_Snapshot {
 
 	/**
 	 * Free SEO-lite read: h1 count from content + meta title/description/canonical/og
-	 * read directly from Yoast / Rank Math / core meta (no Pro dependency).
+	 * read from the common postmeta-based SEO plugins (Yoast / Rank Math / SEOPress).
+	 * Plugins that store SEO data outside postmeta (e.g. All in One SEO's own table)
+	 * supply their values through the `emcp_tools_page_snapshot_seo_lite` filter.
 	 *
 	 * @param int   $post_id Post ID.
 	 * @param array $content From content_stats().
@@ -139,13 +141,23 @@ class EMCP_Tools_Page_Snapshot {
 			return '';
 		};
 
-		return array(
+		$result = array(
 			'h1_count'         => $h1,
-			'meta_title'       => $read( array( '_yoast_wpseo_title', 'rank_math_title' ) ),
-			'meta_description' => $read( array( '_yoast_wpseo_metadesc', 'rank_math_description' ) ),
-			'canonical'        => $read( array( '_yoast_wpseo_canonical', 'rank_math_canonical_url' ) ),
-			'og_image'         => $read( array( '_yoast_wpseo_opengraph-image', 'rank_math_facebook_image' ) ),
+			'meta_title'       => $read( array( '_yoast_wpseo_title', 'rank_math_title', '_seopress_titles_title' ) ),
+			'meta_description' => $read( array( '_yoast_wpseo_metadesc', 'rank_math_description', '_seopress_titles_desc' ) ),
+			'canonical'        => $read( array( '_yoast_wpseo_canonical', 'rank_math_canonical_url', '_seopress_robots_canonical' ) ),
+			'og_image'         => $read( array( '_yoast_wpseo_opengraph-image', 'rank_math_facebook_image', '_seopress_social_fb_img' ) ),
 		);
+
+		/**
+		 * Filter the free SEO-lite snapshot. Lets an active SEO integration (or a
+		 * Pro overlay) supply accurate values for plugins that don't store SEO
+		 * meta in postmeta — e.g. All in One SEO, which keeps it in its own table.
+		 *
+		 * @param array $result  { h1_count, meta_title, meta_description, canonical, og_image }.
+		 * @param int   $post_id Post ID.
+		 */
+		return (array) apply_filters( 'emcp_tools_page_snapshot_seo_lite', $result, $post_id );
 	}
 
 	/**

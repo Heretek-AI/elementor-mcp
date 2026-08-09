@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.9.1
+Stable tag: 3.9.2
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,15 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.9.2 =
+Every AI change is now reversible, safer OAuth connections, and the default-on read tools no longer expose secrets.
+* Added: the change ledger now records and can roll back writes across every domain — pages, content, settings, global colours/typography, the Media Library (including a reversible delete that trashes the files first), Gutenberg blocks, ACF, users, filesystem, and database. Before-images are stored durably so undo points aren't evicted.
+* Added: rollback won't clobber newer edits — it detects that a target changed since and asks you to confirm (force) before overwriting; the History tab shows a "roll back anyway" button.
+* Added: OAuth connections survive a dropped refresh-token response (grace window on rotation), fixing the intermittent mid-chat reconnect for site-hosted OAuth.
+* Added: Connection tab panel for the OAuth/Cloudflare "Couldn't register" case (paths to allow-list + Application-Password fallback).
+* Security: the default-on read tools no longer expose secrets — the database query tool refuses raw reads of the user tables (password hashes/session tokens), and read-file/search-files refuse wp-config.php.
+* Improved: safer database rollback (no unscoped updates; large changes flagged partial) and a single audit source (removed the old write-only fs/db audit logs).
 
 = 3.9.1 =
 GeneratePress + GenerateBlocks support and Blocksy support (both Pro), plus reordering Elementor 4 Global Classes.

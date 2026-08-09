@@ -2,6 +2,20 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.9.2]
+
+### Added
+- **Every AI change is now reversible.** The change ledger (History tab + `list-changes` / `get-change` / `rollback-change`) now records and can undo writes across **every** domain — pages, content (create/update/delete-post), site settings, global colours & typography, the Media Library (including a **reversible delete** that trashes the files first so an attachment can be fully restored), Gutenberg blocks, ACF fields, users, the filesystem, and the database. Before-images are stored durably out-of-band, so a page's undo point is never evicted by a couple of later edits.
+- **Rollback won't clobber your newer edits.** Every recorded change stamps a fingerprint of the result; if the target changed since, `rollback-change` stops with a "conflict" and asks you to confirm (`force`) before overwriting the newer state. The History tab shows a "roll back anyway" button for these.
+- **OAuth connections survive a dropped refresh.** A short grace window on refresh-token rotation stops the intermittent mid-chat "reconnect" for site-hosted OAuth (a lost response no longer invalidates the token).
+- **Connection tab: OAuth / Cloudflare troubleshooting.** A new panel explains the "Couldn't register" case (a CDN or bot filter blocking the client's discovery/registration calls), lists the exact paths to allow-list, and points to the Application-Password fallback.
+
+### Security
+- **The default-on read tools no longer expose secrets.** The database `query` tool refuses raw reads of the user tables (password hashes, session tokens, activation keys — use the dedicated user tools instead), and `read-file` / `search-files` refuse `wp-config.php` (database credentials and auth salts).
+
+### Improved
+- Database rollback is safer (a row-update rollback with no key columns is refused instead of running unscoped; a very large change is flagged as only partially reversible), and the change ledger is now the single audit source (the old write-only filesystem/database audit logs were removed).
+
 ## [3.9.1]
 
 ### Added

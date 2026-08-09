@@ -205,8 +205,31 @@ abstract class EMCP_Tools_Theme_Integration {
 			}
 		}
 		return array(
-			'mode'       => $mode,
-			'operations' => $out,
+			'mode'         => $mode,
+			'operations'   => $out,
+			'capabilities' => $this->capabilities(),
+		);
+	}
+
+	/**
+	 * A normalized capabilities descriptor so an agent learns what a theme/block
+	 * pack supports without special-casing each one. Subclasses override to
+	 * declare support.
+	 *
+	 * - supports_patterns: has list-patterns / insert-pattern (an editor-valid
+	 *   insertion route).
+	 * - supports_preview: can render/validate a block before it is committed.
+	 * - styles_model: how the pack is styled — 'none' (place-and-render),
+	 *   'uniqueid' (self-styling by id), 'styles-object' (a styles map compiled to
+	 *   CSS), or 'attributes' (attribute-driven).
+	 *
+	 * @return array{supports_patterns:bool,supports_preview:bool,styles_model:string}
+	 */
+	protected function capabilities(): array {
+		return array(
+			'supports_patterns' => false,
+			'supports_preview'  => false,
+			'styles_model'      => 'none',
 		);
 	}
 

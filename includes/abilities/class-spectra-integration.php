@@ -23,6 +23,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class EMCP_Tools_Spectra_Integration extends EMCP_Tools_Theme_Integration {
 
+	protected function capabilities(): array {
+		return array( 'supports_patterns' => false, 'supports_preview' => false, 'styles_model' => 'attributes' );
+	}
+
+
 	public function id(): string {
 		return 'spectra';
 	}

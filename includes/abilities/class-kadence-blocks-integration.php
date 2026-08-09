@@ -28,6 +28,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class EMCP_Tools_Kadence_Blocks_Integration extends EMCP_Tools_Theme_Integration {
 
+	protected function capabilities(): array {
+		return array( 'supports_patterns' => true, 'supports_preview' => true, 'styles_model' => 'uniqueid' );
+	}
+
+
 	public function id(): string {
 		return 'kadence-blocks';
 	}

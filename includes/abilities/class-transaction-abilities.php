@@ -85,14 +85,15 @@ class EMCP_Tools_Transaction_Abilities {
 			'emcp-tools/rollback-change',
 			array(
 				'label'               => __( 'Roll Back Change', 'emcp-tools' ),
-				'description'         => __( 'Undoes one recorded change by id, restores a page\'s prior Elementor data, restores/removes a file from its backup, or inverses a database write from its before-image. Marks the entry rolled back (no double-rollback) and records a compensating entry. Only reverts changes EMCP itself recorded.', 'emcp-tools' ),
+				'description'         => __( 'Undoes one recorded change by id, restores a page\'s prior Elementor data, restores/removes a file from its backup, or inverses a database write from its before-image. Refuses with a "conflict" error if the target changed since the change was recorded (pass force:true to override and overwrite the newer state). Marks the entry rolled back (no double-rollback) and records a compensating entry. Only reverts changes EMCP itself recorded.', 'emcp-tools' ),
 				'category'            => 'emcp-tools',
 				'execute_callback'    => array( $this, 'execute_rollback' ),
 				'permission_callback' => array( $this, 'check_manage' ),
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'id' => array( 'type' => 'string', 'description' => __( 'Change id to roll back.', 'emcp-tools' ) ),
+						'id'    => array( 'type' => 'string', 'description' => __( 'Change id to roll back.', 'emcp-tools' ) ),
+						'force' => array( 'type' => 'boolean', 'description' => __( 'Roll back even if the target changed since (overwrites the newer state). Default: false.', 'emcp-tools' ) ),
 					),
 					'required'   => array( 'id' ),
 				),
@@ -168,8 +169,9 @@ class EMCP_Tools_Transaction_Abilities {
 	 * @return array|WP_Error
 	 */
 	public function execute_rollback( $input ) {
-		$id = isset( $input['id'] ) ? (string) $input['id'] : '';
-		return EMCP_Tools_Change_Log::rollback( $id );
+		$id    = isset( $input['id'] ) ? (string) $input['id'] : '';
+		$force = ! empty( $input['force'] );
+		return EMCP_Tools_Change_Log::rollback( $id, $force );
 	}
 
 	/**

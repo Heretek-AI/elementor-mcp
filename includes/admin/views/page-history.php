@@ -44,6 +44,25 @@ $emcp_cleared = isset( $_GET['cleared'] ) ? absint( wp_unslash( $_GET['cleared']
 <div class="emcp-history">
 	<?php if ( 'ok' === $emcp_rb ) : ?>
 		<div class="notice notice-success is-dismissible"><p><strong><?php esc_html_e( 'Change rolled back.', 'emcp-tools' ); ?></strong></p></div>
+	<?php elseif ( 'partial' === $emcp_rb ) : ?>
+		<div class="notice notice-warning is-dismissible"><p><strong><?php esc_html_e( 'Change rolled back — partially.', 'emcp-tools' ); ?></strong>
+			<?php esc_html_e( 'The before-image was capped, so some rows may not have been restored.', 'emcp-tools' ); ?></p></div>
+	<?php elseif ( 'conflict' === $emcp_rb ) : ?>
+		<?php
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only; the force action below carries its own nonce.
+		$emcp_conflict_id = isset( $_GET['change'] ) ? sanitize_text_field( wp_unslash( $_GET['change'] ) ) : '';
+		?>
+		<div class="notice notice-warning"><p>
+			<strong><?php esc_html_e( 'This target changed since the change was recorded.', 'emcp-tools' ); ?></strong>
+			<?php esc_html_e( 'Rolling back now would overwrite the newer edits.', 'emcp-tools' ); ?>
+			<?php if ( '' !== $emcp_conflict_id ) : ?>
+				<a class="button button-secondary" style="margin-left:8px;"
+					href="<?php echo esc_url( EMCP_Tools_Admin::rollback_change_url( $emcp_conflict_id, true ) ); ?>"
+					onclick="return confirm('<?php echo esc_js( __( 'Overwrite the newer state and roll back anyway?', 'emcp-tools' ) ); ?>');">
+					<?php esc_html_e( 'Roll back anyway', 'emcp-tools' ); ?>
+				</a>
+			<?php endif; ?>
+		</p></div>
 	<?php elseif ( 'error' === $emcp_rb ) : ?>
 		<div class="notice notice-error is-dismissible"><p><strong><?php esc_html_e( 'Rollback failed.', 'emcp-tools' ); ?></strong>
 		<?php

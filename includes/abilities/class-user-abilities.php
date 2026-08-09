@@ -345,6 +345,14 @@ class EMCP_Tools_User_Abilities {
 			wp_send_new_user_notifications( $user_id, 'user' );
 		}
 
+		if ( class_exists( 'EMCP_Tools_Change_Recorder' ) ) {
+			EMCP_Tools_Change_Recorder::record_user_create(
+				$user_id,
+				sprintf( 'Created user #%d (%s)', $user_id, $username ),
+				trim( $username . ' (#' . $user_id . ')' )
+			);
+		}
+
 		return array(
 			'id'        => $user_id,
 			'username'  => $username,
@@ -435,9 +443,29 @@ class EMCP_Tools_User_Abilities {
 			$updated[]              = 'email';
 		}
 
+		// Capture prior values of exactly the fields being changed, for rollback.
+		$emcp_before = array();
+		if ( class_exists( 'EMCP_Tools_Change_Recorder' ) ) {
+			foreach ( $userdata as $emcp_uk => $emcp_uv ) {
+				if ( 'ID' === $emcp_uk ) {
+					continue;
+				}
+				$emcp_before[ $emcp_uk ] = (string) ( $u->$emcp_uk ?? '' );
+			}
+		}
+
 		$res = wp_update_user( $userdata );
 		if ( is_wp_error( $res ) ) {
 			return $res;
+		}
+
+		if ( ! empty( $emcp_before ) ) {
+			EMCP_Tools_Change_Recorder::record_user_fields(
+				$id,
+				$emcp_before,
+				sprintf( 'Updated user #%d', $id ),
+				trim( (string) ( $u->user_login ?? '' ) . ' (#' . $id . ')' )
+			);
 		}
 
 		$fresh = get_userdata( $id );

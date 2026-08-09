@@ -438,6 +438,23 @@ class EMCP_Tools_Media_Library_Abilities {
 		$id      = (int) $post->ID;
 		$updated = array();
 
+		// Capture the before-image of exactly what this update changes, for rollback.
+		$emcp_before = null;
+		if ( class_exists( 'EMCP_Tools_Change_Recorder' ) ) {
+			$emcp_bf = array();
+			if ( array_key_exists( 'title', $input ) )       { $emcp_bf['post_title'] = $post->post_title; }
+			if ( array_key_exists( 'caption', $input ) )     { $emcp_bf['post_excerpt'] = $post->post_excerpt; }
+			if ( array_key_exists( 'description', $input ) ) { $emcp_bf['post_content'] = $post->post_content; }
+			$emcp_bm = array();
+			if ( array_key_exists( 'alt', $input ) ) {
+				$emcp_prior_alt = get_post_meta( $id, '_wp_attachment_image_alt', true );
+				$emcp_bm['_wp_attachment_image_alt'] = ( '' === $emcp_prior_alt ) ? '__DELETE__' : $emcp_prior_alt;
+			}
+			if ( $emcp_bf || $emcp_bm ) {
+				$emcp_before = array( 'fields' => $emcp_bf, 'meta' => $emcp_bm, 'terms' => array() );
+			}
+		}
+
 		$postarr = array( 'ID' => $id );
 		if ( array_key_exists( 'title', $input ) ) {
 			$postarr['post_title'] = sanitize_text_field( (string) $input['title'] );
@@ -464,6 +481,17 @@ class EMCP_Tools_Media_Library_Abilities {
 		if ( array_key_exists( 'alt', $input ) ) {
 			update_post_meta( $id, '_wp_attachment_image_alt', sanitize_text_field( (string) $input['alt'] ) );
 			$updated[] = 'alt';
+		}
+
+		if ( null !== $emcp_before && ! empty( $updated ) ) {
+			EMCP_Tools_Change_Recorder::record_post_fields(
+				$id,
+				$emcp_before,
+				sprintf( 'Updated media #%d (%s)', $id, implode( ', ', $updated ) ),
+				trim( (string) $post->post_title . ' (#' . $id . ')' ),
+				'media',
+				'update-media'
+			);
 		}
 
 		$fresh = get_post( $id );
@@ -523,7 +551,22 @@ class EMCP_Tools_Media_Library_Abilities {
 		$id      = (int) $post->ID;
 		$force   = ! empty( $input['force'] );
 		$trashed = ! $force && defined( 'MEDIA_TRASH' ) && MEDIA_TRASH;
-		$res     = wp_delete_attachment( $id, $force );
+
+		// Snapshot the attachment (post + meta + a trashed copy of every file)
+		// BEFORE deleting, so the delete is reversible from the change ledger.
+		$has_rec  = class_exists( 'EMCP_Tools_Change_Recorder' ) && ! EMCP_Tools_Change_Log::$suppress;
+		$snapshot = ( $has_rec && ! $trashed ) ? EMCP_Tools_Change_Recorder::snapshot_attachment( $id ) : array();
+
+		$res = wp_delete_attachment( $id, $force );
+
+		if ( $has_rec && $res && ! empty( $snapshot ) ) {
+			EMCP_Tools_Change_Recorder::record_attachment_delete(
+				$snapshot,
+				$id,
+				sprintf( 'Deleted media #%d', $id ),
+				trim( (string) $post->post_title . ' (#' . $id . ')' )
+			);
+		}
 		return array(
 			'success' => (bool) $res,
 			'id'      => $id,

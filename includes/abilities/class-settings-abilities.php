@@ -250,6 +250,7 @@ class EMCP_Tools_Settings_Abilities {
 		$updated          = array();
 		$skipped          = array();
 		$permalink_change = false;
+		$before_map       = array(); // option => prior value | '__ABSENT__', for rollback.
 
 		foreach ( $settings as $key => $value ) {
 			$key = (string) $key;
@@ -268,11 +269,21 @@ class EMCP_Tools_Settings_Abilities {
 				continue;
 			}
 			$stored = $coerced['store'];
+			$prior  = get_option( $key, '__EMCP_ABSENT__' );
+			$before_map[ $key ] = ( '__EMCP_ABSENT__' === $prior ) ? '__ABSENT__' : $prior;
 			update_option( $key, $stored );
 			$updated[ $key ] = $coerced['report'];
 			if ( $this->is_permalink_key( $key ) ) {
 				$permalink_change = true;
 			}
+		}
+
+		if ( ! empty( $updated ) && class_exists( 'EMCP_Tools_Change_Recorder' ) ) {
+			EMCP_Tools_Change_Recorder::record_options(
+				$before_map,
+				sprintf( 'Updated %d site setting(s)', count( $updated ) ),
+				implode( ', ', array_keys( $updated ) )
+			);
 		}
 
 		// flush_rewrite_rules() lives in wp-includes/rewrite.php and is loaded on

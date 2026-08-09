@@ -547,6 +547,7 @@ class EMCP_Tools_ACF_Abilities {
 		$updated = array();
 		$skipped = array();
 		$values  = array();
+		$before  = array(); // field_key => prior raw value, for rollback.
 
 		foreach ( $fields as $name_or_key => $value ) {
 			$name_or_key = (string) $name_or_key;
@@ -568,6 +569,11 @@ class EMCP_Tools_ACF_Abilities {
 				}
 			}
 
+			// Capture the prior raw value (by key) before overwriting, for rollback.
+			if ( class_exists( 'EMCP_Tools_Change_Recorder' ) && function_exists( 'get_field' ) ) {
+				$before[ (string) $field['key'] ] = get_field( $field['key'], $target, false );
+			}
+
 			// Always write by field KEY: update_field() by name silently fails on
 			// targets that have no stored value for the field yet.
 			update_field( $field['key'], $value, $target );
@@ -582,6 +588,15 @@ class EMCP_Tools_ACF_Abilities {
 		// The per-request field index predates these writes — drop it so a
 		// later read in the same request sees fresh state.
 		unset( $this->field_index_cache[ (string) $target ] );
+
+		if ( ! empty( $updated ) && ! empty( $before ) && class_exists( 'EMCP_Tools_Change_Recorder' ) ) {
+			EMCP_Tools_Change_Recorder::record_acf_fields(
+				$target,
+				$before,
+				sprintf( 'Updated %d ACF field(s)', count( $updated ) ),
+				(string) $target
+			);
+		}
 
 		return array(
 			'target'  => (string) $target,

@@ -138,6 +138,37 @@ class EMCP_Tools_Global_Abilities {
 	 * @param array $input The input parameters.
 	 * @return array|\WP_Error
 	 */
+	/**
+	 * Snapshot the kit's stored settings meta so a global change can be rolled back.
+	 *
+	 * @param object $kit Active Elementor kit document.
+	 * @return array { id, before }.
+	 */
+	private function snapshot_kit_settings( $kit ): array {
+		$kit_id = (int) $kit->get_id();
+		return array( 'id' => $kit_id, 'before' => get_post_meta( $kit_id, '_elementor_page_settings', true ) );
+	}
+
+	/**
+	 * Record a kit-settings change to the change ledger (meta-before-image).
+	 *
+	 * @param array  $snap    Snapshot from snapshot_kit_settings().
+	 * @param string $summary Human summary.
+	 */
+	private function record_kit_change( array $snap, string $summary ): void {
+		if ( class_exists( 'EMCP_Tools_Change_Recorder' ) && (int) $snap['id'] > 0 ) {
+			EMCP_Tools_Change_Recorder::record_meta(
+				'post',
+				(int) $snap['id'],
+				array( '_elementor_page_settings' => $snap['before'] ),
+				$summary,
+				'Elementor kit #' . (int) $snap['id'],
+				'globals',
+				'update-globals'
+			);
+		}
+	}
+
 	public function execute_update_global_colors( $input ) {
 		$colors = $input['colors'] ?? array();
 
@@ -183,7 +214,9 @@ class EMCP_Tools_Global_Abilities {
 			}
 		}
 
+		$emcp_kit_snap = $this->snapshot_kit_settings( $kit );
 		$kit->update_settings( array( 'custom_colors' => $existing_colors ) );
+		$this->record_kit_change( $emcp_kit_snap, 'Updated global colors' );
 
 		return array( 'success' => true );
 	}
@@ -330,7 +363,9 @@ class EMCP_Tools_Global_Abilities {
 			}
 		}
 
+		$emcp_kit_snap = $this->snapshot_kit_settings( $kit );
 		$kit->update_settings( array( 'custom_typography' => $existing_typo ) );
+		$this->record_kit_change( $emcp_kit_snap, 'Updated global typography' );
 
 		return array( 'success' => true );
 	}

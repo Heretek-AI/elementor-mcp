@@ -325,13 +325,22 @@ class EMCP_Tools_Data {
 				}
 			}
 			$emcp_title = function_exists( 'get_the_title' ) ? (string) get_the_title( $post_id ) : '';
-			EMCP_Tools_Change_Log::record( array(
-				'domain'   => 'elementor',
-				'action'   => 'page-edit',
-				'target'   => trim( $emcp_title . ' (#' . $post_id . ')' ),
-				'summary'  => sprintf( 'Edited Elementor page #%d', $post_id ),
-				'rollback' => array( 'type' => 'elementor-data', 'post_id' => $post_id, 'before' => $emcp_before ),
-			) );
+			if ( class_exists( 'EMCP_Tools_Change_Recorder' ) ) {
+				EMCP_Tools_Change_Recorder::record_elementor(
+					$post_id,
+					$emcp_before,
+					sprintf( 'Edited Elementor page #%d', $post_id ),
+					trim( $emcp_title . ' (#' . $post_id . ')' )
+				);
+			} else {
+				EMCP_Tools_Change_Log::record( array(
+					'domain'   => 'elementor',
+					'action'   => 'page-edit',
+					'target'   => trim( $emcp_title . ' (#' . $post_id . ')' ),
+					'summary'  => sprintf( 'Edited Elementor page #%d', $post_id ),
+					'rollback' => array( 'type' => 'elementor-data', 'post_id' => $post_id, 'before' => $emcp_before ),
+				) );
+			}
 		}
 
 		return true;

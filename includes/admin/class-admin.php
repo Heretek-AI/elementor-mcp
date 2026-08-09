@@ -320,11 +320,12 @@ class EMCP_Tools_Admin {
 	 * @param string $id Change id.
 	 * @return string
 	 */
-	public static function rollback_change_url( string $id ): string {
-		return wp_nonce_url(
-			admin_url( 'admin-post.php?action=' . self::ACTION_ROLLBACK_CHANGE . '&change=' . rawurlencode( $id ) ),
-			self::ACTION_ROLLBACK_CHANGE . '_' . $id
-		);
+	public static function rollback_change_url( string $id, bool $force = false ): string {
+		$url = admin_url( 'admin-post.php?action=' . self::ACTION_ROLLBACK_CHANGE . '&change=' . rawurlencode( $id ) );
+		if ( $force ) {
+			$url .= '&force=1';
+		}
+		return wp_nonce_url( $url, self::ACTION_ROLLBACK_CHANGE . '_' . $id );
 	}
 
 	/**
@@ -338,12 +339,20 @@ class EMCP_Tools_Admin {
 		}
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified just below against the per-id action.
 		$id = isset( $_GET['change'] ) ? sanitize_text_field( wp_unslash( $_GET['change'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified just below; force is a display flag on an admin-gated action.
+		$force = ! empty( $_GET['force'] );
 		check_admin_referer( self::ACTION_ROLLBACK_CHANGE . '_' . $id );
 
-		$result = class_exists( 'EMCP_Tools_Change_Log' ) ? EMCP_Tools_Change_Log::rollback( $id ) : new WP_Error( 'unavailable', 'unavailable' );
-		$status = is_wp_error( $result )
-			? 'error&msg=' . rawurlencode( $result->get_error_message() )
-			: 'ok';
+		$result = class_exists( 'EMCP_Tools_Change_Log' ) ? EMCP_Tools_Change_Log::rollback( $id, $force ) : new WP_Error( 'unavailable', 'unavailable' );
+		if ( is_wp_error( $result ) ) {
+			// A conflict is recoverable — bounce back with the id so the History
+			// tab can offer a "roll back anyway" (force) action.
+			$status = ( 'conflict' === $result->get_error_code() )
+				? 'conflict&change=' . rawurlencode( $id )
+				: 'error&msg=' . rawurlencode( $result->get_error_message() );
+		} else {
+			$status = ! empty( $result['partial'] ) ? 'partial' : 'ok';
+		}
 
 		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-history&rollback=' . $status ) );
 		exit;

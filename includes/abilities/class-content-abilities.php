@@ -491,6 +491,15 @@ class EMCP_Tools_Content_Abilities {
 		$warnings = array();
 		$this->apply_write_extras( $post_id, $input, $warnings, false );
 
+		if ( class_exists( 'EMCP_Tools_Change_Recorder' ) ) {
+			$emcp_title = sanitize_text_field( (string) ( $input['title'] ?? '' ) );
+			EMCP_Tools_Change_Recorder::record_post_create(
+				$post_id,
+				sprintf( 'Created %s #%d', (string) ( $postarr['post_type'] ?? 'post' ), $post_id ),
+				trim( $emcp_title . ' (#' . $post_id . ')' )
+			);
+		}
+
 		$result = array(
 			'post_id'   => $post_id,
 			'status'    => $status,
@@ -725,6 +734,35 @@ class EMCP_Tools_Content_Abilities {
 			$postarr['post_author'] = $author;
 		}
 
+		// Capture the before-image of everything this update can change, so the
+		// change ledger can offer a rollback.
+		$emcp_before = null;
+		if ( class_exists( 'EMCP_Tools_Change_Recorder' ) ) {
+			$emcp_bf = array();
+			foreach ( array( 'post_title', 'post_content', 'post_excerpt', 'post_status', 'post_name', 'post_parent', 'menu_order', 'post_date', 'comment_status', 'post_author' ) as $emcp_col ) {
+				if ( array_key_exists( $emcp_col, $postarr ) ) {
+					$emcp_bf[ $emcp_col ] = $post->$emcp_col;
+				}
+			}
+			$emcp_bm = array();
+			if ( isset( $input['meta'] ) && is_array( $input['meta'] ) ) {
+				foreach ( array_keys( $input['meta'] ) as $emcp_mk ) {
+					$emcp_mk   = sanitize_key( $emcp_mk );
+					$emcp_cur  = get_post_meta( $post_id, $emcp_mk, true );
+					$emcp_bm[ $emcp_mk ] = ( '' === $emcp_cur || array() === $emcp_cur ) ? '__DELETE__' : $emcp_cur;
+				}
+			}
+			$emcp_bt = array();
+			if ( isset( $input['terms'] ) && is_array( $input['terms'] ) ) {
+				foreach ( array_keys( $input['terms'] ) as $emcp_tax ) {
+					$emcp_tax  = sanitize_key( $emcp_tax );
+					$emcp_ids  = wp_get_object_terms( $post_id, $emcp_tax, array( 'fields' => 'ids' ) );
+					$emcp_bt[ $emcp_tax ] = is_wp_error( $emcp_ids ) ? array() : array_map( 'intval', $emcp_ids );
+				}
+			}
+			$emcp_before = array( 'fields' => $emcp_bf, 'meta' => $emcp_bm, 'terms' => $emcp_bt );
+		}
+
 		$res = wp_update_post( wp_slash( $postarr ), true );
 		if ( is_wp_error( $res ) ) {
 			return $res;
@@ -733,6 +771,15 @@ class EMCP_Tools_Content_Abilities {
 		$warnings = array();
 		$append   = isset( $input['terms_mode'] ) && 'append' === $input['terms_mode'];
 		$this->apply_write_extras( $post_id, $input, $warnings, $append );
+
+		if ( null !== $emcp_before ) {
+			EMCP_Tools_Change_Recorder::record_post_fields(
+				$post_id,
+				$emcp_before,
+				sprintf( 'Updated post #%d', $post_id ),
+				trim( (string) get_the_title( $post_id ) . ' (#' . $post_id . ')' )
+			);
+		}
 
 		$result = array(
 			'post_id'   => $post_id,
@@ -792,12 +839,23 @@ class EMCP_Tools_Content_Abilities {
 		if ( ! $post ) {
 			return new \WP_Error( 'post_not_found', __( 'Post not found.', 'emcp-tools' ) );
 		}
-		$force = ! empty( $input['force'] );
+		$force   = ! empty( $input['force'] );
+		$has_rec = class_exists( 'EMCP_Tools_Change_Recorder' );
+		$target  = trim( (string) get_the_title( $post_id ) . ' (#' . $post_id . ')' );
+
 		if ( $force ) {
-			$res = wp_delete_post( $post_id, true );
+			// Snapshot the whole post BEFORE deleting so it can be re-inserted.
+			$snapshot = $has_rec ? EMCP_Tools_Change_Recorder::snapshot_post( $post_id ) : array();
+			$res      = wp_delete_post( $post_id, true );
+			if ( $has_rec && $res ) {
+				EMCP_Tools_Change_Recorder::record_post_delete( $post_id, $snapshot, true, sprintf( 'Deleted post #%d', $post_id ), $target );
+			}
 			return array( 'success' => (bool) $res, 'post_id' => $post_id, 'deleted' => 'deleted' );
 		}
 		$res = wp_trash_post( $post_id );
+		if ( $has_rec && $res ) {
+			EMCP_Tools_Change_Recorder::record_post_delete( $post_id, array(), false, sprintf( 'Trashed post #%d', $post_id ), $target );
+		}
 		return array( 'success' => (bool) $res, 'post_id' => $post_id, 'deleted' => 'trashed' );
 	}
 

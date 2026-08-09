@@ -305,6 +305,7 @@ class EMCP_Tools_Gutenberg_Abilities {
 	 * @return void
 	 */
 	private function save_tree( $post, array $tree ): void {
+		$before_content = (string) $post->post_content;
 		// wp_update_post() runs wp_unslash() on the data, and block serialization
 		// emits backslash escapes (&, \", \\ …) in attributes — so the markup
 		// MUST be slashed here or those escapes get stripped and the block corrupts.
@@ -315,6 +316,18 @@ class EMCP_Tools_Gutenberg_Abilities {
 			),
 			true
 		);
+		// Record the block edit so it can be rolled back (post_content only).
+		if ( class_exists( 'EMCP_Tools_Change_Recorder' ) ) {
+			$post_id = (int) $post->ID;
+			EMCP_Tools_Change_Recorder::record_post_fields(
+				$post_id,
+				array( 'fields' => array( 'post_content' => $before_content ), 'meta' => array(), 'terms' => array() ),
+				sprintf( 'Edited blocks on post #%d', $post_id ),
+				trim( (string) get_the_title( $post_id ) . ' (#' . $post_id . ')' ),
+				'gutenberg',
+				'block-write'
+			);
+		}
 	}
 
 	/**

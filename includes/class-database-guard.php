@@ -20,8 +20,6 @@ class EMCP_Tools_Database_Guard {
 
 	const MAX_ROWS         = 1000;
 	const BEFORE_IMAGE_CAP = 500;
-	const AUDIT_OPTION     = 'emcp_tools_db_audit_log';
-	const AUDIT_MAX        = 100;
 
 	/**
 	 * Pure: normalize SQL for safe keyword scanning — replace every comment with
@@ -246,30 +244,11 @@ class EMCP_Tools_Database_Guard {
 	}
 
 	/**
-	 * Append a write to the capped audit log.
+	 * Deprecated: DB writes are now recorded in the unified change ledger
+	 * (EMCP_Tools_Change_Log) via EMCP_Tools_Change_Recorder, which is the single
+	 * audit + rollback source. Kept as a no-op for backward compatibility.
 	 *
-	 * @param string $op
-	 * @param string $table
-	 * @param int    $affected
-	 * @param array  $before
-	 * @return void
+	 * @deprecated 3.10.0
 	 */
-	public static function log( string $op, string $table, int $affected, array $before = array() ): void {
-		$log = get_option( self::AUDIT_OPTION, array() );
-		if ( ! is_array( $log ) ) {
-			$log = array();
-		}
-		$log[] = array(
-			'op'       => $op,
-			'table'    => $table,
-			'affected' => $affected,
-			'before'   => $before,
-			'user'     => get_current_user_id(),
-			'time'     => time(),
-		);
-		if ( count( $log ) > self::AUDIT_MAX ) {
-			$log = array_slice( $log, -self::AUDIT_MAX );
-		}
-		update_option( self::AUDIT_OPTION, $log, false );
-	}
+	public static function log(): void {}
 }

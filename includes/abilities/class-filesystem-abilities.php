@@ -323,7 +323,6 @@ class EMCP_Tools_Filesystem_Abilities {
 			return new \WP_Error( 'write_failed', __( 'Could not write the file (check permissions).', 'emcp-tools' ) );
 		}
 		self::invalidate_php_opcache( $abs );
-		EMCP_Tools_Filesystem_Guard::log( 'write', $abs );
 		self::record_fs_change( 'write-file', $abs, $backup );
 		return array(
 			'path'   => EMCP_Tools_Filesystem_Guard::to_relative( $abs ),
@@ -411,7 +410,6 @@ class EMCP_Tools_Filesystem_Abilities {
 			return new \WP_Error( 'write_failed', __( 'Could not write the file (check permissions).', 'emcp-tools' ) );
 		}
 		self::invalidate_php_opcache( $abs );
-		EMCP_Tools_Filesystem_Guard::log( 'edit', $abs );
 		self::record_fs_change( 'edit-file', $abs, $backup );
 		return array(
 			'path'         => EMCP_Tools_Filesystem_Guard::to_relative( $abs ),
@@ -476,7 +474,6 @@ class EMCP_Tools_Filesystem_Abilities {
 			return new \WP_Error( 'delete_failed', __( 'Could not delete the file (check permissions).', 'emcp-tools' ) );
 		}
 		self::invalidate_php_opcache( $abs );
-		EMCP_Tools_Filesystem_Guard::log( 'delete', $abs );
 		self::record_fs_change( 'delete-file', $abs, $backup );
 		return array(
 			'path'    => EMCP_Tools_Filesystem_Guard::to_relative( $abs ),
@@ -501,13 +498,20 @@ class EMCP_Tools_Filesystem_Abilities {
 			? array( 'type' => 'file-create', 'target_path' => $abs )
 			: array( 'type' => 'file-backup', 'target_path' => $abs, 'backup_path' => (string) $backup );
 		$verbs   = array( 'write-file' => 'Wrote', 'edit-file' => 'Edited', 'delete-file' => 'Deleted' );
-		EMCP_Tools_Change_Log::record( array(
+		$entry   = array(
 			'domain'   => 'filesystem',
 			'action'   => $action,
 			'target'   => $rel,
 			'summary'  => ( $verbs[ $action ] ?? 'Changed' ) . ' ' . $rel,
 			'rollback' => $rollback,
-		) );
+		);
+		// record_file stamps an after-hash of the written file (empty for a delete)
+		// so a later external change is caught by the conflict guard on rollback.
+		if ( class_exists( 'EMCP_Tools_Change_Recorder' ) ) {
+			EMCP_Tools_Change_Recorder::record_file( $entry, $abs );
+		} else {
+			EMCP_Tools_Change_Log::record( $entry );
+		}
 	}
 
 	/**

@@ -125,6 +125,20 @@ class EMCP_Tools_Database_Abilities {
 
 	// ---- writes (disabled by default) ---------------------------------
 
+	/**
+	 * Record a DB write to the change ledger via the recorder (which offloads a
+	 * large before-image to the blob store), falling back to the raw ledger.
+	 *
+	 * @param array $entry Ledger entry.
+	 */
+	private function record_change( array $entry ): void {
+		if ( class_exists( 'EMCP_Tools_Change_Recorder' ) ) {
+			EMCP_Tools_Change_Recorder::record_db( $entry );
+		} elseif ( class_exists( 'EMCP_Tools_Change_Log' ) ) {
+			EMCP_Tools_Change_Log::record( $entry );
+		}
+	}
+
 	private function register_insert_row(): void {
 		$this->ability( 'emcp-tools/insert-row', __( 'Insert Row', 'emcp-tools' ), __( 'Insert a row into a table (parameterized). Refuses protected tables. Disabled by default.', 'emcp-tools' ), 'execute_insert_row', array( 'table' => array( 'type' => 'string' ), 'data' => array( 'type' => 'object' ) ), array( 'table', 'data' ), false );
 	}
@@ -145,16 +159,13 @@ class EMCP_Tools_Database_Abilities {
 		if ( false === $ok ) {
 			return new \WP_Error( 'insert_failed', $wpdb->last_error ? $wpdb->last_error : __( 'Insert failed.', 'emcp-tools' ) );
 		}
-		EMCP_Tools_Database_Guard::log( 'insert', $table, (int) $ok );
-		if ( class_exists( 'EMCP_Tools_Change_Log' ) ) {
-			EMCP_Tools_Change_Log::record( array(
+		$this->record_change( array(
 				'domain'   => 'database',
 				'action'   => 'insert',
 				'target'   => $table,
 				'summary'  => 'Inserted a row into ' . $table,
 				'rollback' => array( 'type' => 'db-before-image', 'op' => 'insert', 'table' => $table, 'inserted_key' => $data ),
 			) );
-		}
 		return array( 'table' => $table, 'insert_id' => (int) $wpdb->insert_id, 'affected' => (int) $ok );
 	}
 
@@ -183,16 +194,13 @@ class EMCP_Tools_Database_Abilities {
 		if ( false === $affected ) {
 			return new \WP_Error( 'update_failed', $wpdb->last_error ? $wpdb->last_error : __( 'Update failed.', 'emcp-tools' ) );
 		}
-		EMCP_Tools_Database_Guard::log( 'update', $table, (int) $affected, $before );
-		if ( class_exists( 'EMCP_Tools_Change_Log' ) ) {
-			EMCP_Tools_Change_Log::record( array(
+		$this->record_change( array(
 				'domain'   => 'database',
 				'action'   => 'update',
 				'target'   => $table,
 				'summary'  => sprintf( 'Updated %d row(s) in %s', (int) $affected, $table ),
-				'rollback' => array( 'type' => 'db-before-image', 'op' => 'update', 'table' => $table, 'key_cols' => array_keys( $where ), 'before_rows' => $before ),
+				'rollback' => array( 'type' => 'db-before-image', 'op' => 'update', 'table' => $table, 'key_cols' => array_keys( $where ), 'before_rows' => $before, 'partial' => ( count( $before ) >= EMCP_Tools_Database_Guard::BEFORE_IMAGE_CAP ) ),
 			) );
-		}
 		return array( 'table' => $table, 'affected' => (int) $affected, 'before_image_rows' => count( $before ) );
 	}
 
@@ -220,16 +228,13 @@ class EMCP_Tools_Database_Abilities {
 		if ( false === $affected ) {
 			return new \WP_Error( 'delete_failed', $wpdb->last_error ? $wpdb->last_error : __( 'Delete failed.', 'emcp-tools' ) );
 		}
-		EMCP_Tools_Database_Guard::log( 'delete', $table, (int) $affected, $before );
-		if ( class_exists( 'EMCP_Tools_Change_Log' ) ) {
-			EMCP_Tools_Change_Log::record( array(
+		$this->record_change( array(
 				'domain'   => 'database',
 				'action'   => 'delete',
 				'target'   => $table,
 				'summary'  => sprintf( 'Deleted %d row(s) from %s', (int) $affected, $table ),
-				'rollback' => array( 'type' => 'db-before-image', 'op' => 'delete', 'table' => $table, 'key_cols' => array_keys( $where ), 'before_rows' => $before ),
+				'rollback' => array( 'type' => 'db-before-image', 'op' => 'delete', 'table' => $table, 'key_cols' => array_keys( $where ), 'before_rows' => $before, 'partial' => ( count( $before ) >= EMCP_Tools_Database_Guard::BEFORE_IMAGE_CAP ) ),
 			) );
-		}
 		return array( 'table' => $table, 'affected' => (int) $affected, 'before_image_rows' => count( $before ) );
 	}
 }

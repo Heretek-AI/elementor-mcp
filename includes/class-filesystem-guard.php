@@ -21,8 +21,6 @@ class EMCP_Tools_Filesystem_Guard {
 
 	const MAX_READ_BYTES  = 5242880; // 5 MB
 	const MAX_WRITE_BYTES = 5242880; // 5 MB
-	const AUDIT_OPTION    = 'emcp_tools_fs_audit_log';
-	const AUDIT_MAX       = 200;
 	const BACKUP_DIR      = 'emcp-fs-backups';
 
 	/**
@@ -203,26 +201,11 @@ class EMCP_Tools_Filesystem_Guard {
 	}
 
 	/**
-	 * Append a write/delete to the capped audit log option.
+	 * Deprecated: filesystem writes are now recorded in the unified change ledger
+	 * (EMCP_Tools_Change_Log) via EMCP_Tools_Change_Recorder, the single audit +
+	 * rollback source. Kept as a no-op for backward compatibility.
 	 *
-	 * @param string $op
-	 * @param string $abs
-	 * @return void
+	 * @deprecated 3.10.0
 	 */
-	public static function log( string $op, string $abs ): void {
-		$log = get_option( self::AUDIT_OPTION, array() );
-		if ( ! is_array( $log ) ) {
-			$log = array();
-		}
-		$log[] = array(
-			'op'   => $op,
-			'path' => self::to_relative( $abs ),
-			'user' => get_current_user_id(),
-			'time' => time(),
-		);
-		if ( count( $log ) > self::AUDIT_MAX ) {
-			$log = array_slice( $log, -self::AUDIT_MAX );
-		}
-		update_option( self::AUDIT_OPTION, $log, false );
-	}
+	public static function log(): void {}
 }

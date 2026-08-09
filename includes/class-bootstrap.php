@@ -129,6 +129,8 @@ class EMCP_Tools_Bootstrap {
 		require_once EMCP_TOOLS_DIR . 'includes/oauth/class-oauth-server.php';
 		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-snapshot-abilities.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-change-log.php';
+		require_once EMCP_TOOLS_DIR . 'includes/class-change-blobs.php';
+		require_once EMCP_TOOLS_DIR . 'includes/class-change-recorder.php';
 		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-transaction-abilities.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-search-ranker.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-search-index.php';
@@ -320,6 +322,7 @@ class EMCP_Tools_Bootstrap {
 
 		// Content search index: install-on-init + incremental re-index on save/delete.
 		EMCP_Tools_Search_Index::init();
+		EMCP_Tools_Change_Blobs::init();
 		// OAuth sign-in: install storage on init (routes wired in later phases).
 		EMCP_Tools_OAuth_Server::init();
 		// Content mirror: auto-export-on-save (gated by its option) + delete cleanup.

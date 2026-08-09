@@ -116,6 +116,19 @@ class EMCP_Tools_Search_Ranker {
 			return $b['score'] <=> $a['score'];
 		} );
 
+		/**
+		 * Rerank the lexically-scored results before they are truncated to the
+		 * limit. This is the seam for an embedding-backed reranker (a future Pro
+		 * upgrade); the lexical order is the default. Guarded so the ranker stays
+		 * usable without WordPress (pure unit tests).
+		 *
+		 * @param array  $scored Ranked results (object_type/id/title/score/snippet/meta).
+		 * @param string $query  The raw query string.
+		 */
+		if ( function_exists( 'apply_filters' ) ) {
+			$scored = (array) apply_filters( 'emcp_tools_search_rerank', $scored, $query );
+		}
+
 		return array_slice( $scored, 0, max( 1, $limit ) );
 	}
 

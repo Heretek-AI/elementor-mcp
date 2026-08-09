@@ -222,7 +222,7 @@ class EMCP_Tools_Search_Index {
 	private static function index_pages(): int {
 		$q = new WP_Query( array(
 			'post_type'      => array( 'page', 'post' ),
-			'post_status'    => 'publish',
+			'post_status'    => array( 'publish', 'draft', 'pending', 'private', 'future' ),
 			'posts_per_page' => -1,
 			'fields'         => 'ids',
 			'meta_query'     => array( array( 'key' => '_elementor_edit_mode', 'value' => 'builder' ) ), // phpcs:ignore WordPress.DB.SlowDBQuery
@@ -238,7 +238,7 @@ class EMCP_Tools_Search_Index {
 	private static function index_templates(): int {
 		$q = new WP_Query( array(
 			'post_type'      => 'elementor_library',
-			'post_status'    => 'publish',
+			'post_status'    => array( 'publish', 'draft', 'pending', 'private', 'future' ),
 			'posts_per_page' => -1,
 			'fields'         => 'ids',
 		) );
@@ -336,6 +336,12 @@ class EMCP_Tools_Search_Index {
 		// dereference a null manager and fatal on activation (#105). Skip until
 		// Elementor is fully initialized; the reindex tool covers anything missed.
 		if ( class_exists( 'EMCP_Tools_Data' ) && ! EMCP_Tools_Data::elementor_documents_ready() ) {
+			return;
+		}
+		// The active kit stores global colours + typography — re-index those when
+		// it is saved (a global-settings change), not the kit as a template.
+		if ( $post_id > 0 && $post_id === (int) get_option( 'elementor_active_kit', 0 ) ) {
+			self::index_globals();
 			return;
 		}
 		$ptype = $post && isset( $post->post_type ) ? $post->post_type : ( function_exists( 'get_post_type' ) ? get_post_type( $post_id ) : '' );

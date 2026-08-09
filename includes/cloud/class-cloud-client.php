@@ -87,6 +87,36 @@ class EMCP_Tools_Cloud_Client {
 	}
 
 	/**
+	 * Upload the site's gateway credential to EMCP Cloud so the hosted gateway
+	 * can redeem it. The Cloud-side route is a Phase 2 concern; this is purely
+	 * the plugin-side client call.
+	 *
+	 * @param string $client_id     The gateway OAuth client id (from EMCP_Tools_Gateway_Credential).
+	 * @param string $refresh_token The gateway-scoped refresh token (plaintext; sent once).
+	 * @return bool True on success.
+	 */
+	public static function put_gateway_credential( string $client_id, string $refresh_token ): bool {
+		$body = array(
+			'client_id'      => $client_id,
+			'refresh_token'  => $refresh_token,
+			'site_uuid'      => EMCP_Tools_Cloud::site_uuid(),
+			'token_endpoint' => (string) ( EMCP_Tools_OAuth_Metadata::authorization_server_document()['token_endpoint'] ?? '' ),
+		);
+		$res = self::put( '/api/cloud/v1/gateway/credential', $body );
+		return ! is_wp_error( $res );
+	}
+
+	/**
+	 * Delete the site's gateway credential from EMCP Cloud.
+	 *
+	 * @return bool True on success.
+	 */
+	public static function delete_gateway_credential(): bool {
+		$res = self::delete( '/api/cloud/v1/gateway/credential' );
+		return ! is_wp_error( $res );
+	}
+
+	/**
 	 * Back-compat generic request (used by the sync layer + MCP tools).
 	 *
 	 * @param string $method HTTP method.

@@ -80,6 +80,23 @@ class EMCP_Tools_Filesystem_Guard {
 	}
 
 	/**
+	 * Whether a path is READ-protected — its contents hold site secrets and must
+	 * not be returned by read-file / search-files. `wp-config.php` carries the DB
+	 * credentials and auth salts; `.htaccess` is not a secret so it stays
+	 * readable. Filterable so an admin can add `.env`, key files, etc.
+	 *
+	 * @param string $abs
+	 * @return bool
+	 */
+	public static function is_read_protected( string $abs ): bool {
+		$base      = strtolower( basename( $abs ) );
+		$protected = array( 'wp-config.php' );
+		/** Filter the read-protected basenames. */
+		$protected = (array) apply_filters( 'emcp_tools_fs_read_protected_paths', $protected, $abs );
+		return in_array( $base, array_map( 'strtolower', $protected ), true );
+	}
+
+	/**
 	 * Pure: a sanitized, timestamped backup filename for a relative path.
 	 *
 	 * @param string $rel       Path relative to ABSPATH.

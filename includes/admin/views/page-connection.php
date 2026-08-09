@@ -227,6 +227,26 @@ $emcp_tools_server_enabled = class_exists( 'EMCP_Tools_Plugin' )
 					<p class="elementor-mcp-activate-note">
 						<?php esc_html_e( 'Claude and other MCP clients connect through a standard authorization flow: they open a page where you approve access from your WordPress login. Administrators only; Application Passwords keep working alongside it.', 'emcp-tools' ); ?>
 					</p>
+
+					<?php // OAuth / DCR troubleshooting: Cloudflare (or another bot filter) blocking the client's registration POST. ?>
+					<details class="emcp-conn-troubleshoot">
+						<summary><?php esc_html_e( 'Cannot connect over OAuth? ("Couldn\'t register" / Cloudflare)', 'emcp-tools' ); ?></summary>
+						<div class="emcp-conn-troubleshoot__body">
+							<p class="description">
+								<?php esc_html_e( 'If a client (e.g. Claude) reports "Couldn\'t register" or the OAuth connection never completes, a CDN or security layer in front of your site - most often Cloudflare\'s bot-fight mode - is usually blocking the client\'s server-side calls to the discovery and dynamic-registration endpoints. Your browser reaches them fine, but the client\'s server does not.', 'emcp-tools' ); ?>
+							</p>
+							<p class="description">
+								<?php esc_html_e( 'Fix it by allow-listing these paths in your CDN/WAF (in Cloudflare, add a WAF skip / Configuration Rule for them), then reconnect:', 'emcp-tools' ); ?>
+							</p>
+							<pre class="emcp-conn-troubleshoot__code"><code>/.well-known/oauth-authorization-server
+/.well-known/oauth-protected-resource
+/wp-json/emcp-tools/oauth/*
+/wp-json/mcp/emcp-tools-server</code></pre>
+							<p class="description">
+								<?php esc_html_e( 'Cannot change the CDN? Use an Application Password instead - it authenticates with a header on every request and is never blocked by bot filters. Pick "Application Password" under "Choose your authentication method" below.', 'emcp-tools' ); ?>
+							</p>
+						</div>
+					</details>
 				</div>
 
 			</div>

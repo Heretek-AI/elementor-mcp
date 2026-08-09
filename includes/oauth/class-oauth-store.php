@@ -315,11 +315,32 @@ class EMCP_Tools_OAuth_Store {
 	 * TTL is the standard OAuth behaviour (RFC 6749 §1.5: refreshing does not
 	 * invalidate previously issued access tokens).
 	 *
-	 * @param int $id Refresh token row id.
+	 * When a positive $grace is given, the rotated refresh token is not deleted
+	 * but SOFT-EXPIRED to `now + grace` instead — it stays usable for that short
+	 * window so a lost-response retry (the client's refresh succeeded server-side
+	 * but the response was dropped, so it re-presents the same refresh token)
+	 * re-rotates and gets a fresh pair rather than a 401 mid-chat. We only ever
+	 * shorten the lifetime (grace << remaining refresh TTL), then it expires on
+	 * its own and gc() prunes it. $grace = 0 keeps the immediate-delete behaviour.
+	 *
+	 * @param int $id    Refresh token row id.
+	 * @param int $grace Grace window in seconds (0 = delete immediately).
 	 */
-	public static function rotate_out_refresh( int $id ): void {
+	public static function rotate_out_refresh( int $id, int $grace = 0 ): void {
 		global $wpdb;
-		$wpdb->delete( self::tokens_table(), array( 'id' => $id ), array( '%d' ) );
+		if ( $grace <= 0 ) {
+			$wpdb->delete( self::tokens_table(), array( 'id' => $id ), array( '%d' ) );
+			return;
+		}
+		$until = time() + $grace;
+		$wpdb->query(
+			$wpdb->prepare(
+				'UPDATE ' . self::tokens_table() . ' SET expires_at = %d WHERE id = %d AND expires_at > %d',
+				$until,
+				$id,
+				$until
+			)
+		);
 	}
 
 	/**

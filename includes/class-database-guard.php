@@ -180,6 +180,49 @@ class EMCP_Tools_Database_Guard {
 	}
 
 	/**
+	 * Pure: does a read-only $sql reference any of $tables as a real identifier?
+	 *
+	 * Comments and string literals are stripped (so `'wp_users'` in a literal is
+	 * not a reference), backticks are removed (so `` `wp_users` `` still matches),
+	 * and each table is matched on word boundaries (so `wp_users_backup` does not
+	 * match `wp_users`). This is the read-path counterpart to is_protected() —
+	 * the `query` tool refuses any read that touches the protected user tables.
+	 *
+	 * @param string   $sql
+	 * @param string[] $tables Real table names (e.g. {$wpdb->users}).
+	 * @return bool
+	 */
+	public static function query_touches_tables( string $sql, array $tables ): bool {
+		// Remove backticks first so quoted identifiers survive normalization
+		// (normalize_sql empties backtick-quoted spans), then strip comments +
+		// string literals via the shared normalizer.
+		$scan = strtolower( self::normalize_sql( str_replace( '`', ' ', $sql ) ) );
+		foreach ( $tables as $t ) {
+			$t = strtolower( trim( (string) $t ) );
+			if ( '' === $t ) {
+				continue;
+			}
+			if ( preg_match( '/(?<![a-z0-9_])' . preg_quote( $t, '/' ) . '(?![a-z0-9_])/', $scan ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Whether a read-only $sql touches a protected table (users/usermeta by
+	 * default; filter via emcp_tools_db_protected_tables).
+	 *
+	 * @param string $sql
+	 * @return bool
+	 */
+	public static function query_touches_protected( string $sql ): bool {
+		global $wpdb;
+		$protected = apply_filters( 'emcp_tools_db_protected_tables', array( $wpdb->users, $wpdb->usermeta ) );
+		return self::query_touches_tables( $sql, (array) $protected );
+	}
+
+	/**
 	 * Capture the rows an equality-AND WHERE will affect, before update/delete.
 	 *
 	 * @param string $table A validated real table name.

@@ -78,6 +78,9 @@ class EMCP_Tools_Filesystem_Abilities {
 		if ( ! is_file( $abs ) ) {
 			return new \WP_Error( 'not_found', __( 'File not found.', 'emcp-tools' ) );
 		}
+		if ( EMCP_Tools_Filesystem_Guard::is_read_protected( $abs ) ) {
+			return new \WP_Error( 'protected_read', __( 'This file holds site secrets (database credentials and auth salts) and cannot be read.', 'emcp-tools' ) );
+		}
 		$size = (int) filesize( $abs );
 		if ( $size > EMCP_Tools_Filesystem_Guard::MAX_READ_BYTES ) {
 			return new \WP_Error( 'too_large', __( 'File exceeds the maximum readable size.', 'emcp-tools' ) );
@@ -236,6 +239,10 @@ class EMCP_Tools_Filesystem_Abilities {
 				continue;
 			}
 			if ( $f->getSize() > EMCP_Tools_Filesystem_Guard::MAX_READ_BYTES ) {
+				continue;
+			}
+			// Never surface secrets (wp-config.php) via a content search.
+			if ( EMCP_Tools_Filesystem_Guard::is_read_protected( $f->getPathname() ) ) {
 				continue;
 			}
 			$content = (string) file_get_contents( $f->getPathname() );

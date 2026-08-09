@@ -100,6 +100,15 @@ class EMCP_Tools_Database_Abilities {
 		if ( is_wp_error( $ro ) ) {
 			return $ro;
 		}
+		// Read-path secret guard: the user tables hold password hashes, session
+		// tokens, and activation keys. Refuse raw reads that touch them and point
+		// the agent at the dedicated, redacting user tools.
+		if ( EMCP_Tools_Database_Guard::query_touches_protected( $sql ) ) {
+			return new \WP_Error(
+				'protected_read',
+				__( 'Reading the user tables (passwords, session tokens, activation keys) via raw SQL is not allowed. Use the list-users / get-user tools instead.', 'emcp-tools' )
+			);
+		}
 		global $wpdb;
 		$limit = isset( $input['limit'] ) ? (int) $input['limit'] : EMCP_Tools_Database_Guard::MAX_ROWS;
 		$limit = min( EMCP_Tools_Database_Guard::MAX_ROWS, max( 1, $limit ) );

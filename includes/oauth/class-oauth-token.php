@@ -21,8 +21,23 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class EMCP_Tools_OAuth_Token {
 
-	const ACCESS_TTL  = 3600;    // 1 hour (default; see access_ttl()).
-	const REFRESH_TTL = 2592000; // 30 days
+	const ACCESS_TTL    = 3600;    // 1 hour (default; see access_ttl()).
+	const REFRESH_TTL   = 2592000; // 30 days
+	const REFRESH_GRACE = 120;     // seconds a rotated refresh token stays usable (idempotent-refresh grace).
+
+	/**
+	 * Grace window during which a just-rotated refresh token remains usable, so a
+	 * lost-response retry re-rotates instead of 401'ing mid-chat. Overridable via
+	 * the `EMCP_TOOLS_OAUTH_REFRESH_GRACE` constant or the
+	 * `emcp_tools_oauth_refresh_grace` filter. Floored at 0 (0 = immediate delete).
+	 *
+	 * @return int
+	 */
+	public static function refresh_grace(): int {
+		$g = defined( 'EMCP_TOOLS_OAUTH_REFRESH_GRACE' ) ? (int) EMCP_TOOLS_OAUTH_REFRESH_GRACE : self::REFRESH_GRACE;
+		$g = (int) apply_filters( 'emcp_tools_oauth_refresh_grace', $g );
+		return max( 0, $g );
+	}
 
 	/**
 	 * Effective access-token lifetime, in seconds.
@@ -124,9 +139,11 @@ class EMCP_Tools_OAuth_Token {
 			return self::error( 'invalid_grant', 'Refresh token is invalid or expired.' );
 		}
 
-		// Rotate: retire the old refresh token, but leave its bound access token
-		// to expire on its own TTL so in-flight requests aren't 401'd mid-chat.
-		EMCP_Tools_OAuth_Store::rotate_out_refresh( (int) $row['id'] );
+		// Rotate: retire the old refresh token, but (a) leave its bound access
+		// token to expire on its own TTL so in-flight requests aren't 401'd
+		// mid-chat, and (b) keep the retired refresh token usable for a short
+		// grace window so a lost-response retry re-rotates instead of 401'ing.
+		EMCP_Tools_OAuth_Store::rotate_out_refresh( (int) $row['id'], self::refresh_grace() );
 		$pair = self::issue_pair( $client_id, (int) $row['user_id'], (string) $row['scopes'] );
 
 		return new WP_REST_Response(

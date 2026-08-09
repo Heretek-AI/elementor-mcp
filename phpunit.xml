@@ -44,6 +44,9 @@
         <testsuite name="Content">
             <directory>pro/tests/unit/content</directory>
         </testsuite>
+        <testsuite name="Composite">
+            <directory>pro/tests/unit/composite</directory>
+        </testsuite>
         <testsuite name="Settings">
             <directory>pro/tests/unit/settings</directory>
         </testsuite>

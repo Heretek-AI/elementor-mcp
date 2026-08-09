@@ -404,6 +404,9 @@ class EMCP_Tools_Composite_Abilities {
 				if ( empty( $widget_type ) ) {
 					$this->warnings[] = 'Skipped a widget with no widget_type, give each widget a widget_type (e.g. "heading", "button", "image").';
 				} else {
+					if ( ! $this->widget_type_exists( (string) $widget_type ) ) {
+						$this->warnings[] = sprintf( 'Unknown widget type "%s" — it may render nothing. Check list-widgets for valid types.', (string) $widget_type );
+					}
 					$widget = $this->build_widget( $widget_type, $settings );
 					$this->elements_created++;
 
@@ -453,6 +456,33 @@ class EMCP_Tools_Composite_Abilities {
 	 * @param array  $settings    Node settings (convenience params for atomic widgets).
 	 * @return array Widget element structure.
 	 */
+	/**
+	 * Whether a widget type is known — in the curated catalog, the atomic map, or
+	 * Elementor's live widget registry. Unknown types still build (the agent may
+	 * know a valid type we don't list) but are flagged in the response warnings.
+	 *
+	 * @param string $widget_type Widget type.
+	 * @return bool
+	 */
+	private function widget_type_exists( string $widget_type ): bool {
+		if ( '' === $widget_type ) {
+			return false;
+		}
+		if ( class_exists( 'EMCP_Tools_Widget_Catalog' ) && EMCP_Tools_Widget_Catalog::get_widget( $widget_type ) ) {
+			return true;
+		}
+		if ( class_exists( 'EMCP_Tools_Atomic_Widget_Map' ) && EMCP_Tools_Atomic_Widget_Map::is_atomic( $widget_type ) ) {
+			return true;
+		}
+		if ( class_exists( '\Elementor\Plugin' ) && isset( \Elementor\Plugin::$instance->widgets_manager ) ) {
+			$wm = \Elementor\Plugin::$instance->widgets_manager;
+			if ( is_object( $wm ) && method_exists( $wm, 'get_widget_types' ) && null !== $wm->get_widget_types( $widget_type ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private function build_widget( string $widget_type, array $settings ): array {
 		if (
 			class_exists( 'EMCP_Tools_Atomic_Widget_Map' )

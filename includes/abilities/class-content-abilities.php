@@ -763,6 +763,16 @@ class EMCP_Tools_Content_Abilities {
 			$emcp_before = array( 'fields' => $emcp_bf, 'meta' => $emcp_bm, 'terms' => $emcp_bt );
 		}
 
+		// A slug change on a published post kills its old permalink — capture it
+		// (before the update) for a suggested redirect.
+		$emcp_slug_old_url = '';
+		if ( ! empty( $input['slug'] )
+			&& isset( $postarr['post_name'] )
+			&& $postarr['post_name'] !== $post->post_name
+			&& 'publish' === $post->post_status ) {
+			$emcp_slug_old_url = (string) get_permalink( $post_id );
+		}
+
 		$res = wp_update_post( wp_slash( $postarr ), true );
 		if ( is_wp_error( $res ) ) {
 			return $res;
@@ -788,6 +798,9 @@ class EMCP_Tools_Content_Abilities {
 		);
 		if ( $warnings ) {
 			$result['warnings'] = $warnings;
+		}
+		if ( '' !== $emcp_slug_old_url ) {
+			$result = $this->with_redirect_suggestion( $result, $emcp_slug_old_url, 'slug-changed', $post_id );
 		}
 		return $result;
 	}
@@ -842,6 +855,8 @@ class EMCP_Tools_Content_Abilities {
 		$force   = ! empty( $input['force'] );
 		$has_rec = class_exists( 'EMCP_Tools_Change_Recorder' );
 		$target  = trim( (string) get_the_title( $post_id ) . ' (#' . $post_id . ')' );
+		// The now-dead URL, captured before deletion, for a suggested redirect.
+		$old_url = (string) get_permalink( $post_id );
 
 		if ( $force ) {
 			// Snapshot the whole post BEFORE deleting so it can be re-inserted.
@@ -850,13 +865,38 @@ class EMCP_Tools_Content_Abilities {
 			if ( $has_rec && $res ) {
 				EMCP_Tools_Change_Recorder::record_post_delete( $post_id, $snapshot, true, sprintf( 'Deleted post #%d', $post_id ), $target );
 			}
-			return array( 'success' => (bool) $res, 'post_id' => $post_id, 'deleted' => 'deleted' );
+			$out = array( 'success' => (bool) $res, 'post_id' => $post_id, 'deleted' => 'deleted' );
+			return $res ? $this->with_redirect_suggestion( $out, $old_url, 'post-deleted', $post_id ) : $out;
 		}
 		$res = wp_trash_post( $post_id );
 		if ( $has_rec && $res ) {
 			EMCP_Tools_Change_Recorder::record_post_delete( $post_id, array(), false, sprintf( 'Trashed post #%d', $post_id ), $target );
 		}
-		return array( 'success' => (bool) $res, 'post_id' => $post_id, 'deleted' => 'trashed' );
+		$out = array( 'success' => (bool) $res, 'post_id' => $post_id, 'deleted' => 'trashed' );
+		return $res ? $this->with_redirect_suggestion( $out, $old_url, 'post-deleted', $post_id ) : $out;
+	}
+
+	/**
+	 * Queue a suggested redirect for a now-dead URL and annotate the tool
+	 * response. Suggest-only: it never writes a redirect. Safe no-op when the
+	 * Redirect Manager is absent.
+	 *
+	 * @param array  $out    The tool response to annotate.
+	 * @param string $old_url The dead permalink.
+	 * @param string $reason 'post-deleted' | 'slug-changed'.
+	 * @param int    $post_id The source post.
+	 * @return array
+	 */
+	private function with_redirect_suggestion( array $out, string $old_url, string $reason, int $post_id ): array {
+		if ( '' === $old_url || ! class_exists( 'EMCP_Tools_Redirect_Abilities' ) ) {
+			return $out;
+		}
+		EMCP_Tools_Redirect_Abilities::push_suggestion( $old_url, $reason, $post_id );
+		$out['redirect_suggestion'] = array(
+			'old_url' => $old_url,
+			'message' => __( 'This URL is now dead — call create-redirect to point it somewhere so visitors and search engines do not hit a 404.', 'emcp-tools' ),
+		);
+		return $out;
 	}
 
 	// ---------------------------------------------------------------------

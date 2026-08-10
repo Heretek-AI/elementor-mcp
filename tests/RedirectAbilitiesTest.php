@@ -48,6 +48,16 @@ class RedirectAbilitiesTest extends \PHPUnit\Framework\TestCase {
 		$this->assertSame( '/old-a', $q[ count( $q ) - 1 ]['old_path'] );
 	}
 
+	public function test_push_suggestion_caps_queue() {
+		for ( $i = 0; $i < 60; $i++ ) {
+			EMCP_Tools_Redirect_Abilities::push_suggestion( '/p' . $i, 'post-deleted', $i );
+		}
+		$q = get_option( 'emcp_tools_redirect_suggestions', array() );
+		$this->assertCount( 50, $q );
+		// FIFO: the oldest were dropped, the newest kept.
+		$this->assertSame( '/p59', $q[ count( $q ) - 1 ]['old_path'] );
+	}
+
 	public function test_push_suggestion_ignores_root_and_empty() {
 		EMCP_Tools_Redirect_Abilities::push_suggestion( '/', 'post-deleted', 1 );
 		EMCP_Tools_Redirect_Abilities::push_suggestion( '', 'post-deleted', 2 );

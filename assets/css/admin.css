@@ -3369,7 +3369,7 @@ body.emcp-modal-open { overflow: hidden; }
 
 .emcp-help-menu { position: relative; }
 /* Match the Changelog / Affiliate Program pill buttons (.emcp-appbar-changelog). */
-.emcp-help-toggle { display: inline-flex; align-items: center; gap: 6px; padding: 12px 18px; background: var(--mcp-white); border: 1px solid var(--mcp-gray-200); border-radius: 4px; font-size: 13px; font-weight: 600; color: var(--mcp-gray-800, #1d2327); text-decoration: none; cursor: pointer; }
+.emcp-help-toggle { display: inline-flex; align-items: center; gap: 6px; height: 42px; padding: 0 18px; box-sizing: border-box; background: var(--mcp-white); border: 1px solid var(--mcp-gray-200); border-radius: 4px; font-size: 13px; font-weight: 600; color: var(--mcp-gray-800, #1d2327); text-decoration: none; cursor: pointer; }
 .emcp-help-toggle:hover { border-color: var(--mcp-primary); color: var(--mcp-primary); }
 .emcp-help-toggle .dashicons { font-size: 16px; width: 16px; height: 16px; }
 .emcp-help-caret { font-size: 16px; width: 16px; height: 16px; line-height: 1; color: var(--mcp-gray-500, #787c82); }
@@ -3384,7 +3384,7 @@ body.emcp-modal-open { overflow: hidden; }
 
 /* Notifications bell + dropdown (Cloud-fed) — mirrors .emcp-help-menu. */
 .emcp-notif { position: relative; }
-.emcp-notif-toggle { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; padding: 0; background: var(--mcp-white); border: 1px solid var(--mcp-gray-200); border-radius: 4px; cursor: pointer; }
+.emcp-notif-toggle { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; padding: 0; box-sizing: border-box; background: var(--mcp-white); border: 1px solid var(--mcp-gray-200); border-radius: 4px; cursor: pointer; }
 .emcp-notif-toggle:hover { border-color: var(--mcp-primary); }
 .emcp-notif-toggle .dashicons { font-size: 18px; width: 18px; height: 18px; color: var(--mcp-gray-800, #1d2327); }
 .emcp-notif-toggle:hover .dashicons { color: var(--mcp-primary); }
@@ -3413,10 +3413,11 @@ body.emcp-modal-open { overflow: hidden; }
 .emcp-notif-item--success .emcp-notif-item-icon { color: #22c55e; }
 
 /* Cloud / avatar button. */
-.emcp-cloud-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; text-decoration: none; }
-.emcp-cloud-btn:hover { box-shadow: 0 0 0 2px var(--mcp-primary-light); }
-.emcp-cloud-avatar { display: block; width: 28px; height: 28px; border-radius: 50%; }
-.emcp-cloud-dot { position: absolute; right: 0; bottom: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--mcp-gray-400, #a7aaad); border: 2px solid var(--mcp-white); }
+.emcp-cloud-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; box-sizing: border-box; background: var(--mcp-white); border: 1px solid var(--mcp-gray-200); border-radius: 4px; text-decoration: none; }
+.emcp-cloud-btn:hover { border-color: var(--mcp-primary); }
+.emcp-cloud-icon { display: block; font-size: 20px; width: 20px; height: 20px; color: var(--mcp-gray-800, #1d2327); }
+.emcp-cloud-btn:hover .emcp-cloud-icon { color: var(--mcp-primary); }
+.emcp-cloud-dot { position: absolute; right: 3px; bottom: 3px; width: 8px; height: 8px; border-radius: 50%; background: var(--mcp-gray-400, #a7aaad); border: 2px solid var(--mcp-white); }
 .emcp-cloud-dot.is-connected { background: #22c55e; }
 
 .emcp-appbar-upgrade { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: var(--mcp-primary); color: var(--mcp-white); border: 1px solid var(--mcp-primary); border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; }

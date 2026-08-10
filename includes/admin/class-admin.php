@@ -3032,7 +3032,7 @@ class EMCP_Tools_Admin {
 						</div>
 					</div>
 					<a class="emcp-cloud-btn" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-connection' ) ); ?>" title="<?php echo esc_attr( $emcp_cloud_connected ? __( 'EMCP Cloud: Connected', 'emcp-tools' ) : __( 'EMCP Cloud: Not connected — click to connect', 'emcp-tools' ) ); ?>">
-						<?php echo get_avatar( $emcp_uid, 24, '', '', array( 'class' => 'emcp-cloud-avatar' ) ); ?>
+						<span class="dashicons dashicons-cloud emcp-cloud-icon" aria-hidden="true"></span>
 						<span class="emcp-cloud-dot<?php echo $emcp_cloud_connected ? ' is-connected' : ''; ?>"></span>
 					</a>
 				</div>

@@ -284,6 +284,7 @@ class EMCP_Tools_Admin {
 		add_action( 'wp_ajax_emcp_tools_save_php_snippet', array( $this, 'ajax_save_php_snippet' ) );
 		add_action( 'wp_ajax_emcp_tools_toggle_php_snippet', array( $this, 'ajax_toggle_php_snippet' ) );
 		add_action( 'wp_ajax_emcp_tools_delete_php_snippet', array( $this, 'ajax_delete_php_snippet' ) );
+		add_action( 'wp_ajax_emcp_tools_notifications_read', array( $this, 'ajax_notifications_read' ) );
 		add_action( 'admin_post_emcp_tools_download_mcpb', array( $this, 'handle_download_mcpb' ) );
 		add_action( 'admin_post_' . self::ACTION_DISMISS_PROMPTS_NOTICE, array( $this, 'handle_dismiss_prompts_notice' ) );
 		add_action( 'admin_post_' . self::ACTION_ROLLBACK_CHANGE, array( $this, 'handle_rollback_change' ) );
@@ -2281,6 +2282,29 @@ class EMCP_Tools_Admin {
 	}
 
 	/**
+	 * AJAX: mark app-bar notifications as read for the current user, called
+	 * when the notifications dropdown is opened.
+	 *
+	 * @since 3.10.0
+	 */
+	public function ajax_notifications_read(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Forbidden.', 'emcp-tools' ) ), 403 );
+		}
+		if ( ! check_ajax_referer( 'emcp_tools_notifications', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'emcp-tools' ) ), 403 );
+		}
+
+		$ids = isset( $_POST['ids'] ) ? (array) wp_unslash( $_POST['ids'] ) : array();
+		$ids = array_map( 'sanitize_text_field', $ids );
+
+		$user_id = get_current_user_id();
+		EMCP_Tools_Notifications::mark_read( $user_id, $ids );
+
+		wp_send_json_success( array( 'unread' => EMCP_Tools_Notifications::unread_count( $user_id ) ) );
+	}
+
+	/**
 	 * AJAX: activate/deactivate a generated Gutenberg block from the Blocks tab.
 	 *
 	 * @since 3.7.0
@@ -2824,7 +2848,7 @@ class EMCP_Tools_Admin {
 
 		?>
 		<div class="wrap elementor-mcp-admin">
-			<h1><?php esc_html_e( 'MCP Tools for WordPress & Page Builders', 'emcp-tools' ); ?></h1>
+			<h1><?php esc_html_e( 'EMCP Tools', 'emcp-tools' ); ?></h1>
 
 			<?php
 			// Success notice after a Settings API save (options.php redirects back
@@ -2845,6 +2869,16 @@ class EMCP_Tools_Admin {
 			// EMCP Tools menu, so we don't need a redundant header link.
 			$emcp_tools_show_upgrade = ! function_exists( 'emcp_tools_fs' )
 				|| ! emcp_tools_fs()->can_use_premium_code();
+			?>
+
+			<?php
+			// App-bar notifications bell + cloud button state (Cloud-fed, cached,
+			// graceful offline — see EMCP_Tools_Notifications).
+			$emcp_notifs  = class_exists( 'EMCP_Tools_Notifications' ) ? EMCP_Tools_Notifications::get() : array();
+			$emcp_uid     = get_current_user_id();
+			$emcp_unread  = class_exists( 'EMCP_Tools_Notifications' ) ? EMCP_Tools_Notifications::unread_count( $emcp_uid ) : 0;
+			$emcp_seen    = (array) get_user_meta( $emcp_uid, '_emcp_tools_read_notifications', true );
+			$emcp_cloud_connected = class_exists( 'EMCP_Tools_Cloud' ) && EMCP_Tools_Cloud::is_connected();
 			?>
 
 			<!-- Rotating promo / announcement bar -->
@@ -2908,7 +2942,7 @@ class EMCP_Tools_Admin {
 			<div class="emcp-appbar">
 				<div class="emcp-appbar-brand">
 					<img class="emcp-appbar-logo" src="<?php echo esc_url( EMCP_TOOLS_URL . 'assets/img/icon-sm.png' ); ?>" alt="" />
-					<span class="emcp-appbar-title emcp-appbar-title--full"><?php esc_html_e( 'MCP Tools for WordPress & Page Builders', 'emcp-tools' ); ?></span>
+					<span class="emcp-appbar-title emcp-appbar-title--full"><?php esc_html_e( 'EMCP Tools', 'emcp-tools' ); ?></span>
 					<span class="emcp-appbar-title emcp-appbar-title--short"><?php esc_html_e( 'MCP Tools', 'emcp-tools' ); ?></span>
 					<span class="emcp-appbar-version">v<?php echo esc_html( EMCP_TOOLS_VERSION ); ?></span>
 				</div>
@@ -2951,6 +2985,56 @@ class EMCP_Tools_Admin {
 							<a role="menuitem" href="https://emcptools.com/tutorials" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-video-alt3" aria-hidden="true"></span><?php esc_html_e( 'Tutorials', 'emcp-tools' ); ?></a>
 						</div>
 					</div>
+					<div class="emcp-notif">
+						<button type="button" class="emcp-notif-toggle" aria-haspopup="true" aria-expanded="false" data-nonce="<?php echo esc_attr( wp_create_nonce( 'emcp_tools_notifications' ) ); ?>">
+							<span class="dashicons dashicons-bell" aria-hidden="true"></span>
+							<span class="emcp-notif-badge<?php echo 0 === $emcp_unread ? ' is-empty' : ''; ?>"><?php echo esc_html( (string) $emcp_unread ); ?></span>
+						</button>
+						<div class="emcp-notif-dropdown" role="menu">
+							<div class="emcp-notif-header"><?php esc_html_e( 'Announcements', 'emcp-tools' ); ?></div>
+							<div class="emcp-notif-list">
+								<?php if ( empty( $emcp_notifs ) ) : ?>
+									<div class="emcp-notif-empty"><?php esc_html_e( 'No announcements yet.', 'emcp-tools' ); ?></div>
+								<?php else : ?>
+									<?php foreach ( $emcp_notifs as $emcp_n ) : ?>
+										<?php
+										$emcp_n_id      = isset( $emcp_n['id'] ) ? (string) $emcp_n['id'] : '';
+										$emcp_n_unread  = '' !== $emcp_n_id && ! in_array( $emcp_n_id, $emcp_seen, true );
+										$emcp_n_level   = isset( $emcp_n['level'] ) && '' !== $emcp_n['level'] ? sanitize_html_class( $emcp_n['level'] ) : 'info';
+										$emcp_n_icon    = isset( $emcp_n['icon'] ) && '' !== $emcp_n['icon'] ? sanitize_html_class( $emcp_n['icon'] ) : 'megaphone';
+										$emcp_n_created = isset( $emcp_n['created_at'] ) ? strtotime( (string) $emcp_n['created_at'] ) : false;
+										?>
+										<div class="emcp-notif-item emcp-notif-item--<?php echo esc_attr( $emcp_n_level ); ?><?php echo $emcp_n_unread ? ' is-unread' : ''; ?>" data-id="<?php echo esc_attr( $emcp_n_id ); ?>">
+											<span class="emcp-notif-item-icon dashicons dashicons-<?php echo esc_attr( $emcp_n_icon ); ?>" aria-hidden="true"></span>
+											<div class="emcp-notif-item-body">
+												<strong><?php echo esc_html( isset( $emcp_n['title'] ) ? $emcp_n['title'] : '' ); ?></strong>
+												<p><?php echo esc_html( isset( $emcp_n['body'] ) ? $emcp_n['body'] : '' ); ?></p>
+												<div class="emcp-notif-item-meta">
+													<?php if ( false !== $emcp_n_created && $emcp_n_created > 0 ) : ?>
+														<span class="emcp-notif-item-time">
+															<?php
+															/* translators: %s: human-readable time difference (e.g. "2 hours") */
+															echo esc_html( sprintf( __( '%s ago', 'emcp-tools' ), human_time_diff( $emcp_n_created ) ) );
+															?>
+														</span>
+													<?php endif; ?>
+													<?php if ( ! empty( $emcp_n['url'] ) ) : ?>
+														<a class="emcp-notif-item-cta" href="<?php echo esc_url( $emcp_n['url'] ); ?>" target="_blank" rel="noopener">
+															<?php echo esc_html( ! empty( $emcp_n['cta'] ) ? $emcp_n['cta'] : __( 'Learn more', 'emcp-tools' ) ); ?>
+														</a>
+													<?php endif; ?>
+												</div>
+											</div>
+										</div>
+									<?php endforeach; ?>
+								<?php endif; ?>
+							</div>
+						</div>
+					</div>
+					<a class="emcp-cloud-btn" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-connection' ) ); ?>" title="<?php echo esc_attr( $emcp_cloud_connected ? __( 'EMCP Cloud: Connected', 'emcp-tools' ) : __( 'EMCP Cloud: Not connected — click to connect', 'emcp-tools' ) ); ?>">
+						<?php echo get_avatar( $emcp_uid, 24, '', '', array( 'class' => 'emcp-cloud-avatar' ) ); ?>
+						<span class="emcp-cloud-dot<?php echo $emcp_cloud_connected ? ' is-connected' : ''; ?>"></span>
+					</a>
 				</div>
 			</div>
 

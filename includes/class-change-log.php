@@ -348,6 +348,11 @@ class EMCP_Tools_Change_Log {
 				return self::rollback_user_fields( $rb );
 			case 'acf-fields':
 				return self::rollback_acf_fields( $rb );
+			case 'redirect-row':
+				if ( class_exists( 'EMCP_Tools_Redirect_Store' ) && EMCP_Tools_Redirect_Store::rollback( $rb ) ) {
+					return true;
+				}
+				return new WP_Error( 'rollback_failed', __( 'Could not reverse the redirect change.', 'emcp-tools' ) );
 			default:
 				return new WP_Error( 'unknown_rollback', __( 'Unknown rollback type.', 'emcp-tools' ) );
 		}

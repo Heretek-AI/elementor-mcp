@@ -197,6 +197,30 @@ class EMCP_Tools_Change_Recorder {
 	}
 
 	/**
+	 * Record a redirect write. `$action` is 'create'|'update'|'delete'; `$before`
+	 * is the rollback before-image: { id } for create (undo = delete the row) or
+	 * { row: <full prior row> } for update/delete (undo = restore / re-insert).
+	 *
+	 * @param string $action  create|update|delete.
+	 * @param array  $before  Before-image.
+	 * @param string $summary Human summary.
+	 * @param string $target  Human target label.
+	 * @return string
+	 */
+	public static function record_redirect( string $action, array $before, string $summary, string $target = '' ): string {
+		if ( EMCP_Tools_Change_Log::$suppress ) {
+			return '';
+		}
+		return EMCP_Tools_Change_Log::record( array(
+			'domain'   => 'redirect',
+			'action'   => $action,
+			'target'   => $target,
+			'summary'  => $summary,
+			'rollback' => array( 'type' => 'redirect-row', 'action' => $action, 'before' => $before ),
+		) );
+	}
+
+	/**
 	 * Record a post/term meta write (globals, ACF). `$before_map` maps each meta
 	 * key to its prior value ('' / array() means it was unset → deleted on undo).
 	 *

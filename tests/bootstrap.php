@@ -420,3 +420,5 @@ require_once EMCP_TOOLS_DIR . 'includes/abilities/forms/class-form-integration.p
 require_once EMCP_TOOLS_DIR . 'includes/abilities/forms/class-cf7-integration.php';
 require_once EMCP_TOOLS_DIR . 'includes/abilities/class-acf-abilities.php';
 require_once EMCP_TOOLS_DIR . 'includes/abilities/class-metabox-abilities.php';
+require_once EMCP_TOOLS_DIR . 'includes/redirects/class-redirect-store.php';
+require_once EMCP_TOOLS_DIR . 'includes/abilities/class-redirect-abilities.php';

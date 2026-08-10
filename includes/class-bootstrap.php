@@ -136,6 +136,9 @@ class EMCP_Tools_Bootstrap {
 		require_once EMCP_TOOLS_DIR . 'includes/class-search-ranker.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-search-index.php';
 		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-search-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/redirects/class-redirect-store.php';
+		require_once EMCP_TOOLS_DIR . 'includes/redirects/class-redirect-handler.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-redirect-abilities.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-content-mirror.php';
 		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-content-mirror-abilities.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-admin-bar.php';
@@ -325,6 +328,9 @@ class EMCP_Tools_Bootstrap {
 		// Content search index: install-on-init + incremental re-index on save/delete.
 		EMCP_Tools_Search_Index::init();
 		EMCP_Tools_Change_Blobs::init();
+		// Redirect Manager: install the table on init + front-end 301/302 handler.
+		EMCP_Tools_Redirect_Store::init();
+		EMCP_Tools_Redirect_Handler::init();
 		// OAuth sign-in: install storage on init (routes wired in later phases).
 		EMCP_Tools_OAuth_Server::init();
 		// Content mirror: auto-export-on-save (gated by its option) + delete cleanup.

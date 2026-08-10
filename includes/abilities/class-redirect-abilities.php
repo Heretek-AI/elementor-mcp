@@ -341,11 +341,166 @@ class EMCP_Tools_Redirect_Abilities {
 	}
 
 	// ---------------------------------------------------------------------
-	// find-broken-links (implemented in Task 5)
+	// find-broken-links
 	// ---------------------------------------------------------------------
 
 	private function register_find_broken_links(): void {
-		// Registered in Task 5.
+		$this->ability_names[] = 'emcp-tools/find-broken-links';
+		emcp_tools_register_ability(
+			'emcp-tools/find-broken-links',
+			array(
+				'label'               => __( 'Find Broken Links', 'emcp-tools' ),
+				'description'         => __( 'Scans published content for internal links that point at trashed/missing pages (dead), or at a path that already has a redirect (should link straight to the target). Read-only — proposes fixes, changes nothing. Bounded by max_posts/max_seconds.', 'emcp-tools' ),
+				'category'            => 'emcp-tools',
+				'execute_callback'    => array( $this, 'execute_find_broken_links' ),
+				'permission_callback' => array( $this, 'check_manage_permission' ),
+				'input_schema'        => array(
+					'type'       => 'object',
+					'properties' => array(
+						'max_posts'   => array( 'type' => 'integer', 'description' => __( '1-2000. Default 200.', 'emcp-tools' ) ),
+						'max_seconds' => array( 'type' => 'integer', 'description' => __( '1-60. Default 10.', 'emcp-tools' ) ),
+					),
+				),
+				'output_schema'       => array( 'type' => 'object', 'properties' => array(
+					'scanned'  => array( 'type' => 'integer' ),
+					'findings' => array( 'type' => 'array', 'items' => array( 'type' => 'object' ) ),
+					'partial'  => array( 'type' => 'boolean' ),
+				) ),
+				'meta'                => array(
+					'annotations'  => array( 'readonly' => true, 'destructive' => false, 'idempotent' => true ),
+					'show_in_rest' => true,
+				),
+			)
+		);
+	}
+
+	/**
+	 * @param array $input Tool input.
+	 * @return array|WP_Error
+	 */
+	public function execute_find_broken_links( $input ) {
+		return $this->scan_broken_links( is_array( $input ) ? $input : array() );
+	}
+
+	/**
+	 * Walk published content and report internal links that are dead or already
+	 * redirected. Bounded by max_posts + max_seconds (partial flag when a cap
+	 * trips). Read-only.
+	 *
+	 * @param array $opts { max_posts:int, max_seconds:int }.
+	 * @return array { scanned, findings, partial }.
+	 */
+	public function scan_broken_links( array $opts ): array {
+		$max_posts   = max( 1, min( 2000, (int) ( $opts['max_posts'] ?? 200 ) ) );
+		$max_seconds = max( 1, min( 60, (int) ( $opts['max_seconds'] ?? 10 ) ) );
+		$start       = microtime( true );
+
+		$sources = array();
+		if ( class_exists( 'EMCP_Tools_Redirect_Store' ) ) {
+			foreach ( EMCP_Tools_Redirect_Store::all( array( 'enabled' => true, 'limit' => 500 ) ) as $r ) {
+				$sources[] = (string) $r['source_path'];
+			}
+		}
+
+		$types = array_values( get_post_types( array( 'public' => true ), 'names' ) );
+		$query = new WP_Query( array(
+			'post_type'      => $types,
+			'post_status'    => 'publish',
+			'posts_per_page' => $max_posts,
+			'no_found_rows'  => true,
+			'fields'         => 'ids',
+		) );
+
+		$findings = array();
+		$scanned  = 0;
+		$partial  = false;
+		foreach ( (array) $query->posts as $pid ) {
+			if ( microtime( true ) - $start > $max_seconds ) {
+				$partial = true;
+				break;
+			}
+			++$scanned;
+			$content = (string) get_post_field( 'post_content', (int) $pid );
+			foreach ( $this->extract_hrefs( $content ) as $href ) {
+				$c = $this->classify_href( $href, $sources );
+				if ( in_array( $c['kind'], array( 'dead', 'redirected' ), true ) ) {
+					$findings[] = array(
+						'post_id'    => (int) $pid,
+						'post_title' => get_the_title( (int) $pid ),
+						'href'       => $href,
+						'kind'       => $c['kind'],
+						'suggestion' => $c['suggestion'] ?? '',
+					);
+				}
+			}
+		}
+		return array( 'scanned' => $scanned, 'findings' => $findings, 'partial' => $partial );
+	}
+
+	/**
+	 * Extract href values from HTML/block content.
+	 *
+	 * @param string $content Post content.
+	 * @return string[]
+	 */
+	private function extract_hrefs( string $content ): array {
+		if ( ! preg_match_all( '#href=["\']([^"\']+)["\']#i', $content, $m ) ) {
+			return array();
+		}
+		return array_values( array_unique( $m[1] ) );
+	}
+
+	/**
+	 * Classify a single href. `$redirect_sources` is the set of enabled,
+	 * normalized redirect source paths. Returns { kind, suggestion? } where kind
+	 * is external | ok | dead | redirected.
+	 *
+	 * @param string   $href            Raw href.
+	 * @param string[] $redirect_sources Enabled normalized source paths.
+	 * @return array
+	 */
+	public function classify_href( string $href, array $redirect_sources ): array {
+		$path = $this->internal_path( $href );
+		if ( '' === $path ) {
+			return array( 'kind' => 'external' );
+		}
+		if ( in_array( $path, $redirect_sources, true ) ) {
+			return array( 'kind' => 'redirected', 'suggestion' => __( 'This path already has a redirect — link straight to the target instead.', 'emcp-tools' ) );
+		}
+		$pid = function_exists( 'url_to_postid' ) ? (int) url_to_postid( home_url( $path ) ) : 0;
+		if ( ! $pid ) {
+			return array( 'kind' => 'dead', 'suggestion' => __( 'Points at a URL with no published content — fix the link or add a redirect.', 'emcp-tools' ) );
+		}
+		$status = function_exists( 'get_post_status' ) ? get_post_status( $pid ) : 'publish';
+		if ( ! in_array( $status, array( 'publish', 'inherit' ), true ) ) {
+			return array( 'kind' => 'dead', 'suggestion' => __( 'Points at trashed/unpublished content — fix the link or add a redirect.', 'emcp-tools' ) );
+		}
+		return array( 'kind' => 'ok' );
+	}
+
+	/**
+	 * Return the normalized internal path of an href, or '' when it is external,
+	 * an anchor, or a non-http scheme.
+	 *
+	 * @param string $href Raw href.
+	 * @return string
+	 */
+	private function internal_path( string $href ): string {
+		$href = trim( $href );
+		if ( '' === $href || 0 === strpos( $href, '#' ) || 0 === strpos( $href, 'mailto:' ) || 0 === strpos( $href, 'tel:' ) ) {
+			return '';
+		}
+		$parts = wp_parse_url( $href );
+		$home  = wp_parse_url( home_url( '/' ) );
+		if ( ! empty( $parts['host'] ) ) {
+			if ( empty( $home['host'] ) || strtolower( $parts['host'] ) !== strtolower( (string) $home['host'] ) ) {
+				return ''; // External host.
+			}
+		}
+		if ( ! class_exists( 'EMCP_Tools_Redirect_Store' ) ) {
+			return '';
+		}
+		return EMCP_Tools_Redirect_Store::normalize_path( $href );
 	}
 
 	// ---------------------------------------------------------------------

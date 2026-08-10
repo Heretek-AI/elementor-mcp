@@ -22,6 +22,7 @@ class RedirectAbilitiesTest extends \PHPUnit\Framework\TestCase {
 		$this->assertContains( 'emcp-tools/create-redirect', $names );
 		$this->assertContains( 'emcp-tools/update-redirect', $names );
 		$this->assertContains( 'emcp-tools/delete-redirect', $names );
+		$this->assertContains( 'emcp-tools/find-broken-links', $names );
 		// Every registered ability MUST carry category => emcp-tools.
 		foreach ( $names as $n ) {
 			$this->assertSame( 'emcp-tools', $GLOBALS['emcp_test']['abilities'][ $n ]['category'] ?? null, "$n missing category" );
@@ -51,5 +52,30 @@ class RedirectAbilitiesTest extends \PHPUnit\Framework\TestCase {
 		EMCP_Tools_Redirect_Abilities::push_suggestion( '/', 'post-deleted', 1 );
 		EMCP_Tools_Redirect_Abilities::push_suggestion( '', 'post-deleted', 2 );
 		$this->assertSame( array(), get_option( 'emcp_tools_redirect_suggestions', array() ) );
+	}
+
+	public function test_classify_href_dead_redirected_ok_external() {
+		$g = new EMCP_Tools_Redirect_Abilities();
+
+		// External host → external (ignored).
+		$this->assertSame( 'external', $g->classify_href( 'https://other.example/x', array() )['kind'] );
+		// Anchor / mailto → external.
+		$this->assertSame( 'external', $g->classify_href( '#top', array() )['kind'] );
+
+		// Path that matches an enabled redirect source → redirected.
+		$this->assertSame( 'redirected', $g->classify_href( '/go-here', array( '/go-here' ) )['kind'] );
+
+		// Internal path with no post → dead.
+		$this->assertSame( 'dead', $g->classify_href( '/missing', array() )['kind'] );
+
+		// Internal path → trashed post → dead.
+		$GLOBALS['emcp_test']['url_to_postid']['/gone'] = 77;
+		$GLOBALS['emcp_test']['post_status'][77]        = 'trash';
+		$this->assertSame( 'dead', $g->classify_href( '/gone', array() )['kind'] );
+
+		// Internal path → published post → ok.
+		$GLOBALS['emcp_test']['url_to_postid']['/live'] = 88;
+		$GLOBALS['emcp_test']['post_status'][88]        = 'publish';
+		$this->assertSame( 'ok', $g->classify_href( 'http://example.test/live', array() )['kind'] );
 	}
 }

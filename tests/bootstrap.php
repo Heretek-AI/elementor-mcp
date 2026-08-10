@@ -145,6 +145,26 @@ function admin_url( $path = '' ): string {
 	return 'http://example.test/wp-admin/' . $path;
 }
 
+function home_url( $path = '' ): string {
+	return 'http://example.test' . ( '' === $path ? '' : '/' . ltrim( (string) $path, '/' ) );
+}
+
+function wp_parse_url( $url, $component = -1 ) {
+	return parse_url( (string) $url, $component ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url
+}
+
+// Fixture-driven: $GLOBALS['emcp_test']['url_to_postid'][ normalized-path ] => post id.
+function url_to_postid( $url ) {
+	$path = parse_url( (string) $url, PHP_URL_PATH ); // phpcs:ignore
+	$path = '/' . trim( strtolower( (string) $path ), '/' );
+	return (int) ( $GLOBALS['emcp_test']['url_to_postid'][ $path ] ?? 0 );
+}
+
+// Fixture-driven: $GLOBALS['emcp_test']['post_status'][ id ] => 'publish'|'trash'|...
+function get_post_status( $id ) {
+	return $GLOBALS['emcp_test']['post_status'][ (int) $id ] ?? false;
+}
+
 // ---------------------------------------------------------------------------
 // ACF stubs (fixture-driven)
 // ---------------------------------------------------------------------------

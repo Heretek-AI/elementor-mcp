@@ -3390,11 +3390,15 @@ body.emcp-modal-open { overflow: hidden; }
 .emcp-notif-toggle:hover .dashicons { color: var(--mcp-primary); }
 .emcp-notif-badge { position: absolute; top: -5px; right: -5px; min-width: 16px; height: 16px; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center; background: var(--mcp-danger); color: var(--mcp-white); border-radius: 9px; font-size: 10px; line-height: 1; font-weight: 700; }
 .emcp-notif-badge.is-empty { display: none; }
-.emcp-notif-dropdown { display: none; position: absolute; right: 0; top: calc(100% + 6px); width: 320px; max-width: calc(100vw - 40px); background: var(--mcp-white); border: 1px solid var(--mcp-gray-200); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.14); z-index: 1000; }
-.emcp-notif-dropdown::before { content: ''; position: absolute; top: -8px; left: 0; right: 0; height: 8px; }
-.emcp-notif.is-open .emcp-notif-dropdown { display: block; }
-.emcp-notif-header { padding: 10px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--mcp-gray-500, #787c82); border-bottom: 1px solid var(--mcp-gray-200); }
-.emcp-notif-list { max-height: 360px; overflow-y: auto; }
+/* Notifications slide-in drawer (right side) + overlay. */
+.emcp-notif-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.35); opacity: 0; visibility: hidden; transition: opacity .2s ease; z-index: 100000; }
+.emcp-notif.is-open .emcp-notif-overlay { opacity: 1; visibility: visible; }
+.emcp-notif-drawer { position: fixed; top: 0; right: 0; height: 100vh; width: 380px; max-width: 90vw; display: flex; flex-direction: column; background: var(--mcp-white); box-shadow: -8px 0 28px rgba(0,0,0,.18); transform: translateX(100%); transition: transform .25s ease; z-index: 100001; }
+.emcp-notif.is-open .emcp-notif-drawer { transform: translateX(0); }
+.emcp-notif-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 18px; font-size: 15px; font-weight: 700; color: var(--mcp-gray-800, #1d2327); border-bottom: 1px solid var(--mcp-gray-200); }
+.emcp-notif-close { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 0; background: none; border: none; border-radius: 4px; color: var(--mcp-gray-500, #787c82); cursor: pointer; }
+.emcp-notif-close:hover { background: var(--mcp-gray-100, #f0f0f1); color: var(--mcp-primary); }
+.emcp-notif-list { flex: 1; overflow-y: auto; }
 .emcp-notif-empty { padding: 24px 14px; text-align: center; font-size: 13px; color: var(--mcp-gray-500, #787c82); }
 .emcp-notif-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--mcp-gray-100, #f0f0f1); border-left: 3px solid transparent; }
 .emcp-notif-item:last-child { border-bottom: none; }

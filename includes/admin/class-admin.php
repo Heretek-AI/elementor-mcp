@@ -2990,8 +2990,12 @@ class EMCP_Tools_Admin {
 							<span class="dashicons dashicons-bell" aria-hidden="true"></span>
 							<span class="emcp-notif-badge<?php echo 0 === $emcp_unread ? ' is-empty' : ''; ?>"><?php echo esc_html( (string) $emcp_unread ); ?></span>
 						</button>
-						<div class="emcp-notif-dropdown" role="menu">
-							<div class="emcp-notif-header"><?php esc_html_e( 'Announcements', 'emcp-tools' ); ?></div>
+						<div class="emcp-notif-overlay" aria-hidden="true"></div>
+						<aside class="emcp-notif-drawer" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Announcements', 'emcp-tools' ); ?>">
+							<div class="emcp-notif-header">
+								<span><?php esc_html_e( 'Announcements', 'emcp-tools' ); ?></span>
+								<button type="button" class="emcp-notif-close" aria-label="<?php esc_attr_e( 'Close', 'emcp-tools' ); ?>"><span class="dashicons dashicons-no-alt" aria-hidden="true"></span></button>
+							</div>
 							<div class="emcp-notif-list">
 								<?php if ( empty( $emcp_notifs ) ) : ?>
 									<div class="emcp-notif-empty"><?php esc_html_e( 'No announcements yet.', 'emcp-tools' ); ?></div>
@@ -3029,7 +3033,7 @@ class EMCP_Tools_Admin {
 									<?php endforeach; ?>
 								<?php endif; ?>
 							</div>
-						</div>
+						</aside>
 					</div>
 					<a class="emcp-cloud-btn" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-connection' ) ); ?>" title="<?php echo esc_attr( $emcp_cloud_connected ? __( 'EMCP Cloud: Connected', 'emcp-tools' ) : __( 'EMCP Cloud: Not connected — click to connect', 'emcp-tools' ) ); ?>">
 						<span class="dashicons dashicons-cloud emcp-cloud-icon" aria-hidden="true"></span>

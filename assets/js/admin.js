@@ -1619,6 +1619,8 @@
 		if ( ! wrap ) { return; }
 		var toggle = wrap.querySelector( '.emcp-notif-toggle' );
 		var badge = wrap.querySelector( '.emcp-notif-badge' );
+		var overlay = wrap.querySelector( '.emcp-notif-overlay' );
+		var closeBtn = wrap.querySelector( '.emcp-notif-close' );
 		if ( ! toggle ) { return; }
 
 		var markedThisView = false;
@@ -1686,6 +1688,10 @@
 				open();
 			}
 		} );
+
+		// Drawer: clicking the overlay or the close button dismisses it.
+		if ( overlay ) { overlay.addEventListener( 'click', close ); }
+		if ( closeBtn ) { closeBtn.addEventListener( 'click', close ); }
 
 		document.addEventListener( 'click', function ( e ) {
 			if ( wrap.classList.contains( 'is-open' ) && ! wrap.contains( e.target ) ) {

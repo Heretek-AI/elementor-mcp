@@ -164,7 +164,7 @@
 		// "Save all to Cloud" — bulk-push every artifact of this kind in one call.
 		var saveAll = document.createElement( 'button' );
 		saveAll.type = 'button';
-		saveAll.className = 'button button-primary emcp-sb-save-all';
+		saveAll.className = 'button emcp-sb-save-all';
 		saveAll.style.marginRight = '8px';
 		var sico = document.createElement( 'span' );
 		sico.className = 'dashicons dashicons-upload';

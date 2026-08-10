@@ -3360,7 +3360,7 @@ body.emcp-modal-open { overflow: hidden; }
 /* Full-width admin header (app bar + tab nav + Help dropdown) ---------------- */
 .elementor-mcp-admin > h1 { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
 
-.emcp-appbar { display: flex; align-items: stretch; justify-content: space-between; gap: 16px; flex-wrap: wrap; background: var(--mcp-white); border-bottom: 1px solid var(--mcp-gray-200); padding: 0 20px 0 20px; margin: 0 -20px 0 -22px; border-top: 1px solid var(--mcp-gray-200); }
+.emcp-appbar { display: flex; align-items: stretch; justify-content: space-between; gap: 16px; flex-wrap: wrap; background: var(--mcp-white); border-bottom: 1px solid var(--mcp-gray-200); padding: 10px 20px 10px 20px; margin: 0 -20px 0 -22px; border-top: 1px solid var(--mcp-gray-200); }
 .emcp-appbar-brand { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 15px 0; width: 40%;}
 .emcp-appbar-logo { width: 34px; height: 34px; border-radius: 6px; object-fit: contain; }
 .emcp-appbar-title { font-size: 18px; font-weight: 700; color: var(--mcp-gray-800, #1d2327); }
@@ -3391,7 +3391,7 @@ body.emcp-modal-open { overflow: hidden; }
 .emcp-appnav-item:hover { color: var(--mcp-gray-800, #1d2327); background: var(--mcp-gray-50); }
 .emcp-appnav-item.is-active { color: var(--mcp-primary); border-bottom-color: var(--mcp-primary); }
 .emcp-appnav-item .dashicons { font-size: 16px; width: 16px; height: 16px; }
-.emcp-appbar-changelog { display: inline-flex; align-items: center; gap: 6px; padding: 12px 18px; background: var(--mcp-white); border: 1px solid var(--mcp-gray-200); border-radius: 4px; font-size: 13px; font-weight: 600; color: var(--mcp-gray-800, #1d2327); text-decoration: none; }
+.emcp-appbar-changelog { display: inline-flex; align-items: center; gap: 6px; padding: 12px 18px; background: var(--mcp-white); font-size: 13px; font-weight: 600; color: var(--mcp-gray-800, #1d2327); text-decoration: none; }
 .emcp-appbar-changelog:hover, .emcp-appbar-changelog.is-active { border-color: var(--mcp-primary); color: var(--mcp-primary); }
 .emcp-appbar-changelog .dashicons { font-size: 16px; width: 16px; height: 16px; }
 /* =========================================================================
@@ -4545,6 +4545,12 @@ body[data-emcp-auth="app-password"] [data-authfor="oauth"] { display: none; }
 .emcp-sb-disclosure--cloud > summary .dashicons-cloud { color: #6a11cb; }
 .emcp-sb-disclosure--cloud > summary::after { color: #6a11cb; }
 .emcp-sb-disclosure__badge { margin-left: 6px; font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: #6a11cb; background: #fff; border: 1px solid #cbb6ef; border-radius: 999px; padding: 2px 9px; }
+
+/* "Save all to Cloud" bulk button — plugin-branded (indigo), not WP blue. */
+.button.emcp-sb-save-all { background: var(--mcp-primary); border-color: var(--mcp-primary); color: var(--mcp-white); font-weight: 600; }
+.button.emcp-sb-save-all:hover, .button.emcp-sb-save-all:focus { background: var(--mcp-primary-hover); border-color: var(--mcp-primary-hover); color: var(--mcp-white); }
+.button.emcp-sb-save-all:disabled { opacity: .6; }
+.button.emcp-sb-save-all .dashicons { margin-right: 2px; }
 
 /* Pending-count badge on the Memory app-nav tab (project-memory proposals awaiting review). */
 .emcp-appnav-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px; border-radius: 9px; background: #d63638; color: #fff; font-size: 11px; font-weight: 700; line-height: 1; }

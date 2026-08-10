@@ -4550,7 +4550,8 @@ body[data-emcp-auth="app-password"] [data-authfor="oauth"] { display: none; }
 .button.emcp-sb-save-all { background: var(--mcp-primary); border-color: var(--mcp-primary); color: var(--mcp-white); font-weight: 600; }
 .button.emcp-sb-save-all:hover, .button.emcp-sb-save-all:focus { background: var(--mcp-primary-hover); border-color: var(--mcp-primary-hover); color: var(--mcp-white); }
 .button.emcp-sb-save-all:disabled { opacity: .6; }
-.button.emcp-sb-save-all .dashicons { margin-right: 2px; }
+.button.emcp-sb-save-all .dashicons { margin-right: 2px; color: var(--mcp-white); }
+.button.emcp-sb-save-all:hover .dashicons, .button.emcp-sb-save-all:focus .dashicons { color: var(--mcp-white); }
 
 /* Pending-count badge on the Memory app-nav tab (project-memory proposals awaiting review). */
 .emcp-appnav-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px; border-radius: 9px; background: #d63638; color: #fff; font-size: 11px; font-weight: 700; line-height: 1; }

@@ -272,6 +272,7 @@ class EMCP_Tools_Admin {
 		add_action( 'wp_ajax_emcp_tools_toggle_block', array( $this, 'ajax_toggle_block' ) );
 		add_action( 'wp_ajax_emcp_tools_delete_block', array( $this, 'ajax_delete_block' ) );
 		add_action( 'wp_ajax_emcp_tools_backup_artifact', array( $this, 'ajax_backup_artifact' ) );
+		add_action( 'wp_ajax_emcp_tools_bulk_backup_artifacts', array( $this, 'ajax_bulk_backup_artifacts' ) );
 		add_action( 'wp_ajax_emcp_tools_push_update', array( $this, 'ajax_push_update' ) );
 		add_action( 'wp_ajax_emcp_tools_marketplace_state', array( $this, 'ajax_marketplace_state' ) );
 		add_action( 'wp_ajax_emcp_tools_resync_cloud', array( $this, 'ajax_resync_cloud' ) );
@@ -495,6 +496,63 @@ class EMCP_Tools_Admin {
 		$payload            = self::cloud_action_payload( $kind, $id );
 		$payload['message'] = __( 'Saved to cloud.', 'emcp-tools' );
 		wp_send_json_success( $payload );
+	}
+
+	/**
+	 * Back up EVERY Sandbox artifact of a kind to EMCP Cloud in one call — the
+	 * bulk counterpart to ajax_backup_artifact(), driving the "Save all to Cloud"
+	 * button. AJAX.
+	 */
+	public function ajax_bulk_backup_artifacts(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to do this.', 'emcp-tools' ) ), 403 );
+		}
+		$kind   = isset( $_POST['kind'] ) ? sanitize_key( wp_unslash( $_POST['kind'] ) ) : '';
+		$nonces = array(
+			'widget'  => 'emcp_tools_widgets',
+			'block'   => 'emcp_tools_blocks',
+			'snippet' => 'emcp_tools_php_snippets',
+		);
+		if ( ! isset( $nonces[ $kind ] ) || ! check_ajax_referer( $nonces[ $kind ], 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'emcp-tools' ) ), 403 );
+		}
+		if ( ! class_exists( 'EMCP_Tools_Cloud_Sync' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Cloud sync is unavailable.', 'emcp-tools' ) ) );
+		}
+		$res = EMCP_Tools_Cloud_Sync::bulk_backup( array( $kind ) );
+		if ( is_wp_error( $res ) ) {
+			$msg = ( 'not_connected' === $res->get_error_code() )
+				? __( 'Connect this site to EMCP Cloud first.', 'emcp-tools' )
+				: $res->get_error_message();
+			wp_send_json_error( array( 'message' => $msg ) );
+		}
+		// Mirror the per-artifact post-processing so each pushed row reflects "Saved".
+		foreach ( (array) ( $res['items'] ?? array() ) as $emcp_item ) {
+			if ( empty( $emcp_item['ok'] ) ) {
+				continue;
+			}
+			$emcp_iid = (int) ( $emcp_item['id'] ?? 0 );
+			if ( $emcp_iid ) {
+				update_post_meta( $emcp_iid, '_emcp_cloud_pushed', time() );
+				self::store_artifact_checksum( $kind, $emcp_iid );
+				self::refresh_marketplace_state( $kind, $emcp_iid );
+			}
+		}
+		$pushed = (int) ( $res['pushed'] ?? 0 );
+		$failed = (int) ( $res['failed'] ?? 0 );
+		/* translators: %d: number of artifacts saved to the cloud. */
+		$message = sprintf( _n( 'Saved %d item to the cloud.', 'Saved %d items to the cloud.', $pushed, 'emcp-tools' ), $pushed );
+		if ( $failed > 0 ) {
+			/* translators: %d: number of artifacts that failed to save. */
+			$message .= ' ' . sprintf( _n( '%d failed.', '%d failed.', $failed, 'emcp-tools' ), $failed );
+		}
+		wp_send_json_success(
+			array(
+				'pushed'  => $pushed,
+				'failed'  => $failed,
+				'message' => $message,
+			)
+		);
 	}
 
 	/** Nonce action for a sandbox artifact kind. */

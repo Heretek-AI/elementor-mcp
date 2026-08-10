@@ -161,14 +161,49 @@
 		btn.appendChild( ico );
 		btn.appendChild( document.createTextNode( ' Refresh cloud status' ) );
 
+		// "Save all to Cloud" — bulk-push every artifact of this kind in one call.
+		var saveAll = document.createElement( 'button' );
+		saveAll.type = 'button';
+		saveAll.className = 'button button-primary emcp-sb-save-all';
+		saveAll.style.marginRight = '8px';
+		var sico = document.createElement( 'span' );
+		sico.className = 'dashicons dashicons-upload';
+		sico.setAttribute( 'aria-hidden', 'true' );
+		sico.style.verticalAlign = 'text-bottom';
+		saveAll.appendChild( sico );
+		saveAll.appendChild( document.createTextNode( ' Save all to Cloud' ) );
+
 		var note = document.createElement( 'span' );
 		note.className = 'emcp-sb-refresh-msg';
 		note.style.marginLeft = '10px';
 		note.style.color = '#2271b1';
 
+		bar.appendChild( saveAll );
 		bar.appendChild( btn );
 		bar.appendChild( note );
 		anchor.parentNode.insertBefore( bar, anchor );
+
+		saveAll.addEventListener( 'click', function () {
+			saveAll.disabled = true;
+			btn.disabled = true;
+			note.textContent = 'Saving all to cloud…';
+			// The bulk handler only needs kind + nonce (id is ignored) — send from any cluster.
+			post( 'emcp_tools_bulk_backup_artifacts', clusters[ 0 ], null ).then( function ( res ) {
+				if ( res && res.success ) {
+					note.textContent = ( res.data && res.data.message ) || 'Saved to cloud.';
+					// Reload so every row's cloud state reflects the push.
+					setTimeout( function () { window.location.reload(); }, 900 );
+				} else {
+					saveAll.disabled = false;
+					btn.disabled = false;
+					note.textContent = ( res && res.data && res.data.message ) || 'Could not save to cloud.';
+				}
+			} ).catch( function () {
+				saveAll.disabled = false;
+				btn.disabled = false;
+				note.textContent = 'Could not save to cloud.';
+			} );
+		} );
 
 		btn.addEventListener( 'click', function () {
 			btn.disabled = true;

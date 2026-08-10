@@ -182,6 +182,7 @@ Every AI change is reversible, project-memory guardrails are enforced, safer OAu
 * Added: AI Chat cost guard — a per-user per-minute and per-day tool-call budget stops runaway loops.
 * Added: Themer dynamic custom-field (ACF-aware) and featured-image elements, plus query-args on the archive-loop preview.
 * Added: bulk cloud sync (push all local sandbox artifacts at once); multi-site per-call routing in the proxy (pass site:"alias"); normalized theme-pack capabilities descriptor.
+* Added: EMCP Cloud multi-site gateway groundwork (Agency, preview) — connecting a site to EMCP Cloud can now self-issue a revocable, scoped "gateway" credential behind one disclosed opt-in consent (off if you decline), so a single AI connection can manage all your sites. No password ever leaves your site; revoke any time from Users -> Authorized Apps or your Cloud dashboard.
 * Fixed: page-snapshot SEO reads Yoast/Rank Math/SEOPress (+ AIOSEO seam); build-page flags unknown widget types; corrupt _elementor_data is backed up before overwrite.
 * Added: the change ledger now records and can roll back writes across every domain — pages, content, settings, global colours/typography, the Media Library (including a reversible delete that trashes the files first), Gutenberg blocks, ACF, users, filesystem, and database. Before-images are stored durably so undo points aren't evicted.
 * Added: rollback won't clobber newer edits — it detects that a target changed since and asks you to confirm (force) before overwriting; the History tab shows a "roll back anyway" button.

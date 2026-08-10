@@ -11,6 +11,7 @@ All notable changes to MCP Tools for Elementor are documented in this file.
 - **Bulk cloud sync.** Push every local sandbox artifact to EMCP Cloud in one call, instead of one at a time.
 - **Multi-site per-call routing.** In the Node proxy, pass `site: "<alias>"` in any tool's arguments to run just that call against that site, without switching the active site (proxy 1.10.0).
 - **Normalized theme-pack capabilities.** Every theme/block pack's read catalog now advertises a `{ supports_patterns, supports_preview, styles_model }` descriptor, so an agent learns what a pack supports without special-casing each.
+- **EMCP Cloud multi-site gateway groundwork (Agency, preview).** Connecting a site to EMCP Cloud can now self-provision a revocable, scoped `gateway` credential — a single disclosed opt-in consent (off if you decline) — the plugin-side foundation for the hosted multi-site gateway that lets one AI connection manage all your sites at once (including `site:"all"` broadcast). No password ever leaves your site; the credential is revocable from **Users → Authorized Apps** or the EMCP Cloud dashboard, and a disconnect tears it down on both ends.
 
 ### Fixed
 - **Page snapshot SEO** now reads Yoast, Rank Math *and* SEOPress meta, with a filter seam so table-based plugins (All in One SEO) can supply accurate values — previously those sites reported empty SEO meta.

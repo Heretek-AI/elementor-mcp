@@ -112,7 +112,7 @@ class EMCP_Tools_Cloud_Client {
 	 * @return bool True on success.
 	 */
 	public static function delete_gateway_credential(): bool {
-		$res = self::delete( '/api/cloud/v1/gateway/credential' );
+		$res = self::delete( '/api/cloud/v1/gateway/credential?site_uuid=' . rawurlencode( EMCP_Tools_Cloud::site_uuid() ) );
 		return ! is_wp_error( $res );
 	}
 

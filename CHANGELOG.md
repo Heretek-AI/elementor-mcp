@@ -2,6 +2,20 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.11.0]
+
+### Added
+- **Redirect Manager (free).** A first-class 301/302 redirect manager over MCP plus a new **Redirects** admin tab — the safety peer to the change ledger: rollback undoes what can be undone; a redirect handles what can't (a deleted or renamed page's old URL). Five tools — `list-redirects` and `find-broken-links` (read, on by default) and `create-redirect` / `update-redirect` / `delete-redirect` (disabled by default). A front-end handler resolves matched paths before WordPress serves a 404; a redirect can target a URL or a post (its permalink is resolved live, so it survives the target's own slug changes). Every redirect write — from MCP or the admin tab — is reversible from the History tab.
+- **Suggest-only redirects.** When `delete-post` or a published slug change kills an old URL, the tools surface a *suggested* redirect (in the tool response and the Redirects tab) — nothing is written until you confirm.
+- **Find broken links.** A read-only scan of published content for internal links pointing at trashed/missing pages (dead) or at a path that already has a redirect (link straight to the target), with proposed fixes.
+- **Notifications center.** The admin header gains a bell with product announcements in a slide-in drawer, and a cloud button that shows the EMCP Cloud connection status and links to the Connection tab.
+
+### Fixed
+- **No more fatal when the free and Pro builds are both active.** The free (`emcp-tools`) and Pro (`emcp-pro`) builds are the same plugin in two folders, so activating the second copy redeclared every class → a fatal error. A single-instance guard now runs before anything loads: Pro always wins — the free copy yields to an active Pro sibling (with a notice) and Pro auto-deactivates the free sibling, so installing/activating Pro over the free version just works.
+
+### Improved
+- **Bulk cloud sync is now surfaced.** The "Save all to Cloud" action (announced in 3.10.0) is now wired into the Sandbox, so you can push every local artifact to EMCP Cloud in one click.
+
 ## [3.10.0]
 
 ### Added

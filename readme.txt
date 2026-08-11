@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.10.0
+Stable tag: 3.11.0
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,14 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.11.0 =
+A built-in Redirect Manager so an AI edit never leaves a dead URL, a header notifications center, and a fix for running the free and Pro versions side by side.
+* Added: Redirect Manager. Create and manage 301/302 redirects from a new Redirects tab (or via MCP). When you delete or rename a page, the tools now suggest a redirect for the old URL so visitors and search engines don't hit a 404 — nothing is created until you confirm. Every redirect is reversible from the History tab.
+* Added: Find broken links — a read-only scan that flags internal links pointing at trashed/missing pages or at a URL that already has a redirect, and proposes the fix.
+* Added: notifications center in the header — a bell with product announcements in a slide-in drawer, plus a cloud button that shows your EMCP Cloud connection status and links to the Connection tab.
+* Fixed: installing and activating EMCP Tools Pro while the free version is active no longer causes a fatal error. Pro now takes over automatically and the free version is deactivated (with a notice); activating the free version while Pro is active leaves it safely paused.
+* Improved: the "Save all to Cloud" bulk sync is now surfaced in the Sandbox (push every local artifact at once).
 
 = 3.10.0 =
 Every AI change is reversible, project-memory guardrails are enforced, safer OAuth connections, and the default-on read tools no longer expose secrets — plus a batch of intelligence, theme, and cloud improvements.

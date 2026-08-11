@@ -2,6 +2,11 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.13.0]
+
+### Added
+- **Backup & Migrate Phase 2 — local→live migration via a thin connector.** A new **Migrate** sub-tab pushes this site to a live server without a manual backup upload. Flow: download the **EMCP Migrate Connector** (a separate, unlicensed, single-file plugin served as a ZIP from the admin), install it on the destination and "Arm pairing", then pair the live site here and **Push & Restore**. The `.emcp` streams to the connector's `emcp-connector/v1/receive-packet` in **HMAC-signed, base64-encoded packets** (base64 to clear destination WAFs; HMAC-SHA256 over upload-id+offset+total+body) with **offset-based resume** on any failure. The connector reassembles and runs a self-contained restore — DB import (transaction-directive-safe, prefix-rewritten), serialization-safe search-replace (byte-accurate `s:LEN` fix + raw JSON), and file placement — **never touching `wp-config.php` or salts**, running past client disconnect and reporting progress the source polls. New classes: `EMCP_Tools_Migrate_HMAC`, `EMCP_Tools_Migrate_Targets` (paired sites, encrypted secret, single-use pairing code), `EMCP_Tools_Migration_Engine` (packet pusher + trigger/poll), `EMCP_Tools_Connector_Builder`, and `pro/connector/emcp-connector.php`. Live-validated: the connector restore rewrites plain + serialized URLs and places files with salts intact.
+
 ## [3.12.3]
 
 ### Fixed

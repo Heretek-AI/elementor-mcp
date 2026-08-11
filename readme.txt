@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.12.3
+Stable tag: 3.13.0
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,11 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.13.0 =
+Backup & Migrate Phase 2: push a local site to a live server through a tiny connector.
+* Added: Migrate tab — move this site to a live server without uploading a backup by hand. Download the small "EMCP Migrate Connector" plugin, install it on the destination and arm pairing, then pair the live site here and click Push & Restore. The backup transfers in resumable, firewall-safe packets (base64-encoded, HMAC-signed, offset-based resume) so even shared hosts complete, and the connector reassembles it and restores — importing the database, rewriting URLs to the live domain, and placing files — while never touching the destination's wp-config or salts.
+* Note: the connector is a separate, unlicensed plugin gated only by the pairing token; the source side is Pro.
 
 = 3.12.3 =
 Backup & Migrate: fixes a browser crash when uploading a large backup to restore.

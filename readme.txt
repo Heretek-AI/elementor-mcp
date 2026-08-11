@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.11.2
+Stable tag: 3.12.0
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,10 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.12.0 =
+New Pro module: Backup & Migrate — package your whole site into a single portable .emcp file and restore it.
+* Added: Backup, Sync, and Migrate module (Pro) with a dedicated admin tab. Back up the full site (database + files) or database/files only into one portable .emcp archive; restore from a local backup or by uploading a .emcp. Backups run in the background in adaptive chunks so large sites complete reliably, and restore rewrites URLs (site address and Elementor page data) to the destination automatically while leaving your current login and wp-config untouched. Local→live migration, sync, and MCP tools land in later updates.
 
 = 3.11.2 =
 Fixes pages created via MCP rendering empty on Elementor 4.2, plus connecting from staging sites whose address is pinned to a different (not-yet-live) domain, and adds an editable Server URL.

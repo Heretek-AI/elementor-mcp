@@ -2,6 +2,11 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.12.0]
+
+### Added
+- **Backup & Migrate module (Pro) — Phase 1: backup + restore.** A new "Backup, Sync, and Migrate" module (on by default, Modules-tab kill-switch) with its own admin tab. Package the whole site — database + files — into a single portable `.emcp` archive (or database/files only), and restore from a local backup or an uploaded `.emcp`. Backups run in the background in adaptive, time-bounded chunks so large sites complete reliably on modest hosts; restore imports the database, extracts files, and runs a serialization-safe search-replace that rewrites the site address and Elementor page-data URLs to the destination — while preserving your current login and never touching `wp-config.php`. New `EMCP_Tools_Migrate_Module` + engine in `pro/includes/migrate/` (`Packager`/`Environment`/`Job_Manager`/`Background_Processor`/`DB_Exporter`/`DB_Importer`/`File_Archiver`/`File_Extractor`/`Backup_Manifest`/`Search_Replace`/`Backup_Engine`/`Restore_Engine`), tables `{prefix}emcp_migrate_backups`/`_jobs`, protected `wp-content/emcp-backups/`. Local→live migration via a thin connector, one-way sync, and MCP tools arrive in later updates.
+
 ## [3.11.2]
 
 ### Fixed

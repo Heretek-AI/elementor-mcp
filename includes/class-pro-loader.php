@@ -251,5 +251,13 @@ final class EMCP_Tools_Pro_Loader {
 				$registry->register( new EMCP_Tools_Memory_Module() );
 			}
 		}
+
+		$migrate_path = self::path( 'includes/modules/class-migrate-module.php' );
+		if ( '' !== $migrate_path ) {
+			require_once $migrate_path;
+			if ( class_exists( 'EMCP_Tools_Migrate_Module' ) ) {
+				$registry->register( new EMCP_Tools_Migrate_Module() );
+			}
+		}
 	}
 }

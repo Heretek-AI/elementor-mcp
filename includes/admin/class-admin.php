@@ -155,6 +155,7 @@ class EMCP_Tools_Admin {
 			'tools'      => 'dashicons-admin-tools',
 			'history'    => 'dashicons-undo',
 			'redirects'  => 'dashicons-randomize',
+			'migrate'    => 'dashicons-migrate',
 			'modules'    => 'dashicons-screenoptions',
 			'connection' => 'dashicons-admin-links',
 			'ai-chat'    => 'dashicons-format-chat',
@@ -181,6 +182,7 @@ class EMCP_Tools_Admin {
 				self::PAGE_SLUG . '-ai-chat'    => __( 'AI Chat', 'emcp-tools' ),
 				self::PAGE_SLUG . '-context'    => __( 'Context', 'emcp-tools' ),
 				self::PAGE_SLUG . '-redirects'  => __( 'Redirects', 'emcp-tools' ),
+				self::PAGE_SLUG . '-migrate'    => __( 'Backup & Migrate', 'emcp-tools' ),
 				self::PAGE_SLUG . '-memory'     => __( 'Memory', 'emcp-tools' ),
 				self::PAGE_SLUG . '-prompts'    => __( 'Prompts', 'emcp-tools' ),
 				self::PAGE_SLUG . '-templates'  => __( 'Templates', 'emcp-tools' ),
@@ -205,6 +207,10 @@ class EMCP_Tools_Admin {
 			// Redirects tab is gated by the Redirect Manager module.
 			if ( ! $this->module_tab_visible( 'redirects' ) ) {
 				unset( $this->submenus[ self::PAGE_SLUG . '-redirects' ] );
+			}
+			// Backup & Migrate tab is gated by the Migrate (Pro) module.
+			if ( ! $this->module_tab_visible( 'migrate' ) ) {
+				unset( $this->submenus[ self::PAGE_SLUG . '-migrate' ] );
 			}
 			// Module-backed tabs: drop each when its module is off/unavailable.
 			foreach ( array( 'prompts', 'templates', 'brand-kits' ) as $emcp_mod_id ) {
@@ -232,6 +238,8 @@ class EMCP_Tools_Admin {
 				return 'history';
 			case self::PAGE_SLUG . '-redirects':
 				return 'redirects';
+			case self::PAGE_SLUG . '-migrate':
+				return 'migrate';
 			case self::PAGE_SLUG . '-modules':
 				return 'modules';
 			case self::PAGE_SLUG . '-connection':
@@ -3304,6 +3312,11 @@ class EMCP_Tools_Admin {
 					include EMCP_TOOLS_DIR . 'includes/admin/views/page-history.php';
 				} elseif ( 'redirects' === $active_tab && $this->module_tab_visible( 'redirects' ) ) {
 					include EMCP_TOOLS_DIR . 'includes/admin/views/page-redirects.php';
+				} elseif ( 'migrate' === $active_tab && $this->module_tab_visible( 'migrate' ) ) {
+					$emcp_migrate_view = EMCP_Tools_Pro_Loader::path( 'includes/admin/views/page-migrate.php' );
+					if ( '' !== $emcp_migrate_view ) {
+						include $emcp_migrate_view;
+					}
 				} elseif ( 'widgets' === $active_tab ) {
 					include EMCP_TOOLS_DIR . 'includes/admin/views/page-widgets.php';
 				} elseif ( 'marketplace' === $active_tab ) {

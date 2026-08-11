@@ -71,3 +71,11 @@ includes/abilities/class-generateblocks-integration.php
 includes/blocks-catalog/class-blocksy-blocks-catalog.php
 includes/abilities/class-blocksy-blocks-integration.php
 includes/abilities/class-blocksy-extensions-integration.php
+
+# Backup & Migrate module (Pro) — Phase 1
+includes/modules/class-migrate-module.php
+includes/admin/views/page-migrate.php
+includes/admin/views/migrate
+includes/migrate
+assets/js/migrate.js
+assets/css/migrate.css

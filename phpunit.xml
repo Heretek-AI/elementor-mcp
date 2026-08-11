@@ -140,6 +140,9 @@
         <testsuite name="Cloud">
             <directory>pro/tests/unit/Cloud</directory>
         </testsuite>
+        <testsuite name="Migrate">
+            <directory>pro/tests/unit/migrate</directory>
+        </testsuite>
     </testsuites>
 
     <source>

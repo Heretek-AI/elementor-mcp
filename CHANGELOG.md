@@ -2,6 +2,11 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.12.2]
+
+### Fixed
+- **Restore `.emcp` upload 500'd behind a WAF (mod_security).** After 3.12.1's smaller chunks, uploads still failed part-way on hosts with a web application firewall — a content-dependent Apache 500 (chunk 1 passed, chunk 2 failed). The `.emcp` carries the raw SQL dump and PHP source, and sending those bytes verbatim through a multipart upload trips WAF signature rules. The uploader now **base64-encodes each chunk** (sent as a text field) and the handler decodes it before writing, so the firewall sees only base64 — not `SELECT`/`<?php`/`eval` signatures. Multipart `$_FILES` is kept as a fallback. Raw chunk size drops to 3 MB (~4 MB encoded) and targets 60% of the host's upload limit to absorb the +33% encoding overhead. Verified: SQL/PHP-laden chunks reassemble byte-identical over a real authenticated upload.
+
 ## [3.12.1]
 
 ### Fixed

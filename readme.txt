@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.12.1
+Stable tag: 3.12.2
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,10 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.12.2 =
+Backup & Migrate: restore uploads now pass through website firewalls.
+* Fixed: restoring a .emcp could still fail with a server error partway through the upload on hosts running a web application firewall (mod_security and similar). A backup contains your database dump and PHP files, and sending those bytes as-is looks like an attack to a firewall, which blocks the request. The uploader now encodes each chunk before sending so the firewall passes it through; the file is decoded and reassembled on the server. Chunks were also made smaller to fit stricter hosts.
 
 = 3.12.1 =
 Backup & Migrate: more reliable restore uploads on shared hosts.

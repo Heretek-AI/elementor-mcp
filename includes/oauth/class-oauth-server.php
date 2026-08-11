@@ -127,6 +127,11 @@ class EMCP_Tools_OAuth_Server {
 	 * @return string
 	 */
 	public static function base_url(): string {
+		// Reachable public base (honors the Server URL override) so the token /
+		// register / revoke endpoints stay consistent with the issuer + resource.
+		if ( class_exists( 'EMCP_Tools_Site_Context' ) ) {
+			return EMCP_Tools_Site_Context::rest_endpoint( self::REST_NAMESPACE );
+		}
 		return rest_url( self::REST_NAMESPACE );
 	}
 

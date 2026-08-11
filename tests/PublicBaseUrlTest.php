@@ -54,6 +54,19 @@ class PublicBaseUrlTest extends \PHPUnit\Framework\TestCase {
 		$this->assertSame( 'https://override.test/wp-json/mcp/emcp-tools-server', EMCP_Tools_Site_Context::mcp_endpoint() );
 	}
 
+	/** rest_endpoint(): override is authoritative for ANY path (oauth token/register). */
+	public function test_rest_endpoint_override_is_authoritative() {
+		$GLOBALS['emcp_test']['options']['emcp_tools_public_base_url'] = 'https://override.test';
+		$this->assertSame( 'https://override.test/wp-json/emcp-tools/oauth/v1', EMCP_Tools_Site_Context::rest_endpoint( 'emcp-tools/oauth/v1' ) );
+		$this->assertSame( 'https://override.test/wp-json/mcp/emcp-tools-server', EMCP_Tools_Site_Context::rest_endpoint( 'mcp/emcp-tools-server' ) );
+	}
+
+	/** rest_endpoint(): no override → rest_url() for the path. */
+	public function test_rest_endpoint_no_override_uses_rest_url() {
+		$GLOBALS['emcp_test']['rest_url_base'] = 'https://reach.test/wp-json';
+		$this->assertSame( 'https://reach.test/wp-json/emcp-tools/oauth/v1', EMCP_Tools_Site_Context::rest_endpoint( 'emcp-tools/oauth/v1' ) );
+	}
+
 	/** Plain-permalink rest_url (?rest_route=) → detected keeps scheme+host. */
 	public function test_detected_plain_permalinks() {
 		$GLOBALS['emcp_test']['rest_url_base'] = 'https://plain.test/?rest_route=';

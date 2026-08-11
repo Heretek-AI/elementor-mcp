@@ -84,12 +84,27 @@ class EMCP_Tools_Site_Context {
 	 * @return string
 	 */
 	public static function mcp_endpoint(): string {
+		return self::rest_endpoint( 'mcp/emcp-tools-server' );
+	}
+
+	/**
+	 * A REST endpoint URL on the reachable public base. With a Server URL
+	 * override set, it is `override + /wp-json/<path>` (pretty permalinks);
+	 * otherwise `rest_url(<path>)` (permalink-aware). Routing every OAuth + MCP
+	 * endpoint (resource, token, authorize, the MCP server) through this keeps
+	 * them all on one consistent, reachable host — so the override is
+	 * authoritative for the whole discovery flow, not just the issuer.
+	 *
+	 * @param string $path REST path relative to the API root (e.g. 'mcp/…').
+	 * @return string
+	 */
+	public static function rest_endpoint( string $path ): string {
 		$override = get_option( self::OPTION_BASE_URL, '' );
 		$override = is_string( $override ) ? trim( $override ) : '';
 		if ( '' !== $override ) {
-			return rtrim( $override, '/' ) . '/wp-json/mcp/emcp-tools-server';
+			return rtrim( $override, '/' ) . '/wp-json/' . ltrim( $path, '/' );
 		}
-		return function_exists( 'rest_url' ) ? (string) rest_url( 'mcp/emcp-tools-server' ) : ( rtrim( (string) home_url(), '/' ) . '/wp-json/mcp/emcp-tools-server' );
+		return function_exists( 'rest_url' ) ? (string) rest_url( $path ) : ( rtrim( (string) home_url(), '/' ) . '/wp-json/' . ltrim( $path, '/' ) );
 	}
 
 	/**

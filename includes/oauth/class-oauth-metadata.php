@@ -51,6 +51,13 @@ class EMCP_Tools_OAuth_Metadata {
 	 * @return string
 	 */
 	public static function resource(): string {
+		// Route through the reachable public base so an admin Server URL override
+		// governs the whole OAuth flow (resource + token + issuer), not just the
+		// issuer — otherwise a host that differs from rest_url() would produce an
+		// inconsistent discovery document.
+		if ( class_exists( 'EMCP_Tools_Site_Context' ) ) {
+			return EMCP_Tools_Site_Context::rest_endpoint( 'mcp/emcp-tools-server' );
+		}
 		return rest_url( 'mcp/emcp-tools-server' );
 	}
 

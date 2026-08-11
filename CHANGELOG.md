@@ -5,6 +5,7 @@ All notable changes to MCP Tools for Elementor are documented in this file.
 ## [3.11.2]
 
 ### Fixed
+- **Pages created via MCP rendered empty on Elementor 4.2.x (#111).** A page built through the tools stored correct data but rendered blank on the front end and in the editor. Elementor 4.2's Element Cache stores rendered HTML in post meta and clears it in its own `Document::save()`, which the plugin's CLI/proxy write path bypasses — so an empty render cached while the page was still empty survived every later content write (especially on a persistent object cache like WP Engine), and the page kept serving the cached empty render. The plugin now invalidates `_elementor_element_cache` on every `_elementor_data` write, from any tool. This also fixes the delayed visibility of edits to existing pages.
 - **Connecting from pinned-URL staging sites.** On hosts that pin the WordPress Site Address to a not-yet-live domain (common on staging — e.g. Hostinger), `home_url()` is unreachable while the REST API answers on the real host. The `.mcpb` bundle's `WP_URL` and the OAuth `issuer` / `authorization_endpoint` used `home_url()`, so the bundle shipped pointing at the unreachable domain, OAuth discovery 404'd, and `mcp-remote` dropped while chasing the dead issuer. All client-facing URLs now derive from the reachable base the REST API actually answers on (`rest_url()`-based, the same value the Connection tab shows), so OAuth metadata is internally consistent and the bundle connects.
 
 ### Added

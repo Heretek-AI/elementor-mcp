@@ -177,7 +177,8 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 == Changelog ==
 
 = 3.11.2 =
-Fixes connecting from staging sites whose address is pinned to a different (not-yet-live) domain, and adds an editable Server URL.
+Fixes pages created via MCP rendering empty on Elementor 4.2, plus connecting from staging sites whose address is pinned to a different (not-yet-live) domain, and adds an editable Server URL.
+* Fixed: pages created through the tools could render completely blank on Elementor 4.2.x (front end and editor) even though the data was stored correctly. Elementor's rendered-element cache held an empty render and the plugin never cleared it; it now invalidates that cache on every content write. This also makes edits to existing pages show up immediately instead of after a manual "Regenerate CSS & Data".
 * Fixed: on hosts that pin the WordPress Address to a domain that isn't live yet (common on staging, e.g. Hostinger), the downloadable bundle and OAuth sign-in used that unreachable address and couldn't connect. They now use the URL your site actually answers on (the same one shown on the Connection tab).
 * Added: a "Server URL" field on the Connection tab. It auto-detects the reachable URL; override it only when your site is served on a different address than its configured WordPress Address. The value is baked into the bundle and used for OAuth and the client config examples.
 * Added: an emcp_tools_public_base_url filter so agencies can set the server URL fleet-wide from a small must-use plugin.

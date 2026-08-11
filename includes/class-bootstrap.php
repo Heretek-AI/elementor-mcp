@@ -326,6 +326,9 @@ class EMCP_Tools_Bootstrap {
 			99
 		);
 
+		// Invalidate Elementor's rendered-element cache on any _elementor_data
+		// write, so MCP-created/edited pages never serve a stale empty render (#111).
+		EMCP_Tools_Data::init();
 		// Content search index: install-on-init + incremental re-index on save/delete.
 		EMCP_Tools_Search_Index::init();
 		EMCP_Tools_Change_Blobs::init();

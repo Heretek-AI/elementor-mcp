@@ -20,6 +20,42 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class EMCP_Tools_Data {
 
+	/** Elementor 4.2's rendered-element cache meta (Document::CACHE_META_KEY). */
+	const ELEMENT_CACHE_META = '_elementor_element_cache';
+
+	/**
+	 * Register global hooks. Invalidates Elementor's rendered-element cache
+	 * (`_elementor_element_cache`) whenever a post's `_elementor_data` changes,
+	 * from ANY write path — our MCP tools' raw `update_post_meta()` writes, the
+	 * editor, or an import.
+	 *
+	 * Elementor 4.2's Element Cache stores rendered HTML in post meta. Elementor
+	 * clears it in `Document::save()`, but our CLI/proxy fallback writes data with
+	 * raw `update_post_meta()` and bypasses that. On a persistent object cache
+	 * (e.g. WP Engine) a stale/empty entry then survives every content write, so a
+	 * page created via MCP — written while its data was still the empty `[]`,
+	 * rendered (caching empty), then filled — keeps serving the cached empty
+	 * render forever. This restores Elementor's invalidation universally, and also
+	 * fixes the delayed visibility of edits to existing pages. See issue #111.
+	 */
+	public static function init(): void {
+		add_action( 'added_post_meta', array( __CLASS__, 'flush_element_cache_on_data_write' ), 10, 3 );
+		add_action( 'updated_post_meta', array( __CLASS__, 'flush_element_cache_on_data_write' ), 10, 3 );
+	}
+
+	/**
+	 * Clear the rendered-element cache when `_elementor_data` is written.
+	 *
+	 * @param int    $meta_id  Meta row id (unused).
+	 * @param int    $post_id  Post id.
+	 * @param string $meta_key Meta key.
+	 */
+	public static function flush_element_cache_on_data_write( $meta_id, $post_id, $meta_key ): void {
+		if ( '_elementor_data' === $meta_key ) {
+			delete_post_meta( (int) $post_id, self::ELEMENT_CACHE_META );
+		}
+	}
+
 	/**
 	 * Whether Elementor's document manager is available.
 	 *
@@ -315,6 +351,12 @@ class EMCP_Tools_Data {
 
 			// Invalidate Elementor CSS cache so it regenerates on next page view.
 			delete_post_meta( $post_id, '_elementor_css' );
+
+			// Invalidate Elementor 4.2's rendered-element cache — the update above
+			// fires the meta hook that clears it, but do it explicitly too so a
+			// re-save of identical data (which skips the hook) still refreshes a
+			// stale/empty cached render. See init() + issue #111.
+			delete_post_meta( $post_id, self::ELEMENT_CACHE_META );
 
 			$upload_dir = wp_get_upload_dir();
 			$css_path   = $upload_dir['basedir'] . '/elementor/css/post-' . $post_id . '.css';

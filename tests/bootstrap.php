@@ -153,6 +153,14 @@ function get_post( $post_id ) {
 	return $GLOBALS['emcp_test']['posts'][ (int) $post_id ] ?? null;
 }
 
+if ( ! function_exists( 'delete_post_meta' ) ) {
+	// Records deletions in $GLOBALS['emcp_test']['deleted_meta'] as [post_id, key].
+	function delete_post_meta( $post_id, $key, $value = '' ) {
+		$GLOBALS['emcp_test']['deleted_meta'][] = array( (int) $post_id, (string) $key );
+		return true;
+	}
+}
+
 function get_permalink( $post = null ): string {
 	return 'http://example.test/?p=' . ( is_object( $post ) ? (int) $post->ID : (int) $post );
 }

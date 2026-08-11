@@ -25,6 +25,101 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Free ⇄ Premium single-instance guard.
+ *
+ * The free build (folder `emcp-tools`) and the premium build (folder `emcp-pro`)
+ * are the SAME plugin — identical `emcp-tools.php` + `includes/`, differing only
+ * by the `pro/*` overlay and the `.emcp-pro` marker. WordPress treats the two
+ * folders as separate plugins, so `require_once` does NOT dedupe across them:
+ * activating the second copy while the first is active redeclares every class
+ * (starting at includes/class-migration.php below) → a fatal error.
+ *
+ * This guard runs BEFORE any require, so it can never redeclare. Premium always
+ * wins: the free copy yields to an active premium sibling (and shows a notice),
+ * and the premium copy retires an active free sibling. A last-resort redeclare
+ * net covers the one request (a premium activation) where the free copy has
+ * already booted.
+ */
+if ( ! function_exists( 'emcp_tools_retire_sibling' ) ) {
+	/**
+	 * Deactivate a sibling EMCP Tools build on the next admin_init.
+	 *
+	 * @param string $basename Plugin basename to deactivate.
+	 */
+	function emcp_tools_retire_sibling( $basename ) {
+		add_action(
+			'admin_init',
+			function () use ( $basename ) {
+				if ( ! current_user_can( 'activate_plugins' ) ) {
+					return;
+				}
+				if ( ! function_exists( 'deactivate_plugins' ) ) {
+					require_once ABSPATH . 'wp-admin/includes/plugin.php';
+				}
+				if ( is_plugin_active( $basename ) ) {
+					deactivate_plugins( $basename );
+					set_transient( 'emcp_tools_free_retired', 1, 60 );
+				}
+			}
+		);
+	}
+}
+
+$emcp_tools_is_premium_build = file_exists( __DIR__ . '/.emcp-pro' );
+$emcp_tools_free_basename    = 'emcp-tools/emcp-tools.php';
+$emcp_tools_premium_basename = 'emcp-pro/emcp-tools.php';
+
+// Last-resort redeclare net: another EMCP Tools copy already booted this
+// request. If THIS is premium and the free copy booted first, retire free so
+// the next load runs premium alone.
+if ( defined( 'EMCP_TOOLS_VERSION' ) ) {
+	if ( $emcp_tools_is_premium_build ) {
+		emcp_tools_retire_sibling( $emcp_tools_free_basename );
+	}
+	return;
+}
+
+// The free build yields to an active premium sibling (bail before defining or
+// requiring anything). A persistent notice tells the admin to remove the free copy.
+if ( ! $emcp_tools_is_premium_build ) {
+	$emcp_tools_premium_active = in_array( $emcp_tools_premium_basename, (array) get_option( 'active_plugins', array() ), true )
+		|| ( is_multisite() && array_key_exists( $emcp_tools_premium_basename, (array) get_site_option( 'active_sitewide_plugins', array() ) ) );
+	if ( $emcp_tools_premium_active ) {
+		add_action(
+			'admin_notices',
+			function () {
+				if ( ! current_user_can( 'activate_plugins' ) ) {
+					return;
+				}
+				echo '<div class="notice notice-warning"><p>';
+				echo wp_kses(
+					__( '<strong>EMCP Tools Pro is active.</strong> The free version of EMCP Tools stays paused to avoid a conflict &mdash; you can safely <strong>deactivate and delete</strong> it. Everything is handled by Pro.', 'emcp-tools' ),
+					array( 'strong' => array() )
+				);
+				echo '</p></div>';
+			}
+		);
+		return;
+	}
+}
+
+// The premium build retires an active free sibling.
+if ( $emcp_tools_is_premium_build ) {
+	emcp_tools_retire_sibling( $emcp_tools_free_basename );
+	add_action(
+		'admin_notices',
+		function () {
+			if ( get_transient( 'emcp_tools_free_retired' ) && current_user_can( 'activate_plugins' ) ) {
+				delete_transient( 'emcp_tools_free_retired' );
+				echo '<div class="notice notice-info is-dismissible"><p>';
+				echo esc_html__( 'EMCP Tools: the free version was deactivated because the Pro version is active.', 'emcp-tools' );
+				echo '</p></div>';
+			}
+		}
+	);
+}
+
+/**
  * Legacy coexistence guard.
  *
  * This plugin was renamed from the `elementor-mcp` folder/slug to `emcp-tools`.

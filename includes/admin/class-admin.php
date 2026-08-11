@@ -154,6 +154,7 @@ class EMCP_Tools_Admin {
 			'dashboard'  => 'dashicons-dashboard',
 			'tools'      => 'dashicons-admin-tools',
 			'history'    => 'dashicons-undo',
+			'redirects'  => 'dashicons-randomize',
 			'modules'    => 'dashicons-screenoptions',
 			'connection' => 'dashicons-admin-links',
 			'ai-chat'    => 'dashicons-format-chat',
@@ -179,6 +180,7 @@ class EMCP_Tools_Admin {
 				self::PAGE_SLUG . '-connection' => __( 'Connection', 'emcp-tools' ),
 				self::PAGE_SLUG . '-ai-chat'    => __( 'AI Chat', 'emcp-tools' ),
 				self::PAGE_SLUG . '-context'    => __( 'Context', 'emcp-tools' ),
+				self::PAGE_SLUG . '-redirects'  => __( 'Redirects', 'emcp-tools' ),
 				self::PAGE_SLUG . '-memory'     => __( 'Memory', 'emcp-tools' ),
 				self::PAGE_SLUG . '-prompts'    => __( 'Prompts', 'emcp-tools' ),
 				self::PAGE_SLUG . '-templates'  => __( 'Templates', 'emcp-tools' ),
@@ -224,6 +226,8 @@ class EMCP_Tools_Admin {
 				return 'tools';
 			case self::PAGE_SLUG . '-history':
 				return 'history';
+			case self::PAGE_SLUG . '-redirects':
+				return 'redirects';
 			case self::PAGE_SLUG . '-modules':
 				return 'modules';
 			case self::PAGE_SLUG . '-connection':
@@ -296,6 +300,9 @@ class EMCP_Tools_Admin {
 		add_action( 'admin_post_emcp_tools_settings_push', array( $this, 'handle_settings_push' ) );
 		add_action( 'admin_post_emcp_tools_settings_pull', array( $this, 'handle_settings_pull' ) );
 		add_action( 'admin_post_emcp_tools_marketplace_install', array( $this, 'handle_marketplace_install' ) );
+		add_action( 'admin_post_emcp_tools_redirect_save', array( $this, 'handle_redirect_save' ) );
+		add_action( 'admin_post_emcp_tools_redirect_delete', array( $this, 'handle_redirect_delete' ) );
+		add_action( 'admin_post_emcp_tools_redirect_toggle', array( $this, 'handle_redirect_toggle' ) );
 	}
 
 	/** Nonce action for the .mcpb bundle download. */
@@ -435,6 +442,136 @@ class EMCP_Tools_Admin {
 
 		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-history&cleared=' . (int) $count ) );
 		exit;
+	}
+
+	/**
+	 * Bounce back to the Redirects tab with a status code.
+	 *
+	 * @param string $status Status slug for a notice.
+	 */
+	private function redirect_back_to_redirects( string $status ): void {
+		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-redirects&notice=' . rawurlencode( $status ) ) );
+		exit;
+	}
+
+	/**
+	 * Create or update a redirect from the management form. Routes through the
+	 * store + ledger so admin edits are reversible in History.
+	 *
+	 * @since 3.11.0
+	 */
+	public function handle_redirect_save(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to do that.', 'emcp-tools' ), '', array( 'response' => 403 ) );
+		}
+		check_admin_referer( 'emcp_tools_redirect_save' );
+		if ( ! class_exists( 'EMCP_Tools_Redirect_Store' ) ) {
+			$this->redirect_back_to_redirects( 'error' );
+		}
+		$id             = isset( $_POST['redirect_id'] ) ? absint( wp_unslash( $_POST['redirect_id'] ) ) : 0;
+		$source         = isset( $_POST['source'] ) ? sanitize_text_field( wp_unslash( $_POST['source'] ) ) : '';
+		$target_raw     = isset( $_POST['target'] ) ? esc_url_raw( wp_unslash( $_POST['target'] ) ) : '';
+		$target_post_id = isset( $_POST['target_post_id'] ) ? absint( wp_unslash( $_POST['target_post_id'] ) ) : 0;
+		$status_code    = isset( $_POST['status_code'] ) ? absint( wp_unslash( $_POST['status_code'] ) ) : 301;
+		$ignore_query   = ! empty( $_POST['ignore_query'] );
+
+		$data = array(
+			'source'       => $source,
+			'status_code'  => $status_code,
+			'ignore_query' => $ignore_query,
+		);
+		if ( $target_post_id ) {
+			$data['target_post_id'] = $target_post_id;
+		} else {
+			$data['target'] = $target_raw;
+		}
+
+		if ( $id ) {
+			$prior = EMCP_Tools_Redirect_Store::get( $id );
+			$res   = EMCP_Tools_Redirect_Store::update( $id, $data );
+			if ( ! is_wp_error( $res ) && $prior && class_exists( 'EMCP_Tools_Change_Recorder' ) ) {
+				EMCP_Tools_Change_Recorder::record_redirect( 'update', array( 'row' => $prior ), sprintf( 'Updated redirect %s', $res['source_path'] ), (string) $res['source_path'] );
+			}
+		} else {
+			$res = EMCP_Tools_Redirect_Store::create( $data );
+			if ( ! is_wp_error( $res ) && class_exists( 'EMCP_Tools_Change_Recorder' ) ) {
+				EMCP_Tools_Change_Recorder::record_redirect( 'create', array( 'id' => (int) $res['id'] ), sprintf( 'Created redirect %s', $res['source_path'] ), (string) $res['source_path'] );
+			}
+		}
+		$this->redirect_back_to_redirects( is_wp_error( $res ) ? 'error:' . $res->get_error_code() : ( $id ? 'updated' : 'created' ) );
+	}
+
+	/**
+	 * Delete a redirect (nonce per-id), recorded for rollback.
+	 *
+	 * @since 3.11.0
+	 */
+	public function handle_redirect_delete(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to do that.', 'emcp-tools' ), '', array( 'response' => 403 ) );
+		}
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified just below against the per-id action.
+		$id = isset( $_GET['id'] ) ? absint( wp_unslash( $_GET['id'] ) ) : 0;
+		check_admin_referer( 'emcp_tools_redirect_delete_' . $id );
+		if ( class_exists( 'EMCP_Tools_Redirect_Store' ) ) {
+			$prior = EMCP_Tools_Redirect_Store::get( $id );
+			if ( $prior && EMCP_Tools_Redirect_Store::delete( $id ) && class_exists( 'EMCP_Tools_Change_Recorder' ) ) {
+				EMCP_Tools_Change_Recorder::record_redirect( 'delete', array( 'row' => $prior ), sprintf( 'Deleted redirect %s', $prior['source_path'] ), (string) $prior['source_path'] );
+			}
+		}
+		$this->redirect_back_to_redirects( 'deleted' );
+	}
+
+	/**
+	 * Toggle a redirect's enabled state (nonce per-id), recorded for rollback.
+	 *
+	 * @since 3.11.0
+	 */
+	public function handle_redirect_toggle(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to do that.', 'emcp-tools' ), '', array( 'response' => 403 ) );
+		}
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified just below against the per-id action.
+		$id = isset( $_GET['id'] ) ? absint( wp_unslash( $_GET['id'] ) ) : 0;
+		check_admin_referer( 'emcp_tools_redirect_toggle_' . $id );
+		if ( class_exists( 'EMCP_Tools_Redirect_Store' ) ) {
+			$prior = EMCP_Tools_Redirect_Store::get( $id );
+			if ( $prior ) {
+				$res = EMCP_Tools_Redirect_Store::update( $id, array( 'enabled' => empty( $prior['enabled'] ) ) );
+				if ( ! is_wp_error( $res ) && class_exists( 'EMCP_Tools_Change_Recorder' ) ) {
+					EMCP_Tools_Change_Recorder::record_redirect( 'update', array( 'row' => $prior ), sprintf( 'Toggled redirect %s', $prior['source_path'] ), (string) $prior['source_path'] );
+				}
+			}
+		}
+		$this->redirect_back_to_redirects( 'updated' );
+	}
+
+	/**
+	 * Nonce'd URL that deletes one redirect.
+	 *
+	 * @since 3.11.0
+	 * @param int $id Redirect id.
+	 * @return string
+	 */
+	public static function redirect_delete_url( int $id ): string {
+		return wp_nonce_url(
+			admin_url( 'admin-post.php?action=emcp_tools_redirect_delete&id=' . $id ),
+			'emcp_tools_redirect_delete_' . $id
+		);
+	}
+
+	/**
+	 * Nonce'd URL that toggles one redirect's enabled state.
+	 *
+	 * @since 3.11.0
+	 * @param int $id Redirect id.
+	 * @return string
+	 */
+	public static function redirect_toggle_url( int $id ): string {
+		return wp_nonce_url(
+			admin_url( 'admin-post.php?action=emcp_tools_redirect_toggle&id=' . $id ),
+			'emcp_tools_redirect_toggle_' . $id
+		);
 	}
 
 	/**
@@ -1089,7 +1226,7 @@ class EMCP_Tools_Admin {
 	 *
 	 * @since 1.8.0
 	 */
-	const DEFAULTS_VERSION = 31;
+	const DEFAULTS_VERSION = 32;
 
 	/**
 	 * SEO/A11y Pro MCP tool slugs that ship disabled-by-default (v2 defaults).
@@ -1288,6 +1425,18 @@ class EMCP_Tools_Admin {
 	 */
 	public static function database_write_tool_slugs(): array {
 		return array( 'emcp-tools/insert-row', 'emcp-tools/update-rows', 'emcp-tools/delete-rows' );
+	}
+
+	/**
+	 * Redirect Manager write tool slugs that ship disabled-by-default. The reads
+	 * (list-redirects/find-broken-links) stay enabled. The admin opts in on the
+	 * Tools tab.
+	 *
+	 * @since 3.11.0
+	 * @return string[]
+	 */
+	public static function redirect_tool_slugs(): array {
+		return array( 'emcp-tools/create-redirect', 'emcp-tools/update-redirect', 'emcp-tools/delete-redirect' );
 	}
 
 	/**
@@ -1608,6 +1757,13 @@ class EMCP_Tools_Admin {
 		if ( $applied < 31 ) {
 			$add[] = 'emcp-tools/blocksy-blocks-write';
 			$add[] = 'emcp-tools/blocksy-extensions-write';
+		}
+
+		// v32 — Redirect Manager write tools ship disabled-by-default (create/
+		// update/delete a redirect). The reads (list-redirects/find-broken-links)
+		// stay enabled. The admin opts in on the Tools tab.
+		if ( $applied < 32 ) {
+			$add = array_merge( $add, self::redirect_tool_slugs() );
 		}
 
 		$merged = array_values( array_unique( array_merge( $existing, $add ) ) );
@@ -3113,6 +3269,8 @@ class EMCP_Tools_Admin {
 					}
 				} elseif ( 'history' === $active_tab ) {
 					include EMCP_TOOLS_DIR . 'includes/admin/views/page-history.php';
+				} elseif ( 'redirects' === $active_tab ) {
+					include EMCP_TOOLS_DIR . 'includes/admin/views/page-redirects.php';
 				} elseif ( 'widgets' === $active_tab ) {
 					include EMCP_TOOLS_DIR . 'includes/admin/views/page-widgets.php';
 				} elseif ( 'marketplace' === $active_tab ) {
@@ -3981,6 +4139,37 @@ class EMCP_Tools_Admin {
 						'label'       => __( 'Get Global Settings', 'emcp-tools' ),
 						'description' => __( 'Returns global colors, typography, and theme settings.', 'emcp-tools' ),
 						'badges'      => array( 'read-only' ),
+					),
+				),
+			),
+			'redirects'        => array(
+				'platform' => 'wordpress',
+				'label' => __( 'Redirects', 'emcp-tools' ),
+				'tools' => array(
+					'emcp-tools/list-redirects'    => array(
+						'label'       => __( 'List Redirects', 'emcp-tools' ),
+						'description' => __( 'Lists the site\'s managed 301/302 redirects (source → target, code, hits).', 'emcp-tools' ),
+						'badges'      => array( 'read-only' ),
+					),
+					'emcp-tools/find-broken-links' => array(
+						'label'       => __( 'Find Broken Links', 'emcp-tools' ),
+						'description' => __( 'Scans published content for internal links to dead or already-redirected URLs. Read-only.', 'emcp-tools' ),
+						'badges'      => array( 'read-only' ),
+					),
+					'emcp-tools/create-redirect'   => array(
+						'label'       => __( 'Create Redirect', 'emcp-tools' ),
+						'description' => __( 'Creates a 301/302 redirect from an old path to a target URL or post. Disabled by default.', 'emcp-tools' ),
+						'badges'      => array(),
+					),
+					'emcp-tools/update-redirect'   => array(
+						'label'       => __( 'Update Redirect', 'emcp-tools' ),
+						'description' => __( 'Updates an existing redirect by id. Disabled by default.', 'emcp-tools' ),
+						'badges'      => array(),
+					),
+					'emcp-tools/delete-redirect'   => array(
+						'label'       => __( 'Delete Redirect', 'emcp-tools' ),
+						'description' => __( 'Deletes a redirect by id. Reversible from History. Disabled by default.', 'emcp-tools' ),
+						'badges'      => array( 'destructive' ),
 					),
 				),
 			),

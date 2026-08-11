@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.12.2
+Stable tag: 3.12.3
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,11 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.12.3 =
+Backup & Migrate: fixes a browser crash when uploading a large backup to restore.
+* Fixed: uploading a large .emcp to restore could crash the browser tab with an "Out of Memory" error partway through. The uploader held every encoded chunk in memory at once; it now processes one chunk at a time, releases it before the next, and uses smaller (2 MB) chunks, so even multi-hundred-MB backups upload without exhausting browser memory.
+* Tip: for very large sites you can also copy the .emcp file directly into wp-content/emcp-backups/uploads/ on the destination (via FTP or your host's file manager) and it will appear in the Restore list — no browser upload needed.
 
 = 3.12.2 =
 Backup & Migrate: restore uploads now pass through website firewalls.

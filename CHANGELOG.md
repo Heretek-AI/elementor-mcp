@@ -2,6 +2,11 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.12.3]
+
+### Fixed
+- **Browser tab "Out of Memory" crash mid restore upload.** 3.12.2's base64 chunk encoding was read via `FileReader` inside a deeply-nested recursive XHR-callback chain, so every chunk's multi-MB base64 string was retained across the whole upload (an ~888 MB backup ≈ hundreds of chunks) until the tab OOM'd. The uploader is now a flat iteration: it holds **one** encoded chunk at a time, nulls the base64 string + FormData before scheduling the next chunk on a **fresh stack** (`setTimeout`, so prior closures are freed), and drops the raw chunk cap to **2 MB** (~2.7 MB encoded) for a low memory peak. Also surfaces a manual fallback: drop the `.emcp` into `wp-content/emcp-backups/uploads/` (FTP/file manager) and it appears in the Restore list without any browser upload.
+
 ## [3.12.2]
 
 ### Fixed

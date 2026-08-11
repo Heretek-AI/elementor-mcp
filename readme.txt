@@ -178,7 +178,7 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 
 = 3.11.0 =
 A built-in Redirect Manager so an AI edit never leaves a dead URL, a header notifications center, and a fix for running the free and Pro versions side by side.
-* Added: Redirect Manager. Create and manage 301/302 redirects from a new Redirects tab (or via MCP). When you delete or rename a page, the tools now suggest a redirect for the old URL so visitors and search engines don't hit a 404 — nothing is created until you confirm. Every redirect is reversible from the History tab.
+* Added: Redirect Manager. Create and manage 301/302 redirects from a new Redirects tab (or via MCP). When you delete or rename a page, the tools now suggest a redirect for the old URL so visitors and search engines don't hit a 404 — nothing is created until you confirm. Every redirect is reversible from the History tab. Ships as a module (on by default) — you can turn it off on the Modules tab.
 * Added: Find broken links — a read-only scan that flags internal links pointing at trashed/missing pages or at a URL that already has a redirect, and proposes the fix.
 * Added: notifications center in the header — a bell with product announcements in a slide-in drawer, plus a cloud button that shows your EMCP Cloud connection status and links to the Connection tab.
 * Fixed: installing and activating EMCP Tools Pro while the free version is active no longer causes a fatal error. Pro now takes over automatically and the free version is deactivated (with a notice); activating the free version while Pro is active leaves it safely paused.

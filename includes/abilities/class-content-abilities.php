@@ -891,6 +891,10 @@ class EMCP_Tools_Content_Abilities {
 		if ( '' === $old_url || ! class_exists( 'EMCP_Tools_Redirect_Abilities' ) ) {
 			return $out;
 		}
+		// Only suggest when the Redirect Manager module is active.
+		if ( class_exists( 'EMCP_Tools_Redirect_Module' ) && ! EMCP_Tools_Redirect_Module::is_enabled() ) {
+			return $out;
+		}
 		EMCP_Tools_Redirect_Abilities::push_suggestion( $old_url, $reason, $post_id );
 		$out['redirect_suggestion'] = array(
 			'old_url' => $old_url,

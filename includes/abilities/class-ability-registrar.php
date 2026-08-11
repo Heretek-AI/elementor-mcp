@@ -159,10 +159,14 @@ class EMCP_Tools_Ability_Registrar {
 		$content->register();
 		$this->ability_names = array_merge( $this->ability_names, $content->get_ability_names() );
 
-		// Redirect Manager abilities (301/302 redirects + broken-link scan; no Elementor).
-		$redirects = new EMCP_Tools_Redirect_Abilities();
-		$redirects->register();
-		$this->ability_names = array_merge( $this->ability_names, $redirects->get_ability_names() );
+		// Redirect Manager abilities (301/302 redirects + broken-link scan; no
+		// Elementor). Gated on the Redirects module (on by default) — abilities
+		// register before the module boots on init:5, so gate on is_enabled().
+		if ( class_exists( 'EMCP_Tools_Redirect_Module' ) && EMCP_Tools_Redirect_Module::is_enabled() ) {
+			$redirects = new EMCP_Tools_Redirect_Abilities();
+			$redirects->register();
+			$this->ability_names = array_merge( $this->ability_names, $redirects->get_ability_names() );
+		}
 
 		// Gutenberg block abilities (discover blocks/patterns + incremental block-tree edits).
 		$gutenberg = new EMCP_Tools_Gutenberg_Abilities();

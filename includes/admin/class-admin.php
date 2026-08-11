@@ -202,6 +202,10 @@ class EMCP_Tools_Admin {
 			if ( ! $this->memory_tab_visible() ) {
 				unset( $this->submenus[ self::PAGE_SLUG . '-memory' ] );
 			}
+			// Redirects tab is gated by the Redirect Manager module.
+			if ( ! $this->module_tab_visible( 'redirects' ) ) {
+				unset( $this->submenus[ self::PAGE_SLUG . '-redirects' ] );
+			}
 			// Module-backed tabs: drop each when its module is off/unavailable.
 			foreach ( array( 'prompts', 'templates', 'brand-kits' ) as $emcp_mod_id ) {
 				if ( ! $this->module_tab_visible( $emcp_mod_id ) ) {
@@ -3269,7 +3273,7 @@ class EMCP_Tools_Admin {
 					}
 				} elseif ( 'history' === $active_tab ) {
 					include EMCP_TOOLS_DIR . 'includes/admin/views/page-history.php';
-				} elseif ( 'redirects' === $active_tab ) {
+				} elseif ( 'redirects' === $active_tab && $this->module_tab_visible( 'redirects' ) ) {
 					include EMCP_TOOLS_DIR . 'includes/admin/views/page-redirects.php';
 				} elseif ( 'widgets' === $active_tab ) {
 					include EMCP_TOOLS_DIR . 'includes/admin/views/page-widgets.php';
@@ -4038,7 +4042,8 @@ class EMCP_Tools_Admin {
 				self::widget_builder_tool_slugs(),
 				self::block_tool_slugs(),
 				self::memory_tool_slugs(),
-				array( 'emcp-tools/resize-media' )
+				self::redirect_tool_slugs(),
+				array( 'emcp-tools/list-redirects', 'emcp-tools/find-broken-links', 'emcp-tools/resize-media' )
 			);
 			foreach ( $catalog as $emcp_group ) {
 				foreach ( array_keys( $emcp_group['tools'] ?? array() ) as $emcp_slug ) {

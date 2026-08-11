@@ -294,6 +294,7 @@ class EMCP_Tools_Bootstrap {
 		require_once EMCP_TOOLS_DIR . 'includes/themer/php/class-themer-php-admin.php';
 		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-themer-abilities.php';
 		require_once EMCP_TOOLS_DIR . 'includes/modules/class-themer-module.php';
+		require_once EMCP_TOOLS_DIR . 'includes/modules/class-redirect-module.php';
 		// Pro-tier units (SEO/a11y helpers + abilities, widget generator + builder
 		// abilities, system-kit abilities, Pro brand kits, AI Chat). These ship in
 		// the private Pro overlay (pro/) and are absent from the free build; the
@@ -328,9 +329,9 @@ class EMCP_Tools_Bootstrap {
 		// Content search index: install-on-init + incremental re-index on save/delete.
 		EMCP_Tools_Search_Index::init();
 		EMCP_Tools_Change_Blobs::init();
-		// Redirect Manager: install the table on init + front-end 301/302 handler.
-		EMCP_Tools_Redirect_Store::init();
-		EMCP_Tools_Redirect_Handler::init();
+		// The Redirect Manager (store table install + front-end 301/302 handler) is
+		// booted by EMCP_Tools_Redirect_Module::register() only when the module is
+		// active — a true kill switch from the Modules tab.
 		// OAuth sign-in: install storage on init (routes wired in later phases).
 		EMCP_Tools_OAuth_Server::init();
 		// Content mirror: auto-export-on-save (gated by its option) + delete cleanup.
@@ -359,6 +360,7 @@ class EMCP_Tools_Bootstrap {
 		$emcp_modules->register( new EMCP_Tools_Brand_Kits_Module() );
 		$emcp_modules->register( new EMCP_Tools_Templates_Module() );
 		$emcp_modules->register( new EMCP_Tools_Themer_Module() );
+		$emcp_modules->register( new EMCP_Tools_Redirect_Module() );
 		$emcp_modules->register( new EMCP_Tools_Agent_Skills_Module() );
 		$emcp_modules->register( new EMCP_Tools_SVG_Support_Module() );
 		$emcp_modules->register( new EMCP_Tools_Cloud_Module() );

@@ -480,6 +480,18 @@ Direct database inspection and structured writes over MCP. The 3 read tools are 
 | `emcp-tools/update-rows` | Update rows matching a forced non-empty WHERE clause; before-image snapshot; audit-logged. Disabled-by-default. (`manage_options`) |
 | `emcp-tools/delete-rows` | Delete rows matching a forced non-empty WHERE clause; requires `confirm:true`; before-image snapshot; audit-logged. Disabled-by-default. (`manage_options`) |
 
+### Redirect Manager — domain (5 tools, v3.11.0, free)
+
+301/302 redirect management over MCP + a dedicated **Redirects** admin tab — the safety peer to the 3.10.0 change-ledger/rollback story: rollback undoes what *can* be undone; a redirect handles what can't (a deleted/renamed page's old URL). Free-tier, in `includes/redirects/`. Custom table `{prefix}emcp_redirects` (`EMCP_Tools_Redirect_Store`, on the `EMCP_Tools_Search_Index` version-gated `dbDelta` pattern; `source_path VARCHAR(191)` unique, `normalize_path()` host/subdir-safe, self-target + one-hop loop guard, `target_post_id` resolved to a live permalink so it survives the *target's* own slug changes). `EMCP_Tools_Redirect_Handler` matches on `template_redirect` (pri 1, before 404), skips wp-admin/REST/cron/login, forwards the original query string to a query-less target. **Every write routes through `EMCP_Tools_Change_Recorder::record_redirect()`** via a new `redirect-row` ledger type (create→undo deletes, update/delete→undo restores/re-inserts), so admin *and* MCP edits are reversible in the History tab. **Suggest-only safety:** `delete-post` and a published slug change in `class-content-abilities.php` push a suggestion onto the capped `emcp_tools_redirect_suggestions` queue + add a `redirect_suggestion` field to the tool response — **never writing a row** (the admin/agent confirms). The 2 reads are enabled-by-default; the 3 writes ship disabled-by-default (`DEFAULTS_VERSION = 32`, `EMCP_Tools_Admin::redirect_tool_slugs()`). Classes: `EMCP_Tools_Redirect_Store`/`_Handler` + `EMCP_Tools_Redirect_Abilities` (`includes/abilities/`), registered non-Elementor-gated in `class-ability-registrar.php`, booted in `class-bootstrap.php`. Admin: a **Redirects** submenu tab (`page-redirects.php` — table + add/edit form + suggested-redirects queue; nonce'd `admin_post` save/delete/toggle handlers) + the 5 tool toggles under the WordPress platform on the Tools grid. Tests: public `tests/RedirectStoreTest.php` + `tests/RedirectAbilitiesTest.php` (normalize/loop/validation + classification + suggestion queue); CRUD/rollback/301 verified by a live wp-cli smoke.
+
+| Ability Name | Purpose |
+|---|---|
+| `emcp-tools/list-redirects` | List managed redirects (source → target, code, hits); `enabled`/`search` filters, paginated. Read-only. (`manage_options`) |
+| `emcp-tools/find-broken-links` | Scan published content for internal links to trashed/missing (dead) or already-redirected URLs; bounded (`max_posts`/`max_seconds`), proposes fixes. Read-only. (`manage_options`) |
+| `emcp-tools/create-redirect` | Create a 301/302 from a source path to a target URL or post; warns (but allows) when the source shadows a live published page. Ledger-reversible. Disabled-by-default. (`manage_options`) |
+| `emcp-tools/update-redirect` | Update a redirect by id (partial). Ledger-reversible. Disabled-by-default. (`manage_options`) |
+| `emcp-tools/delete-redirect` | Delete a redirect by id; reversible from History. Destructive; disabled-by-default. (`manage_options`) |
+
 ### Stock Images (3 tools)
 
 | Ability Name | Purpose |

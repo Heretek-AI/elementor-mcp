@@ -2,6 +2,15 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.11.2]
+
+### Fixed
+- **Connecting from pinned-URL staging sites.** On hosts that pin the WordPress Site Address to a not-yet-live domain (common on staging — e.g. Hostinger), `home_url()` is unreachable while the REST API answers on the real host. The `.mcpb` bundle's `WP_URL` and the OAuth `issuer` / `authorization_endpoint` used `home_url()`, so the bundle shipped pointing at the unreachable domain, OAuth discovery 404'd, and `mcp-remote` dropped while chasing the dead issuer. All client-facing URLs now derive from the reachable base the REST API actually answers on (`rest_url()`-based, the same value the Connection tab shows), so OAuth metadata is internally consistent and the bundle connects.
+
+### Added
+- **Editable "Server URL" on the Connection tab.** Auto-detected from the REST API; override it only when the site is served on a different address than its configured WordPress Address (e.g. staging with a pinned domain). The value is baked into the bundle and used for OAuth sign-in and the client config examples.
+- **`emcp_tools_public_base_url` filter** — set the reachable server URL fleet-wide from a one-line must-use plugin (handy when rolling many staging sites through the same host).
+
 ## [3.11.1]
 
 ### Fixed

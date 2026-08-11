@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.11.1
+Stable tag: 3.11.2
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,12 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.11.2 =
+Fixes connecting from staging sites whose address is pinned to a different (not-yet-live) domain, and adds an editable Server URL.
+* Fixed: on hosts that pin the WordPress Address to a domain that isn't live yet (common on staging, e.g. Hostinger), the downloadable bundle and OAuth sign-in used that unreachable address and couldn't connect. They now use the URL your site actually answers on (the same one shown on the Connection tab).
+* Added: a "Server URL" field on the Connection tab. It auto-detects the reachable URL; override it only when your site is served on a different address than its configured WordPress Address. The value is baked into the bundle and used for OAuth and the client config examples.
+* Added: an emcp_tools_public_base_url filter so agencies can set the server URL fleet-wide from a small must-use plugin.
 
 = 3.11.1 =
 Hotfix for the free/Pro activation error introduced in 3.11.0.

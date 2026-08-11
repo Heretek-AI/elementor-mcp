@@ -35,6 +35,13 @@ class EMCP_Tools_OAuth_Metadata {
 	 * @return string
 	 */
 	public static function issuer(): string {
+		// The reachable public base (rest_url-derived / admin-overridable), NOT
+		// home_url() — a host that pins the Site Address to a not-yet-live domain
+		// would otherwise advertise an unreachable issuer and break OAuth
+		// discovery. Matches resource()/base_url(), which already use rest_url().
+		if ( class_exists( 'EMCP_Tools_Site_Context' ) ) {
+			return EMCP_Tools_Site_Context::public_base_url();
+		}
 		return rtrim( (string) home_url(), '/' );
 	}
 

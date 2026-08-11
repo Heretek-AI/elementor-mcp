@@ -47,6 +47,12 @@ class EMCP_Tools_OAuth_Authorize {
 	 * @return string
 	 */
 	public static function endpoint_url(): string {
+		// Reachable public base (rest_url-derived / admin-overridable), NOT
+		// home_url() — see EMCP_Tools_Site_Context::public_base_url(). Keeps the
+		// advertised authorize URL on the host clients can actually reach.
+		if ( class_exists( 'EMCP_Tools_Site_Context' ) ) {
+			return EMCP_Tools_Site_Context::public_base_url() . self::PATH;
+		}
 		return home_url( self::PATH );
 	}
 

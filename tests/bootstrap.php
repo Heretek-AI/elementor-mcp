@@ -113,6 +113,22 @@ function esc_url_raw( $value ): string {
 	return (string) $value;
 }
 
+if ( ! function_exists( 'apply_filters' ) ) {
+	function apply_filters( $hook, $value = null ) {
+		return $value; // Pass-through: no registered filters in the public harness.
+	}
+}
+
+// Fixture-driven: $GLOBALS['emcp_test']['rest_url_base'] sets the REST base so a
+// staging-style split (rest_url host != home_url host) can be simulated.
+if ( ! function_exists( 'rest_url' ) ) {
+	function rest_url( $path = '', $scheme = 'rest' ) {
+		$base = $GLOBALS['emcp_test']['rest_url_base'] ?? ( home_url() . '/wp-json' );
+		$base = rtrim( (string) $base, '/' );
+		return '' === (string) $path ? $base . '/' : $base . '/' . ltrim( (string) $path, '/' );
+	}
+}
+
 function get_option( $name, $default = false ) {
 	return $GLOBALS['emcp_test']['options'][ $name ] ?? $default;
 }

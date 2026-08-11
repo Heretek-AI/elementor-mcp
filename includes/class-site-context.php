@@ -24,6 +24,9 @@ class EMCP_Tools_Site_Context {
 	/** Option holding the on/off toggle ('1' or '0'). Default on. */
 	const OPTION_ENABLED = 'emcp_tools_site_context_enabled';
 
+	/** Admin override for the reachable public base URL (Connection tab). */
+	const OPTION_BASE_URL = 'emcp_tools_public_base_url';
+
 	/** Delimiter that separates the base description from the site context. */
 	const DELIMITER = "\n\n## Site context\n\n";
 
@@ -38,6 +41,88 @@ class EMCP_Tools_Site_Context {
 	 */
 	public static function default_base(): string {
 		return __( 'Exposes Elementor data and design tools as MCP tools for AI agents.', 'emcp-tools' );
+	}
+
+	/**
+	 * The reachable public base URL clients use to reach this site's MCP server.
+	 *
+	 * Defaults to the base the REST API actually answers on (derived from
+	 * rest_url(), which is what the Connection tab shows) — NOT home_url().
+	 * On some hosts (e.g. a staging site whose Site Address is pinned to a
+	 * not-yet-live production domain) home_url() points at an unreachable URL
+	 * while the REST API answers on the real host; using rest_url() keeps every
+	 * client-facing URL reachable. An admin override (Connection tab "Server
+	 * URL") wins when set, and the `emcp_tools_public_base_url` filter is the
+	 * fleet-wide override seam (drop a one-line MU-plugin across many sites).
+	 *
+	 * Used for the .mcpb bundle WP_URL, the OAuth issuer + authorization
+	 * endpoint, and the manual config examples — so they stay consistent with
+	 * the rest_url()-based resource/token endpoints.
+	 *
+	 * @return string Base URL, no trailing slash.
+	 */
+	public static function public_base_url(): string {
+		$override = get_option( self::OPTION_BASE_URL, '' );
+		$override = is_string( $override ) ? trim( $override ) : '';
+		$base     = '' !== $override ? $override : self::detected_base_url();
+		/**
+		 * Filter the reachable public base URL used for all client-facing
+		 * endpoints (bundle WP_URL, OAuth issuer/authorization endpoint, configs).
+		 *
+		 * @param string $base Base URL, no trailing slash.
+		 */
+		$base = (string) apply_filters( 'emcp_tools_public_base_url', $base );
+		return rtrim( $base, '/' );
+	}
+
+	/**
+	 * The full MCP server endpoint clients call, honoring the Server URL
+	 * override. With no override this is rest_url() (permalink-aware, reachable);
+	 * with an override set it is the override + the pretty-permalink REST path
+	 * (staging overrides are standard pretty-permalink hosts).
+	 *
+	 * @return string
+	 */
+	public static function mcp_endpoint(): string {
+		$override = get_option( self::OPTION_BASE_URL, '' );
+		$override = is_string( $override ) ? trim( $override ) : '';
+		if ( '' !== $override ) {
+			return rtrim( $override, '/' ) . '/wp-json/mcp/emcp-tools-server';
+		}
+		return function_exists( 'rest_url' ) ? (string) rest_url( 'mcp/emcp-tools-server' ) : ( rtrim( (string) home_url(), '/' ) . '/wp-json/mcp/emcp-tools-server' );
+	}
+
+	/**
+	 * The base URL detected from the REST API (rest_url() with the REST prefix
+	 * stripped) — the origin the site actually answers on. No option/filter, so
+	 * the Connection tab can show it as the detected default even when an
+	 * override is set.
+	 *
+	 * @return string Base URL, no trailing slash.
+	 */
+	public static function detected_base_url(): string {
+		$rest = function_exists( 'rest_url' ) ? (string) rest_url() : '';
+		if ( '' === $rest ) {
+			return rtrim( (string) home_url(), '/' );
+		}
+		// Pretty permalinks: https://host/subdir/wp-json/ → strip the REST prefix.
+		$stripped = preg_replace( '#/wp-json/?$#', '', $rest );
+		if ( is_string( $stripped ) && $stripped !== $rest ) {
+			return rtrim( $stripped, '/' );
+		}
+		// Plain permalinks: https://host/?rest_route=/ → keep scheme+host(+port+path).
+		$parts = wp_parse_url( $rest );
+		if ( is_array( $parts ) && ! empty( $parts['scheme'] ) && ! empty( $parts['host'] ) ) {
+			$base = $parts['scheme'] . '://' . $parts['host'];
+			if ( ! empty( $parts['port'] ) ) {
+				$base .= ':' . $parts['port'];
+			}
+			if ( ! empty( $parts['path'] ) ) {
+				$base .= rtrim( (string) $parts['path'], '/' );
+			}
+			return rtrim( $base, '/' );
+		}
+		return rtrim( (string) home_url(), '/' );
 	}
 
 	/**

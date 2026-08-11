@@ -1997,6 +1997,31 @@ class EMCP_Tools_Admin {
 			)
 		);
 
+		// Server URL override (Connection tab). Empty = auto-detect from the REST
+		// API. Set it when the site is served on a different URL than WordPress's
+		// configured Site Address (e.g. staging with a pinned domain) so the
+		// bundle / OAuth / configs use the reachable host. Accepts only http(s).
+		register_setting(
+			self::SETTINGS_GROUP_SERVER,
+			EMCP_Tools_Site_Context::OPTION_BASE_URL,
+			array(
+				'type'              => 'string',
+				'default'           => '',
+				'sanitize_callback' => static function ( $value ) {
+					$value = trim( (string) $value );
+					if ( '' === $value ) {
+						return '';
+					}
+					$value  = esc_url_raw( $value );
+					$scheme = wp_parse_url( $value, PHP_URL_SCHEME );
+					if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
+						return '';
+					}
+					return rtrim( $value, '/' );
+				},
+			)
+		);
+
 		// WP-CLI base command (Connection → 3rd Party Services) — the `wp` launcher
 		// used for the shell / background-job path over HTTP (e.g. "wp" or
 		// "php /path/to/wp-cli.phar"). Empty = in-process only (WP-CLI stdio).
@@ -2218,12 +2243,12 @@ class EMCP_Tools_Admin {
 				'copied'      => __( 'Copied!', 'emcp-tools' ),
 				'copy'        => __( 'Copy', 'emcp-tools' ),
 				'download'    => __( 'Download', 'emcp-tools' ),
-				'mcpEndpoint' => rest_url( 'mcp/emcp-tools-server' ),
+				'mcpEndpoint' => class_exists( 'EMCP_Tools_Site_Context' ) ? EMCP_Tools_Site_Context::mcp_endpoint() : rest_url( 'mcp/emcp-tools-server' ),
 				'oauthEnabled' => class_exists( 'EMCP_Tools_OAuth_Server' ) && EMCP_Tools_OAuth_Server::is_enabled(),
 				'oauthSignin'  => __( 'The next time your AI client connects, your browser opens so you can authorize it. Approve to finish connecting.', 'emcp-tools' ),
 				/* translators: %s: client label */
 				'genFirst'     => __( 'Generate your credentials above, the config for %s then appears here.', 'emcp-tools' ),
-				'siteUrl'     => site_url(),
+				'siteUrl'     => class_exists( 'EMCP_Tools_Site_Context' ) ? EMCP_Tools_Site_Context::public_base_url() : site_url(),
 				'restMeUrl'   => rest_url( 'wp/v2/users/me' ),
 				// Only the filename — never the absolute server path. The proxy runs
 				// on the CLIENT machine, so the server path is both useless to the
@@ -2699,7 +2724,11 @@ class EMCP_Tools_Admin {
 			wp_die( esc_html__( 'Generate an Application Password first, then download the bundle.', 'emcp-tools' ), '', array( 'response' => 400 ) );
 		}
 
-		$manifest = EMCP_Tools_Mcpb_Builder::build_manifest( home_url(), $user->user_login, $app_password );
+		// Bake the reachable public base (rest_url-derived / admin-overridable),
+		// NOT home_url() — on a staging host whose Site Address is pinned to a
+		// not-yet-live domain, home_url() would ship a bundle that can't connect.
+		$emcp_base = class_exists( 'EMCP_Tools_Site_Context' ) ? EMCP_Tools_Site_Context::public_base_url() : home_url();
+		$manifest  = EMCP_Tools_Mcpb_Builder::build_manifest( $emcp_base, $user->user_login, $app_password );
 		$tmp      = EMCP_Tools_Mcpb_Builder::build_zip( $manifest );
 		if ( is_wp_error( $tmp ) ) {
 			wp_die( esc_html( $tmp->get_error_message() ), '', array( 'response' => 500 ) );
@@ -2716,7 +2745,7 @@ class EMCP_Tools_Admin {
 			}
 		);
 
-		$host     = (string) wp_parse_url( home_url(), PHP_URL_HOST );
+		$host     = (string) wp_parse_url( $emcp_base, PHP_URL_HOST );
 		$filename = 'emcp-tools-' . sanitize_file_name( $host ?: 'site' ) . '.mcpb';
 
 		nocache_headers();

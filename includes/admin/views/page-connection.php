@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** @var EMCP_Tools_Admin $this */
-$emcp_tools_endpoint      = rest_url( 'mcp/emcp-tools-server' );
+$emcp_tools_endpoint      = class_exists( 'EMCP_Tools_Site_Context' ) ? EMCP_Tools_Site_Context::mcp_endpoint() : rest_url( 'mcp/emcp-tools-server' );
 $emcp_tools_enabled_count = $this->get_enabled_tool_count();
 $emcp_tools_total_count   = $this->get_total_tool_count();
 $emcp_tools_has_adapter   = class_exists( '\WP\MCP\Core\McpAdapter' );
@@ -197,6 +197,36 @@ $emcp_tools_server_enabled = class_exists( 'EMCP_Tools_Plugin' )
 							/* translators: %s: link to the Tools tab. */
 							esc_html__( 'Looking for Compact tool mode? It now lives on the %s tab, next to the per-tool toggles it works with.', 'emcp-tools' ),
 							'<a href="' . esc_url( admin_url( 'admin.php?page=emcp-tools-tools' ) ) . '">' . esc_html__( 'Tools', 'emcp-tools' ) . '</a>'
+						);
+						?>
+					</p>
+				</div>
+
+				<?php // Card: Server URL override. ?>
+				<?php
+				$emcp_detected_base = class_exists( 'EMCP_Tools_Site_Context' ) ? EMCP_Tools_Site_Context::detected_base_url() : home_url();
+				$emcp_base_override = (string) get_option( EMCP_Tools_Site_Context::OPTION_BASE_URL, '' );
+				?>
+				<div class="emcp-conn-card">
+					<h2 class="emcp-conn-card-title"><?php esc_html_e( 'Server URL', 'emcp-tools' ); ?></h2>
+
+					<input
+						type="url"
+						class="regular-text"
+						style="width:100%;max-width:520px;"
+						name="<?php echo esc_attr( EMCP_Tools_Site_Context::OPTION_BASE_URL ); ?>"
+						value="<?php echo esc_attr( $emcp_base_override ); ?>"
+						placeholder="<?php echo esc_attr( $emcp_detected_base ); ?>"
+						inputmode="url"
+						autocomplete="off"
+					/>
+
+					<p class="elementor-mcp-activate-note">
+						<?php
+						printf(
+							/* translators: %s: the auto-detected base URL. */
+							esc_html__( 'The URL AI clients use to reach this site. Auto-detected as %s. Override it only when this site is served on a different address than WordPress\'s configured Site Address, for example a staging site whose domain is pinned to a not-yet-live production URL. Leave blank to auto-detect. This value is baked into the downloadable bundle and used for OAuth sign-in.', 'emcp-tools' ),
+							'<code>' . esc_html( $emcp_detected_base ) . '</code>'
 						);
 						?>
 					</p>

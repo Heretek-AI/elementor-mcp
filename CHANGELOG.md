@@ -2,6 +2,11 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.11.1]
+
+### Fixed
+- **Free/Pro activation fatal (hotfix).** Activating EMCP Tools Pro while the free version was active could still throw a fatal error in 3.11.0. The 3.11.0 single-instance guard runs at *runtime*, but the redeclared symbol was a top-level function that PHP **early-binds at compile time** — before any statement in the file (including the guard's `return`) executes. The function is now wrapped in `function_exists()` so it is a runtime, skippable declaration; the guard runs, Pro wins, and the free copy is deactivated automatically. Live-verified on a real two-folder install.
+
 ## [3.11.0]
 
 ### Added

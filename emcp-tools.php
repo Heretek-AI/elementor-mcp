@@ -3,7 +3,7 @@
  * Plugin Name:       EMCP Tools
  * Plugin URI:        https://github.com/msrbuilds/elementor-mcp
  * Description:       Extends the WordPress MCP Adapter to expose Elementor data, widgets, and page design tools as MCP tools for AI agents.
- * Version:           3.11.0
+ * Version:           3.11.1
  * Requires at least: 6.9
  * Tested up to:      6.9
  * Requires PHP:      8.1
@@ -161,7 +161,7 @@ if ( EMCP_Tools_Migration::is_legacy_plugin_active() ) {
 }
 
 // Plugin constants.
-define( 'EMCP_TOOLS_VERSION', '3.11.0' );
+define( 'EMCP_TOOLS_VERSION', '3.11.1' );
 define( 'EMCP_TOOLS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'EMCP_TOOLS_URL', plugin_dir_url( __FILE__ ) );
 define( 'EMCP_TOOLS_BASENAME', plugin_basename( __FILE__ ) );
@@ -259,12 +259,22 @@ if ( function_exists( 'emcp_tools_fs' ) ) {
  * public pricing page (with full plan comparison + FAQ) rather than Freemius's
  * bundled in-admin pricing iframe.
  *
+ * MUST be function_exists-guarded: an unconditional top-level function is
+ * *early-bound at compile time*, so PHP would try to declare it while merely
+ * compiling this file — before the single-instance guard above can `return`.
+ * When the free (emcp-tools) and premium (emcp-pro) folders are both present,
+ * compiling the second copy would then redeclare it and fatal, bypassing the
+ * runtime guard entirely. The function_exists wrapper makes it a runtime
+ * (conditional) declaration the guard's early `return` skips.
+ *
  * @since 1.7.1
  *
  * @return string
  */
-function emcp_tools_upgrade_url(): string {
-	return 'https://emcptools.com/pricing';
+if ( ! function_exists( 'emcp_tools_upgrade_url' ) ) {
+	function emcp_tools_upgrade_url(): string {
+		return 'https://emcptools.com/pricing';
+	}
 }
 
 // Hand off to the bootstrap (loads classes + wires hooks) once dependencies

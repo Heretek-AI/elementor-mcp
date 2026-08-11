@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.11.0
+Stable tag: 3.11.1
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,10 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.11.1 =
+Hotfix for the free/Pro activation error introduced in 3.11.0.
+* Fixed: activating EMCP Tools Pro while the free version was active could still trigger a fatal error. The cause was a top-level function PHP binds at compile time — before the single-instance guard could run — so the guard is now paired with a compile-safe function wrapper. Pro activates cleanly over free again and takes over automatically.
 
 = 3.11.0 =
 A built-in Redirect Manager so an AI edit never leaves a dead URL, a header notifications center, and a fix for running the free and Pro versions side by side.

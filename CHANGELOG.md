@@ -2,6 +2,11 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.12.1]
+
+### Fixed
+- **Restore `.emcp` upload failed with a 500 on some hosts.** The chunked uploader sent 20 MB chunks (`max(2MB, min(20MB, wp_max_upload_size×0.9))`), which exceeds many shared hosts' `post_max_size` / ModSecurity / proxy body limits for an `admin-ajax` POST — surfacing as a 500 even though the server-side handler is correct. Chunk size now caps at **4 MB**, leaves 20% headroom below the host's reported limit, and never floors above it (`EMCP_Tools_Migrate_Module::compute_chunk_size()`, unit-tested, filterable via `emcp_tools_migrate_upload_chunk_size`). The uploader also retries a transiently-failed chunk (×3, backoff) and surfaces the real HTTP status + response snippet instead of a generic "network" error.
+
 ## [3.12.0]
 
 ### Added

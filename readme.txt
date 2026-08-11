@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.12.0
+Stable tag: 3.12.1
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,10 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.12.1 =
+Backup & Migrate: more reliable restore uploads on shared hosts.
+* Fixed: uploading a .emcp to restore could fail with a server error on some hosts because the browser sent 20 MB chunks — too large for many shared hosts' upload/security limits. Chunks are now capped at 4 MB and sized to stay within the host's own limit, and the uploader retries a briefly-failed chunk and reports the actual server error instead of a generic "network" message.
 
 = 3.12.0 =
 New Pro module: Backup & Migrate — package your whole site into a single portable .emcp file and restore it.

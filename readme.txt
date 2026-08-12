@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.14.0
+Stable tag: 3.15.0
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,10 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.15.0 =
+Backup & Migrate Phase 4: drive backups, migration and sync from your AI agent.
+* Added: four MCP tools so a connected AI agent can run the feature — create-backup (make an .emcp backup) and list-backups are available by default; migrate-site (push this whole site to a paired live server) and sync-to-live (push a full or selective scope) are destructive and ship disabled by default, require a confirm flag, and only run when you enable them on the Tools tab. This completes the Backup / Migrate / Sync feature.
 
 = 3.14.0 =
 Backup & Migrate Phase 3: one-way Sync — push the whole site or just what you choose.

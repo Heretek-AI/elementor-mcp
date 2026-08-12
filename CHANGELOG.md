@@ -2,6 +2,11 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.15.0]
+
+### Added
+- **Backup & Migrate Phase 4 — MCP tools (completes the feature).** Four Pro abilities expose Backup/Migrate/Sync to connected agents: **`create-backup`** (build a full/database/files `.emcp`, run to completion, return id + size + download URL) and **`list-backups`** — non-destructive, **on by default**; **`migrate-site`** (push the whole site to a paired target + trigger the remote restore) and **`sync-to-live`** (push a full or selective scope) — **destructive, disabled-by-default, require `confirm:true`**. `EMCP_Tools_Migrate_Abilities` reuses `Backup_Engine`/`Sync_Engine`/`Migration_Engine`, self-gates on premium, and registers only when the Migrate module is enabled. `DEFAULTS_VERSION` 33 seeds the two destructive tools disabled; `EMCP_Tools_Admin::migrate_tool_slugs()` drift-guard exclusion; a "Backup & Migrate" catalog category surfaces them on the Tools grid. Live-verified: all four register, the destructive pair is disabled-by-default, and `migrate-site` without `confirm` returns a `confirm_required` error.
+
 ## [3.14.0]
 
 ### Added

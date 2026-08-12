@@ -2,6 +2,11 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.15.1]
+
+### Changed
+- **Restore upload rewritten on the All-in-One WP Migration model — raw blob + offset assembly, base64 only as a firewall fallback.** The uploader now sends each chunk as a **raw multipart blob** (no `FileReader`, no base64 in the common case), sized to `min(post_max_size, upload_max_filesize, 5 MB)`, and the handler **streams the tmp file to the archive in 8 KB blocks and writes at the chunk's byte offset** (`'cb'` + `fseek`) — memory-light and resumable/order-independent. This removes the browser "Out of Memory" crash the earlier base64+`FileReader` path caused on large backups. If a chunk is rejected by a WAF (4xx/5xx except 413), the uploader automatically switches to **base64** for the remainder and retries the chunk — no user action. `compute_chunk_size` is now raw-oriented (5 MB cap, host-limit ×0.9). Live-verified: raw offset assembly reassembles byte-identical out-of-order; the base64 fallback path also byte-identical.
+
 ## [3.15.0]
 
 ### Added

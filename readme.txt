@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.15.0
+Stable tag: 3.15.1
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,10 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.15.1 =
+Backup & Migrate: faster, memory-safe restore uploads (no more browser crashes).
+* Changed: the restore uploader now sends each chunk as a raw file part (like All-in-One WP Migration) instead of encoding it, so large backups upload without exhausting browser memory or crashing the tab. Chunks are sized to your server's own upload limit (up to 5 MB) and written at their exact position so an interrupted upload can resume. If a server firewall blocks a raw chunk, the uploader automatically switches to a firewall-safe encoded mode for the rest of the upload — no action needed.
 
 = 3.15.0 =
 Backup & Migrate Phase 4: drive backups, migration and sync from your AI agent.

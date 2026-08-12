@@ -9,6 +9,9 @@ All notable changes to MCP Tools for Elementor are documented in this file.
   - **Three MCP tools** so an agent that edits a page locally can sync just that page: `list-syncable-changes` (read), `sync-content-item` (destructive push, disabled-by-default, `confirm:true`), and `discard-sync-change`.
   - The connector gains a signed `receive-content` route that applies one item, sideloading its media and remapping attachment IDs/URLs (classic and Elementor 4.0 atomic images), and now advertises its own REST base so sync works regardless of the destination's permalink structure. **Re-install the updated connector on any destination to receive content syncs.**
 
+### Fixed
+- **Couldn't re-pair the connector after a migration ("Pairing failed: HTTP 200").** A full migration replaces the destination's database with the source's, and its rewrite rules weren't regenerated afterward — so pretty-permalink `/wp-json/` routing was stale and the pairing request (which used `/wp-json/` only) never reached the connector's REST route (a 200 homepage or a 404). Two fixes: the connector now **regenerates rewrite rules after a restore** so `/wp-json/` works on the migrated site, and pairing now **falls back to the permalink-independent `?rest_route=` form** when `/wp-json/` doesn't return a valid connector response — with a clearer error when the connector truly can't be reached.
+
 ## [3.15.8]
 
 ### Added

@@ -1238,7 +1238,7 @@ class EMCP_Tools_Admin {
 	 *
 	 * @since 1.8.0
 	 */
-	const DEFAULTS_VERSION = 32;
+	const DEFAULTS_VERSION = 33;
 
 	/**
 	 * SEO/A11y Pro MCP tool slugs that ship disabled-by-default (v2 defaults).
@@ -1449,6 +1449,23 @@ class EMCP_Tools_Admin {
 	 */
 	public static function redirect_tool_slugs(): array {
 		return array( 'emcp-tools/create-redirect', 'emcp-tools/update-redirect', 'emcp-tools/delete-redirect' );
+	}
+
+	/**
+	 * The Backup/Migrate/Sync MCP tool slugs (drift-guard exclusion — the group
+	 * only registers when the Migrate module is active + premium). The two
+	 * destructive tools (migrate-site/sync-to-live) ship disabled-by-default.
+	 *
+	 * @since 3.15.0
+	 * @return string[]
+	 */
+	public static function migrate_tool_slugs(): array {
+		return array(
+			'emcp-tools/create-backup',
+			'emcp-tools/list-backups',
+			'emcp-tools/migrate-site',
+			'emcp-tools/sync-to-live',
+		);
 	}
 
 	/**
@@ -1776,6 +1793,14 @@ class EMCP_Tools_Admin {
 		// stay enabled. The admin opts in on the Tools tab.
 		if ( $applied < 32 ) {
 			$add = array_merge( $add, self::redirect_tool_slugs() );
+		}
+
+		// v33 — Backup/Migrate/Sync destructive MCP tools ship disabled-by-default
+		// (migrate-site/sync-to-live push to and overwrite a live target). The
+		// reads (create-backup/list-backups) stay enabled.
+		if ( $applied < 33 ) {
+			$add[] = 'emcp-tools/migrate-site';
+			$add[] = 'emcp-tools/sync-to-live';
 		}
 
 		$merged = array_values( array_unique( array_merge( $existing, $add ) ) );
@@ -4085,6 +4110,7 @@ class EMCP_Tools_Admin {
 				self::block_tool_slugs(),
 				self::memory_tool_slugs(),
 				self::redirect_tool_slugs(),
+				self::migrate_tool_slugs(),
 				array( 'emcp-tools/list-redirects', 'emcp-tools/find-broken-links', 'emcp-tools/resize-media' )
 			);
 			foreach ( $catalog as $emcp_group ) {
@@ -4216,6 +4242,32 @@ class EMCP_Tools_Admin {
 					'emcp-tools/delete-redirect'   => array(
 						'label'       => __( 'Delete Redirect', 'emcp-tools' ),
 						'description' => __( 'Deletes a redirect by id. Reversible from History. Disabled by default.', 'emcp-tools' ),
+						'badges'      => array( 'destructive' ),
+					),
+				),
+			),
+			'migrate'          => array(
+				'platform' => 'wordpress',
+				'label' => __( 'Backup & Migrate', 'emcp-tools' ),
+				'tools' => array(
+					'emcp-tools/create-backup' => array(
+						'label'       => __( 'Create Backup', 'emcp-tools' ),
+						'description' => __( 'Creates a portable .emcp backup (full/database/files) and returns its id + size. Non-destructive.', 'emcp-tools' ),
+						'badges'      => array(),
+					),
+					'emcp-tools/list-backups'  => array(
+						'label'       => __( 'List Backups', 'emcp-tools' ),
+						'description' => __( 'Lists this site\'s .emcp backups. Read-only.', 'emcp-tools' ),
+						'badges'      => array( 'read-only' ),
+					),
+					'emcp-tools/migrate-site'  => array(
+						'label'       => __( 'Migrate Site to Live', 'emcp-tools' ),
+						'description' => __( 'Pushes this whole site to a paired live target and restores it there. Destructive on the destination; requires confirm. Disabled by default.', 'emcp-tools' ),
+						'badges'      => array( 'destructive' ),
+					),
+					'emcp-tools/sync-to-live'  => array(
+						'label'       => __( 'Sync to Live', 'emcp-tools' ),
+						'description' => __( 'Pushes a full or selective scope (chosen tables/files) to a paired live target. Destructive for the pushed scope; requires confirm. Disabled by default.', 'emcp-tools' ),
 						'badges'      => array( 'destructive' ),
 					),
 				),

@@ -2,6 +2,13 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.16.0]
+
+### Added
+- **Content Sync — push individual content changes to a live site.** A new, change-driven **Sync** experience in the Backup & Migrate module: a **Changes to sync** list shows the pages, posts, and CPTs that changed locally since they were last synced to a paired live site, each with **Sync** / **Discard**. Syncing an item updates only that page/post on the live site — its content, custom fields, taxonomy terms, and attached media (featured image plus every image referenced in the content and Elementor data) — upserting it by a stable sync id and remapping media IDs and URLs so it renders correctly. No full database import, no downtime; the rest of the live site is untouched. The previous full/selective whole-site sync is preserved under an **Advanced** disclosure.
+  - **Three MCP tools** so an agent that edits a page locally can sync just that page: `list-syncable-changes` (read), `sync-content-item` (destructive push, disabled-by-default, `confirm:true`), and `discard-sync-change`.
+  - The connector gains a signed `receive-content` route that applies one item, sideloading its media and remapping attachment IDs/URLs (classic and Elementor 4.0 atomic images), and now advertises its own REST base so sync works regardless of the destination's permalink structure. **Re-install the updated connector on any destination to receive content syncs.**
+
 ## [3.15.8]
 
 ### Added

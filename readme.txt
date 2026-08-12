@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.15.3
+Stable tag: 3.15.4
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,10 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.15.4 =
+Backups now start instantly and no longer get stuck on "Queued".
+* Fixed: starting a backup could sit on "Queued 0%" for a while (or never start on some hosts) because it waited for a background scheduler. Backups now run directly from the browser and begin immediately, working reliably on any host. Keep the tab open while a backup runs. (AI-driven backups via the tools are unaffected.)
 
 = 3.15.3 =
 Faster backups: the file-copying step now completes in fewer, longer passes.

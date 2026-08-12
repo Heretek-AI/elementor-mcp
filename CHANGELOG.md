@@ -2,6 +2,11 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.15.4]
+
+### Fixed
+- **Backup stuck on "Queued 0%" / slow to start.** The admin backup relied on the background tier (Action Scheduler → WP-Cron loopback → AJAX). On WP-Cron hosts it sat at "Queued" until a cron tick fired (looked stuck); on hosts where the tier resolves to `ajax` it would never start. The backup is now **frontend-driven** like restore: `EMCP_Tools_Backup_Engine::dispatch()` no longer schedules a background job, and the browser drives it via the `emcp_backup_chunk` endpoint (single worker — no cron/ajax race). `handle_ajax_chunk()` now **loops `process_chunk` for a full execution window** like the cron handler, so a database backup that previously crawled to ~9% over 30 round-trips completes in a **single ~5 s call**. Backups start instantly and work on any host; keep the tab open while one runs. The MCP `create-backup` tool is unaffected (it drives `run_chunk_sync` directly).
+
 ## [3.15.3]
 
 ### Performance

@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.15.2
+Stable tag: 3.15.3
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,10 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.15.3 =
+Faster backups: the file-copying step now completes in fewer, longer passes.
+* Improved: while backing up files, the plugin now works for as long as your server safely allows per pass (instead of a fixed 10 seconds), so a full backup finishes in far fewer background steps — noticeably quicker on most hosts. Large files also copy with fewer disk operations.
 
 = 3.15.2 =
 Fixes a harmless but confusing "invalid header" message after updating the Pro plugin.

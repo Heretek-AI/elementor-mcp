@@ -2,6 +2,11 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.15.3]
+
+### Performance
+- **Faster backup file streaming.** The file-copy phase was bounded by a hardcoded 10 s per chunk, and each chunk is a wp-cron/AJAX round-trip — so on real hosts the dispatch + poll overhead between many chunks dominated (the streaming code itself runs at ~50 MB/s locally). `EMCP_Tools_Packager::stream_chunk()` now accepts a `$max_seconds` argument and the backup engine passes `EMCP_Tools_Environment::get_safe_execution_time()` (~25 s on most hosts) → roughly 2.5× fewer chunks/round-trips. The read/write buffer grew from 512 KB to 2 MB (fewer syscalls on large files), and each file's entry header is now written in a single `fwrite` instead of five. Restore/extract paths keep the conservative 10 s fallback.
+
 ## [3.15.2]
 
 ### Fixed

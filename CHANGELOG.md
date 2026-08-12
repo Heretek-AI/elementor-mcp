@@ -2,6 +2,11 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.15.6]
+
+### Fixed
+- **Restore upload 500 on protected hosts (rate-limiting).** A restore upload could fail mid-stream (e.g. HTTP 500 at chunk ~10) even though the same 5 MB chunk size succeeded for earlier chunks and base64 didn't rescue it — the signature of a host **rate-limiter** (mod_evasive/mod_security) after a burst of rapid POSTs, not chunk content (verified: 12×5 MB chunks incl. the same offset all return 200 on a clean host). Chunks are now sent ~150 ms apart to stay under rate limits (and to give the browser GC room). The Restore tab also surfaces a prominent **FTP-drop** hint — copy the `.emcp` into `wp-content/emcp-backups/uploads/` — the reliable, zero-browser-memory path for large or firewall-blocked restores.
+
 ## [3.15.5]
 
 ### Fixed

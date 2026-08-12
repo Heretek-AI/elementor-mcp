@@ -176,6 +176,10 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 
 == Changelog ==
 
+= 3.15.6 =
+More reliable restore uploads on hosts with a firewall or rate limiting.
+* Improved: restore chunks are now sent at a gentle pace so a burst of rapid uploads doesn't trip host rate-limiters (which can cause a mid-upload server error). The Restore tab also now clearly shows how to upload a large backup via FTP (by copying it into wp-content/emcp-backups/uploads/) — the most reliable method for very large backups or hosts that block browser uploads.
+
 = 3.15.5 =
 Fixes downloading a backup file (slow, stuck, or "couldn't finish").
 * Fixed: downloading a large .emcp backup could sit at 0 and fail to finish, because the file was being held in server memory instead of streamed. Downloads now stream straight to your browser, so even multi-hundred-MB backups download reliably.

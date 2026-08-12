@@ -2,6 +2,11 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.15.8]
+
+### Fixed
+- **Backup upload unreliable / slow on localhost (mod_fcgid worker churn + an invisible single-request cap).** The uploader sent the archive in ~90 tiny 5 MB POSTs paced 150 ms apart. On mod_fcgid/php-cgi hosts (Laragon, many shared hosts) that burst churns FastCGI workers ("still did not exit, terminating forcefully"), surfacing as the intermittent "chunk N → HTTP 500". Diagnosis found the true single-request ceiling is **not** PHP's `post_max_size` (2 GB here) but mod_fcgid's `FcgidMaxRequestLen` (~77 MB, invisible to PHP) — and All-in-One WP Migration is instant precisely because a backup that fits goes in **one** request. The uploader now starts from a **large 48 MB chunk** (few requests — a 400 MB backup is ~10, not ~90 — and a small backup is a single instant request), carries the whole-file size so the server reports completion by **byte offset** (robust to a changing chunk size), and **halves the chunk and retries at the same offset** whenever a host rejects a body (413 / a FastCGI 500 / a dropped connection) — converging on the host's real limit (mod_fcgid, nginx `client_max_body_size`, Cloudflare's 100 MB) without needing to know it. Real upload progress now drives the bar. The server also **truncates on the first chunk** so re-uploading a same-named file can't leave stale trailing bytes. Live-verified: a real 446 MB archive uploaded in 9 chunks over mod_fcgid with **byte-for-byte** (md5-identical) assembly. Large/firewalled hosts still have the FTP-drop path (copy the `.emcp` into `wp-content/emcp-backups/uploads/`).
+
 ## [3.15.7]
 
 ### Fixed

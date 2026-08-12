@@ -2,6 +2,11 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.14.0]
+
+### Added
+- **Backup & Migrate Phase 3 — one-way Sync (full + selective).** A new **Sync** sub-tab pushes this site to a paired live target as **Full** (database + all files) or **Selective** — choose exact database tables and/or file areas (themes/plugins/uploads or a safe relative path). `EMCP_Tools_Sync_Engine::build_scoped_emcp()` builds a scoped `.emcp` (chosen tables via `DB_Exporter::export($tables)`, chosen roots via a bounded walk into the Packager, caches/backups/connector-dirs excluded) carrying the scope in its manifest; it transfers over the same HMAC-signed, base64, resumable packet path as migration. The connector applies **only** what the archive contains — a **partial restore** — and **skips search-replace when no database is present**, so a files-only sync never rewrites the live DB. Full sync = scope `{db:all, files:all}`. New `EMCP_Tools_Sync_Engine` (+ `normalize_scope`/`file_root_path` traversal-guarded), module AJAX `sync_meta`/`sync_start`, `sync.php` panel + `initSync` JS. Live-validated: DB-only scoped restore rewrites its table's URLs and places no files; files-only scoped restore places files and leaves the live DB untouched.
+
 ## [3.13.0]
 
 ### Added

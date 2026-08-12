@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.13.0
+Stable tag: 3.14.0
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,10 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.14.0 =
+Backup & Migrate Phase 3: one-way Sync — push the whole site or just what you choose.
+* Added: Sync tab. Push this site to a paired live server as a Full sync (database + all files) or a Selective sync — pick exact database tables and/or file areas (themes, plugins, uploads). A selective sync restores only what you pushed on the destination and leaves everything else alone, so you can push a theme change without touching the live site's orders or comments. A files-only sync never rewrites the live database. Same firewall-safe, resumable packet transfer as migration.
 
 = 3.13.0 =
 Backup & Migrate Phase 2: push a local site to a live server through a tiny connector.

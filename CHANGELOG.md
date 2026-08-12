@@ -2,6 +2,11 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.15.5]
+
+### Fixed
+- **Backup download stalled at 0 / "couldn't finish".** `ajax_download_backup` streamed with `echo fread() + flush()`, but admin-ajax runs with a WP output buffer, so the entire archive accumulated in memory — the browser saw nothing until it flushed, and a 400 MB+ file could exhaust `memory_limit` and drop the connection. The handler now discards every active output buffer before streaming, disables `zlib.output_compression` + Apache gzip, lifts the time limit, sends `X-Accel-Buffering: no`, streams 1 MB blocks, and stops on `connection_aborted()`. Live-verified byte-identical.
+
 ## [3.15.4]
 
 ### Fixed

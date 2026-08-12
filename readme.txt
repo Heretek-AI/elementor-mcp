@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.15.4
+Stable tag: 3.15.5
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,10 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.15.5 =
+Fixes downloading a backup file (slow, stuck, or "couldn't finish").
+* Fixed: downloading a large .emcp backup could sit at 0 and fail to finish, because the file was being held in server memory instead of streamed. Downloads now stream straight to your browser, so even multi-hundred-MB backups download reliably.
 
 = 3.15.4 =
 Backups now start instantly and no longer get stuck on "Queued".

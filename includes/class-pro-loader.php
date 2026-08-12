@@ -35,6 +35,11 @@ final class EMCP_Tools_Pro_Loader {
 		'includes/memory/class-memory-enforcer.php',
 		'includes/memory/class-memory-summarizer.php',
 		'includes/abilities/class-memory-abilities.php',
+		// Backup / Migrate / Sync MCP tools (Pro). The engine classes load with
+		// the module on init:5; this ability class is loaded here so the registrar
+		// (wp_abilities_api_init, earlier) can register the group when the module
+		// is enabled. Executors lazy-load the engines defensively.
+		'includes/abilities/class-migrate-abilities.php',
 		'includes/class-widget-generator.php',
 		'includes/abilities/class-system-kit-abilities.php',
 		'includes/abilities/class-widget-builder-abilities.php',

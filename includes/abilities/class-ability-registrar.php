@@ -575,6 +575,18 @@ class EMCP_Tools_Ability_Registrar {
 			$memory->register();
 			$this->ability_names = array_merge( $this->ability_names, $memory->get_ability_names() );
 		}
+
+		// Backup / Migrate / Sync MCP tools (Pro; self-guards on license). Not
+		// Elementor-dependent; gated by the Migrate module. is_enabled() runs
+		// before the module's init:5 boot (abilities register on
+		// wp_abilities_api_init). The two destructive tools ship disabled-by-default.
+		if ( class_exists( 'EMCP_Tools_Migrate_Abilities' )
+			&& class_exists( 'EMCP_Tools_Migrate_Module' )
+			&& EMCP_Tools_Migrate_Module::is_enabled() ) {
+			$migrate = new EMCP_Tools_Migrate_Abilities();
+			$migrate->register();
+			$this->ability_names = array_merge( $this->ability_names, $migrate->get_ability_names() );
+		}
 	}
 
 	/**

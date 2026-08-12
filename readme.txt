@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.15.1
+Stable tag: 3.15.2
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,10 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.15.2 =
+Fixes a harmless but confusing "invalid header" message after updating the Pro plugin.
+* Fixed: after updating EMCP Tools Pro, the "Activate Plugin" link shown on the install screen could point at the bundled migration connector and report "The plugin does not have a valid header." The main plugin installed and worked fine; the bundled connector is now stored so WordPress never mistakes it for a second plugin.
 
 = 3.15.1 =
 Backup & Migrate: faster, memory-safe restore uploads (no more browser crashes).

@@ -2,6 +2,11 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.15.2]
+
+### Fixed
+- **"The plugin does not have a valid header" after a Pro update.** The migration connector shipped as `emcp-pro/connector/emcp-connector.php` with a `Plugin Name:` header. WordPress's upgrader runs `get_plugins('/emcp-pro')` after an update, which scans one level into subdirectories and detected the connector; since `connector` sorts before `emcp-tools.php`, the post-install "Activate" link pointed at the connector sub-file and errored (the main plugin still installed and activated fine). The connector source is now stored as `emcp-connector.php.txt` (WordPress only scans `.php` for plugin headers), while the downloadable connector ZIP still contains a normal `emcp-connector.php` — so nothing about installing the connector on a destination changes.
+
 ## [3.15.1]
 
 ### Changed

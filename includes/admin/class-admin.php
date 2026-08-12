@@ -1238,7 +1238,7 @@ class EMCP_Tools_Admin {
 	 *
 	 * @since 1.8.0
 	 */
-	const DEFAULTS_VERSION = 33;
+	const DEFAULTS_VERSION = 34;
 
 	/**
 	 * SEO/A11y Pro MCP tool slugs that ship disabled-by-default (v2 defaults).
@@ -1465,6 +1465,9 @@ class EMCP_Tools_Admin {
 			'emcp-tools/list-backups',
 			'emcp-tools/migrate-site',
 			'emcp-tools/sync-to-live',
+			'emcp-tools/list-syncable-changes',
+			'emcp-tools/sync-content-item',
+			'emcp-tools/discard-sync-change',
 		);
 	}
 
@@ -1801,6 +1804,12 @@ class EMCP_Tools_Admin {
 		if ( $applied < 33 ) {
 			$add[] = 'emcp-tools/migrate-site';
 			$add[] = 'emcp-tools/sync-to-live';
+		}
+
+		// v34 — the content-sync push tool overwrites an item on the live site, so
+		// it ships disabled-by-default. The list + discard reads stay enabled.
+		if ( $applied < 34 ) {
+			$add[] = 'emcp-tools/sync-content-item';
 		}
 
 		$merged = array_values( array_unique( array_merge( $existing, $add ) ) );
@@ -4269,6 +4278,21 @@ class EMCP_Tools_Admin {
 						'label'       => __( 'Sync to Live', 'emcp-tools' ),
 						'description' => __( 'Pushes a full or selective scope (chosen tables/files) to a paired live target. Destructive for the pushed scope; requires confirm. Disabled by default.', 'emcp-tools' ),
 						'badges'      => array( 'destructive' ),
+					),
+					'emcp-tools/list-syncable-changes' => array(
+						'label'       => __( 'List Syncable Changes', 'emcp-tools' ),
+						'description' => __( 'Lists pages/posts/CPTs changed locally since they were last synced to a paired live target. Read-only.', 'emcp-tools' ),
+						'badges'      => array( 'read-only' ),
+					),
+					'emcp-tools/sync-content-item' => array(
+						'label'       => __( 'Sync Content Item to Live', 'emcp-tools' ),
+						'description' => __( 'Pushes one page/post/CPT (content + fields + attached media) to a paired live target, upserting it and remapping media. Overwrites only that item; requires confirm. Disabled by default.', 'emcp-tools' ),
+						'badges'      => array( 'destructive' ),
+					),
+					'emcp-tools/discard-sync-change' => array(
+						'label'       => __( 'Discard Sync Change', 'emcp-tools' ),
+						'description' => __( 'Dismisses an item from the changes-to-sync list until it changes again. Local only.', 'emcp-tools' ),
+						'badges'      => array(),
 					),
 				),
 			),

@@ -2,6 +2,11 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.15.7]
+
+### Fixed
+- **Restore stuck on "Queued 0%" (the restore was never driven).** Restore is frontend-driven — its `dispatch()` is a deliberate no-op, and nothing processes it server-side unless the browser keeps requesting the next chunk. But the admin JS only *polled* progress (`job_progress`) instead of *driving* it, so a restore — including a `.emcp` copied straight into `wp-content/emcp-backups/uploads/` via FTP — sat at "Queued" forever. The Restore panel now drives the restore by repeatedly POSTing the token endpoint (`emcp_tools_migrate_restore_chunk_token`) with the `restore_token` returned by start, updating the progress bar until the server reports completed/failed — the same pattern the 3.15.4 backup fix used. The token endpoint (nopriv + file-stored secret) is used precisely because the database import replaces `wp_options` mid-restore and can invalidate the session/nonce. Resuming after a page reload now drives too (`get_active_restore_job` returns the live token). The token-chunk handler also **loops `process_chunk` for a full execution window** instead of one unit per request, so a large restore finalizes in a handful of round-trips rather than hundreds. Live-verified end-to-end: a 446 MB / 20,707-entry full archive (27 MB DB + full WP tree) driven to completion over real HTTP against the nopriv endpoint. The `.emcp` format itself was confirmed intact (`validate()` + full entry scan) — the archive was never the problem.
+
 ## [3.15.6]
 
 ### Fixed

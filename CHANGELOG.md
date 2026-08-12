@@ -6,6 +6,8 @@ All notable changes to MCP Tools for Elementor are documented in this file.
 
 ### Added
 - **Server upload limits panel on the Restore tab.** A new info box shows your current PHP limits — `upload_max_filesize`, `post_max_size`, `memory_limit`, `max_execution_time` — next to the recommended values, green when you're already set and amber when raising one would help, with a **How to raise these** button linking to the docs. The uploader adapts to any host regardless, so this is guidance for faster large uploads, not a requirement.
+- **Remove the connector after migrating (zero residue).** A signed `/cleanup` route lets the source ask the connector to unpair, purge any staged transfer data, deactivate itself, and delete its own plugin files from the live site. Surfaced as a **Remove connector** action on each paired target and a one-click button that appears when a migration completes. If the connector can't be reached, the target is still forgotten locally (with a note to remove it manually). Only the paired source can trigger it — the call is HMAC-signed like every other control request.
+- **Configurable pairing window on the connector.** The connector's admin page now has a **5 / 10 / 15 minute** selector for how long it will accept a new pairing (default 10), with copy clarifying that this is only the pairing window — once a site pairs it stays paired until you unpair or remove the connector, and the window closes automatically after the first successful pairing.
 
 ### Fixed
 - **Restore-tab FTP hint rendered as three columns.** The hint is a flex row, so its inline `<code>` and the text on either side became three separate flex items laid out side by side. The text is now wrapped in a single span, so it flows as one sentence.

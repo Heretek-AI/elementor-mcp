@@ -176,59 +176,19 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 
 == Changelog ==
 
-= 3.15.6 =
-More reliable restore uploads on hosts with a firewall or rate limiting.
-* Improved: restore chunks are now sent at a gentle pace so a burst of rapid uploads doesn't trip host rate-limiters (which can cause a mid-upload server error). The Restore tab also now clearly shows how to upload a large backup via FTP (by copying it into wp-content/emcp-backups/uploads/) — the most reliable method for very large backups or hosts that block browser uploads.
-
-= 3.15.5 =
-Fixes downloading a backup file (slow, stuck, or "couldn't finish").
-* Fixed: downloading a large .emcp backup could sit at 0 and fail to finish, because the file was being held in server memory instead of streamed. Downloads now stream straight to your browser, so even multi-hundred-MB backups download reliably.
-
-= 3.15.4 =
-Backups now start instantly and no longer get stuck on "Queued".
-* Fixed: starting a backup could sit on "Queued 0%" for a while (or never start on some hosts) because it waited for a background scheduler. Backups now run directly from the browser and begin immediately, working reliably on any host. Keep the tab open while a backup runs. (AI-driven backups via the tools are unaffected.)
-
-= 3.15.3 =
-Faster backups: the file-copying step now completes in fewer, longer passes.
-* Improved: while backing up files, the plugin now works for as long as your server safely allows per pass (instead of a fixed 10 seconds), so a full backup finishes in far fewer background steps — noticeably quicker on most hosts. Large files also copy with fewer disk operations.
-
-= 3.15.2 =
-Fixes a harmless but confusing "invalid header" message after updating the Pro plugin.
-* Fixed: after updating EMCP Tools Pro, the "Activate Plugin" link shown on the install screen could point at the bundled migration connector and report "The plugin does not have a valid header." The main plugin installed and worked fine; the bundled connector is now stored so WordPress never mistakes it for a second plugin.
-
-= 3.15.1 =
-Backup & Migrate: faster, memory-safe restore uploads (no more browser crashes).
-* Changed: the restore uploader now sends each chunk as a raw file part (like All-in-One WP Migration) instead of encoding it, so large backups upload without exhausting browser memory or crashing the tab. Chunks are sized to your server's own upload limit (up to 5 MB) and written at their exact position so an interrupted upload can resume. If a server firewall blocks a raw chunk, the uploader automatically switches to a firewall-safe encoded mode for the rest of the upload — no action needed.
-
-= 3.15.0 =
-Backup & Migrate Phase 4: drive backups, migration and sync from your AI agent.
-* Added: four MCP tools so a connected AI agent can run the feature — create-backup (make an .emcp backup) and list-backups are available by default; migrate-site (push this whole site to a paired live server) and sync-to-live (push a full or selective scope) are destructive and ship disabled by default, require a confirm flag, and only run when you enable them on the Tools tab. This completes the Backup / Migrate / Sync feature.
-
-= 3.14.0 =
-Backup & Migrate Phase 3: one-way Sync — push the whole site or just what you choose.
-* Added: Sync tab. Push this site to a paired live server as a Full sync (database + all files) or a Selective sync — pick exact database tables and/or file areas (themes, plugins, uploads). A selective sync restores only what you pushed on the destination and leaves everything else alone, so you can push a theme change without touching the live site's orders or comments. A files-only sync never rewrites the live database. Same firewall-safe, resumable packet transfer as migration.
-
-= 3.13.0 =
-Backup & Migrate Phase 2: push a local site to a live server through a tiny connector.
-* Added: Migrate tab — move this site to a live server without uploading a backup by hand. Download the small "EMCP Migrate Connector" plugin, install it on the destination and arm pairing, then pair the live site here and click Push & Restore. The backup transfers in resumable, firewall-safe packets (base64-encoded, HMAC-signed, offset-based resume) so even shared hosts complete, and the connector reassembles it and restores — importing the database, rewriting URLs to the live domain, and placing files — while never touching the destination's wp-config or salts.
-* Note: the connector is a separate, unlicensed plugin gated only by the pairing token; the source side is Pro.
-
-= 3.12.3 =
-Backup & Migrate: fixes a browser crash when uploading a large backup to restore.
-* Fixed: uploading a large .emcp to restore could crash the browser tab with an "Out of Memory" error partway through. The uploader held every encoded chunk in memory at once; it now processes one chunk at a time, releases it before the next, and uses smaller (2 MB) chunks, so even multi-hundred-MB backups upload without exhausting browser memory.
-* Tip: for very large sites you can also copy the .emcp file directly into wp-content/emcp-backups/uploads/ on the destination (via FTP or your host's file manager) and it will appear in the Restore list — no browser upload needed.
-
-= 3.12.2 =
-Backup & Migrate: restore uploads now pass through website firewalls.
-* Fixed: restoring a .emcp could still fail with a server error partway through the upload on hosts running a web application firewall (mod_security and similar). A backup contains your database dump and PHP files, and sending those bytes as-is looks like an attack to a firewall, which blocks the request. The uploader now encodes each chunk before sending so the firewall passes it through; the file is decoded and reassembled on the server. Chunks were also made smaller to fit stricter hosts.
-
-= 3.12.1 =
-Backup & Migrate: more reliable restore uploads on shared hosts.
-* Fixed: uploading a .emcp to restore could fail with a server error on some hosts because the browser sent 20 MB chunks — too large for many shared hosts' upload/security limits. Chunks are now capped at 4 MB and sized to stay within the host's own limit, and the uploader retries a briefly-failed chunk and reports the actual server error instead of a generic "network" message.
-
 = 3.12.0 =
-New Pro module: Backup & Migrate — package your whole site into a single portable .emcp file and restore it.
-* Added: Backup, Sync, and Migrate module (Pro) with a dedicated admin tab. Back up the full site (database + files) or database/files only into one portable .emcp archive; restore from a local backup or by uploading a .emcp. Backups run in the background in adaptive chunks so large sites complete reliably, and restore rewrites URLs (site address and Elementor page data) to the destination automatically while leaving your current login and wp-config untouched. Local→live migration, sync, and MCP tools land in later updates.
+New Pro suite: Backup, Sync & Migrate — back up your whole site, migrate it to a live server, and sync individual pages — plus fixes for dynamic content and container-off sites.
+* Added: Backup, Sync, and Migrate module (Pro) with its own admin tab. Back up the full site (database + files) or database/files only into one portable .emcp archive and restore it locally or from an upload. Backups and restores run in adaptive, resumable chunks so large sites finish reliably on modest and shared hosts, and restore rewrites URLs to the destination while leaving your login and wp-config untouched.
+* Added: local → live Migration. Install the small "EMCP Migrate Connector" on the destination, pair the two sites, and Push & Restore — the backup transfers in resumable, firewall-safe packets and the connector restores it without ever touching wp-config or salts. Optionally remove the connector automatically when the migration completes (zero residue).
+* Added: one-way Sync — push the whole site or a selective scope (chosen database tables and/or file areas) to a paired live server.
+* Added: Content Sync. A "Changes to sync" list shows the pages, posts and CPTs you changed locally; sync any one of them to your live site with a click — its content, custom fields, terms and attached media only, matched by a stable id, with no full database import and no downtime.
+* Added: seven MCP tools so an AI agent can drive the whole feature (create-backup, list-backups, migrate-site, sync-to-live, sync-content-item, list-syncable-changes, discard-sync-change). Destructive tools are disabled by default and require a confirm flag.
+* Added: a server upload-limits panel on the Restore tab (with a link to the docs), and a configurable pairing window on the connector.
+* Fixed: reliable large backups, downloads, and restore uploads on any host — driven from the browser in short, resumable, byte-offset slices that automatically adapt to your host's real limits, encoded so a firewall passes them, and memory-safe (no more "Out of Memory" tab crash). Very large or firewalled hosts can still drop the .emcp into wp-content/emcp-backups/uploads/ via FTP.
+* Fixed: several migration edge cases — a false "archive is missing" error, a mid-transfer server timeout on long pushes, a confusing error shown after a successful restore, and being unable to re-pair after a migration.
+* Fixed (#112): editing any element of a Theme Builder template that used a dynamic value (post date, category, author) as a paragraph failed with "invalid_value" and locked the whole template out of the tools. Such edits now save correctly.
+* Fixed (#111): on sites with Elementor's Flexbox Container feature turned off, creating a page with the tools stored an empty-rendering page. The tools now tell you to enable the feature first instead of silently creating a blank page.
+* Fixed: OAuth sign-in could return a token that wasn't saved on some sites (leaving you unable to reconnect); token creation now verifies the write, repairs the database if needed, and reports a clear error instead of an unusable token.
 
 = 3.11.2 =
 Fixes pages created via MCP rendering empty on Elementor 4.2, plus connecting from staging sites whose address is pinned to a different (not-yet-live) domain, and adds an editable Server URL.

@@ -117,6 +117,9 @@ class EMCP_Tools_OAuth_Token {
 		}
 
 		$pair = self::issue_pair( $client_id, (int) $payload['user_id'], (string) $payload['scopes'] );
+		if ( '' === $pair['access'] || '' === $pair['refresh'] ) {
+			return self::error( 'server_error', 'The authorization server could not persist the issued token. Please try again; if it persists, check the database and the site error log.', 500 );
+		}
 		return new WP_REST_Response(
 			self::token_response( $pair['access'], $pair['refresh'], self::access_ttl(), (string) $payload['scopes'] ),
 			200
@@ -145,6 +148,9 @@ class EMCP_Tools_OAuth_Token {
 		// grace window so a lost-response retry re-rotates instead of 401'ing.
 		EMCP_Tools_OAuth_Store::rotate_out_refresh( (int) $row['id'], self::refresh_grace() );
 		$pair = self::issue_pair( $client_id, (int) $row['user_id'], (string) $row['scopes'] );
+		if ( '' === $pair['access'] || '' === $pair['refresh'] ) {
+			return self::error( 'server_error', 'The authorization server could not persist the rotated token. Please try again; if it persists, check the database and the site error log.', 500 );
+		}
 
 		return new WP_REST_Response(
 			self::token_response( $pair['access'], $pair['refresh'], self::access_ttl(), (string) $row['scopes'] ),
@@ -234,7 +240,13 @@ class EMCP_Tools_OAuth_Token {
 	 */
 	private static function issue_pair( string $client_id, int $user_id, string $scope ): array {
 		$refresh = EMCP_Tools_OAuth_Store::issue_token( 'refresh', $client_id, $user_id, $scope, self::REFRESH_TTL );
+		if ( '' === $refresh['token'] ) {
+			return array( 'access' => '', 'refresh' => '' );
+		}
 		$access  = EMCP_Tools_OAuth_Store::issue_token( 'access', $client_id, $user_id, $scope, self::access_ttl(), (int) $refresh['id'] );
+		if ( '' === $access['token'] ) {
+			return array( 'access' => '', 'refresh' => '' );
+		}
 		return array( 'access' => $access['token'], 'refresh' => $refresh['token'] );
 	}
 

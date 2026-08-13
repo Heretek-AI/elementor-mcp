@@ -65,14 +65,25 @@ class EMCP_Tools_OAuth_Store {
 		if ( $installed >= self::DB_VERSION ) {
 			return;
 		}
+		self::install_tables();
+		update_option( self::DB_VERSION_OPTION, self::DB_VERSION, false );
+	}
+
+	/**
+	 * (Re)create the OAuth tables via dbDelta — idempotent. Also called to
+	 * self-heal a drifted or missing schema when a token insert fails.
+	 */
+	public static function install_tables(): void {
 		if ( ! function_exists( 'dbDelta' ) ) {
 			$upgrade = ABSPATH . 'wp-admin/includes/upgrade.php';
 			if ( is_readable( $upgrade ) ) {
 				require_once $upgrade;
 			}
 		}
-		if ( function_exists( 'dbDelta' ) ) {
-			global $wpdb;
+		if ( ! function_exists( 'dbDelta' ) ) {
+			return;
+		}
+		global $wpdb;
 			$charset = method_exists( $wpdb, 'get_charset_collate' ) ? $wpdb->get_charset_collate() : '';
 			$clients = self::clients_table();
 			$tokens  = self::tokens_table();
@@ -106,8 +117,6 @@ class EMCP_Tools_OAuth_Store {
 					KEY refresh_of (refresh_of)
 				) {$charset};"
 			);
-		}
-		update_option( self::DB_VERSION_OPTION, self::DB_VERSION, false );
 	}
 
 	// ---------------------------------------------------------------------
@@ -252,21 +261,35 @@ class EMCP_Tools_OAuth_Store {
 	 */
 	public static function issue_token( string $type, string $client_id, int $user_id, string $scopes, int $ttl, ?int $refresh_of = null ): array {
 		global $wpdb;
-		$token = EMCP_Tools_OAuth_Util::generate_token();
-		$wpdb->insert(
-			self::tokens_table(),
-			array(
-				'token_hash' => EMCP_Tools_OAuth_Util::hash_token( $token ),
-				'token_type' => $type,
-				'client_id'  => $client_id,
-				'user_id'    => $user_id,
-				'scopes'     => $scopes,
-				'expires_at' => time() + $ttl,
-				'refresh_of' => $refresh_of,
-				'created_at' => time(),
-			),
-			array( '%s', '%s', '%s', '%d', '%s', '%d', '%d', '%d' )
+		$token   = EMCP_Tools_OAuth_Util::generate_token();
+		$data    = array(
+			'token_hash' => EMCP_Tools_OAuth_Util::hash_token( $token ),
+			'token_type' => $type,
+			'client_id'  => $client_id,
+			'user_id'    => $user_id,
+			'scopes'     => $scopes,
+			'expires_at' => time() + $ttl,
+			'refresh_of' => $refresh_of,
+			'created_at' => time(),
 		);
+		$formats = array( '%s', '%s', '%s', '%d', '%s', '%d', '%d', '%d' );
+
+		$ok = $wpdb->insert( self::tokens_table(), $data, $formats );
+		if ( false === $ok ) {
+			// The insert failed — most often a drifted/missing tokens table after an
+			// upgrade. Recreate the tables (dbDelta is idempotent) and retry once.
+			self::install_tables();
+			$ok = $wpdb->insert( self::tokens_table(), $data, $formats );
+		}
+		if ( false === $ok || ! $wpdb->insert_id ) {
+			// Never hand back a token we didn't store — the caller turns this into an
+			// OAuth error instead of a 200 with an unusable token. Log the DB error so
+			// the real cause is visible.
+			if ( function_exists( 'error_log' ) ) {
+				error_log( '[EMCP Tools] OAuth token was not persisted: ' . $wpdb->last_error ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			}
+			return array( 'token' => '', 'id' => 0 );
+		}
 		return array( 'token' => $token, 'id' => (int) $wpdb->insert_id );
 	}
 

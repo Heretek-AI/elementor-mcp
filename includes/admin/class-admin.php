@@ -5533,6 +5533,11 @@ class EMCP_Tools_Admin {
 						'description' => __( 'Full detail of one attachment (sizes, metadata, alt/caption).', 'emcp-tools' ),
 						'badges'      => array( 'read-only' ),
 					),
+					'emcp-tools/upload-media'     => array(
+						'label'       => __( 'Upload Media', 'emcp-tools' ),
+						'description' => __( 'Upload a LOCAL file from the client machine into the Media Library by passing its base64 bytes (companion to sideload-image, which fetches a server-reachable URL). Only WordPress-allowed file types.', 'emcp-tools' ),
+						'badges'      => array(),
+					),
 					'emcp-tools/update-media'     => array(
 						'label'       => __( 'Update Media', 'emcp-tools' ),
 						'description' => __( 'Edit an attachment\'s alt text, title, caption, description.', 'emcp-tools' ),

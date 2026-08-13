@@ -54,6 +54,7 @@ class EMCP_Tools_Media_Library_Abilities {
 		return array(
 			'emcp-tools/list-media',
 			'emcp-tools/get-media',
+			'emcp-tools/upload-media',
 			'emcp-tools/update-media',
 			'emcp-tools/delete-media',
 		);
@@ -67,8 +68,22 @@ class EMCP_Tools_Media_Library_Abilities {
 	public function register(): void {
 		$this->register_list_media();
 		$this->register_get_media();
+		$this->register_upload_media();
 		$this->register_update_media();
 		$this->register_delete_media();
+	}
+
+	/**
+	 * Permission check for uploading a new attachment.
+	 *
+	 * Mirrors sideload-image: gated on `upload_files`.
+	 *
+	 * @since 3.12.1
+	 *
+	 * @return bool
+	 */
+	public function check_upload_permission(): bool {
+		return current_user_can( 'upload_files' );
 	}
 
 	/**
@@ -572,6 +587,225 @@ class EMCP_Tools_Media_Library_Abilities {
 			'id'      => $id,
 			'deleted' => $trashed ? 'trashed' : 'deleted',
 		);
+	}
+
+	// -------------------------------------------------------------------------
+	// upload-media
+	// -------------------------------------------------------------------------
+
+	/**
+	 * The largest decoded file (bytes) upload-media will accept. Filterable so a
+	 * host with more headroom can raise it; the base64 payload already arrived in
+	 * the request, so this only guards the decode/write, not an HTTP upload limit.
+	 *
+	 * @since 3.12.1
+	 */
+	const UPLOAD_MAX_BYTES = 33554432; // 32 MB.
+
+	private function register_upload_media(): void {
+		emcp_tools_register_ability(
+			'emcp-tools/upload-media',
+			array(
+				'label'               => __( 'Upload Media', 'emcp-tools' ),
+				'description'         => __( 'Uploads a file from the CLIENT machine into the WordPress Media Library by passing its raw bytes as base64. This is the companion to sideload-image: sideload-image fetches a URL the SERVER can reach, while upload-media takes a LOCAL file the client reads and base64-encodes. Use this when the user asks to upload an image (or other allowed media) from their own computer. Pass `filename` (with its real extension, e.g. "logo.png") and `data` (base64, with or without a `data:` URI prefix). Optionally set alt/title/caption/description and attach it to a post. Only WordPress-allowed file types are accepted (executable types are refused). Returns the new attachment id and URLs, ready for add-free-widget.', 'emcp-tools' ),
+				'category'            => 'emcp-tools',
+				'execute_callback'    => array( $this, 'execute_upload_media' ),
+				'permission_callback' => array( $this, 'check_upload_permission' ),
+				'input_schema'        => array(
+					'type'       => 'object',
+					'properties' => array(
+						'filename'    => array(
+							'type'        => 'string',
+							'description' => __( 'The file name including its extension (e.g. "photo.jpg", "logo.png", "brochure.pdf"). The extension determines the file type, so it must be correct.', 'emcp-tools' ),
+						),
+						'data'        => array(
+							'type'        => 'string',
+							'description' => __( 'The file contents, base64-encoded. A `data:<mime>;base64,` prefix is accepted and stripped automatically.', 'emcp-tools' ),
+						),
+						'alt'         => array(
+							'type'        => 'string',
+							'description' => __( 'Alt text for the image (accessibility/SEO). Optional but recommended for images.', 'emcp-tools' ),
+						),
+						'title'       => array(
+							'type'        => 'string',
+							'description' => __( 'Attachment title. Defaults to the filename without its extension.', 'emcp-tools' ),
+						),
+						'caption'     => array(
+							'type'        => 'string',
+							'description' => __( 'Attachment caption. Optional.', 'emcp-tools' ),
+						),
+						'description' => array(
+							'type'        => 'string',
+							'description' => __( 'Attachment description. Optional.', 'emcp-tools' ),
+						),
+						'post_id'     => array(
+							'type'        => 'integer',
+							'description' => __( 'Optional post ID to attach the media to (sets post_parent). Omit to leave it unattached.', 'emcp-tools' ),
+						),
+						'convert_webp' => array(
+							'type'        => 'boolean',
+							'description' => __( 'Set false to skip WebP conversion/optimization for this upload (useful on slow shared hosting). Default true.', 'emcp-tools' ),
+						),
+					),
+					'required'   => array( 'filename', 'data' ),
+				),
+				'output_schema'       => array(
+					'type'       => 'object',
+					'properties' => array(
+						'id'        => array( 'type' => 'integer' ),
+						'title'     => array( 'type' => 'string' ),
+						'url'       => array( 'type' => 'string' ),
+						'mime_type' => array( 'type' => 'string' ),
+						'filesize'  => array( 'type' => 'integer' ),
+						'alt'       => array( 'type' => 'string' ),
+						'width'     => array( 'type' => 'integer' ),
+						'height'    => array( 'type' => 'integer' ),
+					),
+				),
+				'meta'                => array(
+					'annotations'  => array( 'readonly' => false, 'destructive' => false, 'idempotent' => false ),
+					'show_in_rest' => true,
+				),
+			)
+		);
+	}
+
+	/**
+	 * Executes the upload-media ability: decode base64 client bytes into a temp
+	 * file and hand it to media_handle_sideload(), which enforces the allowed
+	 * MIME allowlist, moves the file into uploads, inserts the attachment, and
+	 * generates metadata (triggering the Image Optimization / SVG modules).
+	 *
+	 * @since 3.12.1
+	 *
+	 * @param array $input Tool input.
+	 * @return array|\WP_Error
+	 */
+	public function execute_upload_media( $input ) {
+		$filename = sanitize_file_name( (string) ( $input['filename'] ?? '' ) );
+		$raw_data = (string) ( $input['data'] ?? '' );
+
+		if ( '' === $filename ) {
+			return new \WP_Error( 'missing_filename', __( 'The filename parameter is required (with a real extension, e.g. "photo.jpg").', 'emcp-tools' ) );
+		}
+		if ( ! preg_match( '/\.[A-Za-z0-9]{1,8}$/', $filename ) ) {
+			return new \WP_Error( 'no_extension', __( 'The filename must include a file extension (e.g. "photo.jpg") so the file type can be determined.', 'emcp-tools' ) );
+		}
+		if ( '' === $raw_data ) {
+			return new \WP_Error( 'missing_data', __( 'The data parameter (base64-encoded file contents) is required.', 'emcp-tools' ) );
+		}
+
+		// Strip an optional `data:<mime>;base64,` URI prefix and any whitespace/newlines.
+		if ( 0 === strpos( $raw_data, 'data:' ) ) {
+			$comma    = strpos( $raw_data, ',' );
+			$raw_data = false !== $comma ? substr( $raw_data, $comma + 1 ) : $raw_data;
+		}
+		$raw_data = preg_replace( '/\s+/', '', $raw_data );
+
+		$bytes = base64_decode( $raw_data, true );
+		if ( false === $bytes || '' === $bytes ) {
+			return new \WP_Error( 'bad_base64', __( 'The data parameter is not valid base64. Pass the file contents base64-encoded.', 'emcp-tools' ) );
+		}
+
+		$max = (int) apply_filters( 'emcp_tools_upload_media_max_bytes', self::UPLOAD_MAX_BYTES );
+		if ( strlen( $bytes ) > $max ) {
+			return new \WP_Error(
+				'file_too_large',
+				sprintf(
+					/* translators: 1: file size, 2: limit */
+					__( 'The decoded file is %1$s, which exceeds the %2$s upload-media limit. Raise it with the emcp_tools_upload_media_max_bytes filter, or use sideload-image with a URL.', 'emcp-tools' ),
+					size_format( strlen( $bytes ) ),
+					size_format( $max )
+				)
+			);
+		}
+
+		// Load required WordPress media functions.
+		if ( ! function_exists( 'media_handle_sideload' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			require_once ABSPATH . 'wp-admin/includes/media.php';
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+		}
+
+		// Write the decoded bytes to a temp file named for the real filename so
+		// the extension-based type check works.
+		$tmp_file = wp_tempnam( $filename );
+		if ( ! $tmp_file ) {
+			return new \WP_Error( 'tmp_failed', __( 'Could not create a temporary file for the upload.', 'emcp-tools' ) );
+		}
+		if ( false === file_put_contents( $tmp_file, $bytes ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			wp_delete_file( $tmp_file );
+			return new \WP_Error( 'write_failed', __( 'Could not write the uploaded file to disk.', 'emcp-tools' ) );
+		}
+		unset( $bytes );
+
+		// Reject disallowed types up front with a clear message. media_handle_sideload
+		// enforces this too, but a pre-check gives an actionable error and keeps
+		// executable uploads out even if a filter loosens things downstream.
+		$check = wp_check_filetype_and_ext( $tmp_file, $filename );
+		$type  = $check['type'] ? $check['type'] : '';
+		if ( '' === $type || ! get_allowed_mime_types() || ! in_array( $type, get_allowed_mime_types(), true ) ) {
+			wp_delete_file( $tmp_file );
+			return new \WP_Error(
+				'disallowed_type',
+				sprintf(
+					/* translators: %s: filename */
+					__( 'The file type of "%s" is not permitted for upload on this site (executable and unknown types are refused). Allowed types are the standard WordPress media types; enable the SVG Uploads module for SVGs.', 'emcp-tools' ),
+					$filename
+				)
+			);
+		}
+
+		$post_id   = isset( $input['post_id'] ) ? absint( $input['post_id'] ) : 0;
+		$post_data = array();
+		if ( ! empty( $input['title'] ) ) {
+			$post_data['post_title'] = sanitize_text_field( (string) $input['title'] );
+		}
+		if ( isset( $input['caption'] ) ) {
+			$post_data['post_excerpt'] = sanitize_text_field( (string) $input['caption'] );
+		}
+		if ( isset( $input['description'] ) ) {
+			$post_data['post_content'] = sanitize_textarea_field( (string) $input['description'] );
+		}
+
+		$file_array = array(
+			'name'     => $filename,
+			'tmp_name' => $tmp_file,
+		);
+
+		// media_handle_sideload() runs wp_generate_attachment_metadata() synchronously,
+		// where the Image Optimization module compresses + generates WebP. Honor the
+		// same convert_webp:false opt-out sideload-image offers.
+		$skip_webp = array_key_exists( 'convert_webp', (array) $input ) && false === $input['convert_webp'];
+		if ( $skip_webp ) {
+			add_filter( 'emcp_tools_optimize_attachment', '__return_false', 99 );
+		}
+		$attachment_id = media_handle_sideload( $file_array, $post_id, null, $post_data );
+		if ( $skip_webp ) {
+			remove_filter( 'emcp_tools_optimize_attachment', '__return_false', 99 );
+		}
+
+		if ( is_wp_error( $attachment_id ) ) {
+			if ( file_exists( $tmp_file ) ) {
+				wp_delete_file( $tmp_file );
+			}
+			return new \WP_Error(
+				'upload_failed',
+				sprintf(
+					/* translators: 1: filename, 2: error message */
+					__( 'Upload of "%1$s" failed: %2$s', 'emcp-tools' ),
+					$filename,
+					$attachment_id->get_error_message()
+				)
+			);
+		}
+
+		// Alt text (image accessibility/SEO).
+		if ( isset( $input['alt'] ) && '' !== (string) $input['alt'] ) {
+			update_post_meta( (int) $attachment_id, '_wp_attachment_image_alt', sanitize_text_field( (string) $input['alt'] ) );
+		}
+
+		return $this->execute_get_media( array( 'id' => (int) $attachment_id ) );
 	}
 
 	/**

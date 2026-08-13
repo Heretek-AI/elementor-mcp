@@ -306,12 +306,30 @@ class EMCP_Tools_Atomic_Layout_Abilities {
 					$core_version = defined( 'ELEMENTOR_VERSION' ) ? ELEMENTOR_VERSION : 'unknown';
 					$pro_version  = defined( 'ELEMENTOR_PRO_VERSION' ) ? ELEMENTOR_PRO_VERSION : null;
 
-					return array(
+					$supports_atomic    = EMCP_Tools_Atomic_Props::is_atomic_supported();
+					$supports_container = EMCP_Tools_Atomic_Props::is_container_supported();
+
+					if ( $supports_atomic ) {
+						$mode = 'atomic';
+					} elseif ( $supports_container ) {
+						$mode = 'legacy';
+					} else {
+						$mode = 'unsupported';
+					}
+
+					$out = array(
 						'elementor_version'     => $core_version,
 						'elementor_pro_version' => $pro_version,
-						'supports_atomic'       => EMCP_Tools_Atomic_Props::is_atomic_supported(),
-						'recommended_mode'      => EMCP_Tools_Atomic_Props::is_atomic_supported() ? 'atomic' : 'legacy',
+						'supports_atomic'       => $supports_atomic,
+						'supports_container'    => $supports_container,
+						'recommended_mode'      => $mode,
 					);
+
+					if ( 'unsupported' === $mode ) {
+						$out['warning'] = __( 'Both the Flexbox Container and Atomic Elements experiments are disabled on this site, so pages built with add-container / build-page / the atomic tools will store data but render empty. Enable Elementor -> Settings -> Features -> "Flexbox Container" (or Atomic Elements) before creating pages via MCP.', 'emcp-tools' );
+					}
+
+					return $out;
 				},
 				'permission_callback' => function () {
 					return current_user_can( 'edit_posts' ) ? true : new \WP_Error( 'forbidden', __( 'Insufficient permissions.', 'emcp-tools' ) );
@@ -326,7 +344,9 @@ class EMCP_Tools_Atomic_Layout_Abilities {
 						'elementor_version'     => array( 'type' => 'string' ),
 						'elementor_pro_version' => array( 'type' => 'string' ),
 						'supports_atomic'       => array( 'type' => 'boolean' ),
+						'supports_container'    => array( 'type' => 'boolean' ),
 						'recommended_mode'      => array( 'type' => 'string' ),
+						'warning'               => array( 'type' => 'string' ),
 					),
 				),
 				'meta'                => array(

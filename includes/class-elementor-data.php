@@ -252,6 +252,28 @@ class EMCP_Tools_Data {
 	}
 
 	/**
+	 * Whether an exception thrown by Document::save() is Elementor's atomic
+	 * settings/styles validation rejecting a value (as opposed to a genuine
+	 * fatal). Elementor formats these as `Settings validation failed. …` /
+	 * `Styles validation failed …`, and the per-prop reason is `<prop>: invalid_value`.
+	 *
+	 * A validation rejection on our save path is over-strict — the tree is
+	 * coerce_tree()'d on the way out, so what remains is editor-authored data the
+	 * live editor persists fine (e.g. a `{$$type:'dynamic'}` paragraph whose tag
+	 * the CLI/REST atomic registry can't resolve, #112). Those route to the raw
+	 * meta-write fallback; anything else hard-fails.
+	 *
+	 * @since 3.12.0
+	 *
+	 * @param string $message The exception message from Document::save().
+	 * @return bool True when the message is a settings/styles validation rejection.
+	 */
+	public static function is_atomic_validation_rejection( string $message ): bool {
+		return false !== stripos( $message, 'validation failed' )
+			|| false !== stripos( $message, 'invalid_value' );
+	}
+
+	/**
 	 * Saves page data using Elementor's native save mechanism.
 	 *
 	 * Tries document save() first (triggers CSS regeneration). If that fails
@@ -298,17 +320,37 @@ class EMCP_Tools_Data {
 		// ONLY for the no-exception falsy case (false OR null — valid data,
 		// non-browser context), so invalid data is never written raw. Document::save()
 		// can return null (not just false) in CLI/REST, hence `! $result`. (F-005, #36)
+		$result           = false;
+		$validation_throw = false;
 		try {
 			$result = $document->save( array( 'elements' => $data ) );
 		} catch ( \Throwable $e ) {
-			return new \WP_Error(
-				'save_rejected',
-				sprintf(
-					/* translators: %s: error message from Elementor */
-					__( 'Elementor rejected the element data: %s', 'emcp-tools' ),
-					$e->getMessage()
-				)
-			);
+			// Elementor 4.x atomic validation THROWS (get_data_for_save →
+			// parse_atomic_settings → Props_Parser) on a value it cannot verify.
+			// That includes an editor-authored `{$$type:'dynamic'}` prop whose tag
+			// is not resolvable in this (CLI/REST) context: the atomic dynamic-tags
+			// registry is under-populated outside the live editor, so a dynamic
+			// paragraph that renders fine on the front end is rejected here — and
+			// because save() validates the WHOLE tree, that blocks EVERY save of the
+			// document, including edits to unrelated elements (#112).
+			//
+			// The tree was already swept by coerce_tree() above, so a validation
+			// throw now is over-strict rejection of data the editor itself persists,
+			// not a raw value we introduced. Route it into the direct meta write —
+			// the same fallback used when save() returns falsy — instead of locking
+			// the document out of the API. Any non-validation throw (a genuine fatal)
+			// still hard-fails.
+			if ( ! self::is_atomic_validation_rejection( $e->getMessage() ) ) {
+				return new \WP_Error(
+					'save_rejected',
+					sprintf(
+						/* translators: %s: error message from Elementor */
+						__( 'Elementor rejected the element data: %s', 'emcp-tools' ),
+						$e->getMessage()
+					)
+				);
+			}
+			$validation_throw = true;
 		}
 
 		// Verify the native save actually persisted our elements. Elementor's
@@ -316,8 +358,9 @@ class EMCP_Tools_Data {
 		// contexts yet drop the elements so `_elementor_data` ends up empty —
 		// a silent write failure the caller never sees (issue #98). Re-read and,
 		// if we sent real elements but nothing landed, force the direct meta write
-		// below rather than reporting a phantom success.
-		$needs_fallback = ! $result;
+		// below rather than reporting a phantom success. A validation throw (#112)
+		// also routes straight to the fallback.
+		$needs_fallback = $validation_throw || ! $result;
 		if ( ! $needs_fallback && ! empty( $data ) ) {
 			$persisted_raw = get_post_meta( $post_id, '_elementor_data', true );
 			$persisted     = ( is_string( $persisted_raw ) && '' !== $persisted_raw )

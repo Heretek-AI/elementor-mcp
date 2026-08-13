@@ -205,6 +205,18 @@ class EMCP_Tools_Composite_Abilities {
 			return new \WP_Error( 'missing_structure', __( 'The structure parameter is required and must be an array.', 'emcp-tools' ) );
 		}
 
+		// build-page emits legacy `container` elements, which only render when
+		// Elementor's Flexbox Container experiment is active. On installs where it
+		// is OFF, Elementor silently skips them and the whole page renders empty
+		// with no error (#111). Refuse up front with an actionable message rather
+		// than persisting an unrenderable document.
+		if ( ! EMCP_Tools_Atomic_Props::is_container_supported() ) {
+			return new \WP_Error(
+				'container_unsupported',
+				__( 'This site has Elementor\'s Flexbox Container experiment disabled, so build-page would store a page that renders empty. Enable Elementor → Settings → Features → "Flexbox Container" before building pages via MCP. Editing existing pages is unaffected.', 'emcp-tools' )
+			);
+		}
+
 		// 1. Build the Elementor element tree from the declarative structure
 		//    (in memory — no DB write yet, so dry_run can validate first).
 		$this->elements_created = 0;

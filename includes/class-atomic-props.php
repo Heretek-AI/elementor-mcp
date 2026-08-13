@@ -923,4 +923,51 @@ class EMCP_Tools_Atomic_Props {
 		// Genuine 4.0+ core (kept as a forward-compatible fallback).
 		return defined( 'ELEMENTOR_VERSION' ) && version_compare( ELEMENTOR_VERSION, '4.0.0', '>=' );
 	}
+
+	/**
+	 * Whether Elementor's (legacy, 3.x) Flexbox **Container** is available on this
+	 * site — i.e. a `container` elType will actually instantiate and render.
+	 *
+	 * Long-lived installs (pre-Container, ~2020) can have the Container experiment
+	 * OFF (`container: false`). There, our creation tools (`add-container`,
+	 * `build-page`) emit `container` elements Elementor cannot instantiate, so
+	 * Elements_Manager silently skips every top-level element and the page renders
+	 * an empty wrapper — no data change fixes it, only enabling the experiment (#111).
+	 *
+	 * Authoritative signal (mirrors is_atomic_supported): the `container` element
+	 * type is registered server-side, so Document::save() keeps it. Falls back to
+	 * the experiment flag, then — only when Elementor is not loaded at all (test
+	 * stubs) — to true so non-WP unit paths keep their current behaviour.
+	 *
+	 * @since 3.12.0
+	 *
+	 * @return bool True if the `container` element type will render on this site.
+	 */
+	public static function is_container_supported(): bool {
+		if ( ! class_exists( '\Elementor\Plugin' ) || ! method_exists( '\Elementor\Plugin', 'instance' ) ) {
+			// Elementor absent (e.g. unit stubs): don't block — callers that need
+			// Elementor already guard on it elsewhere.
+			return true;
+		}
+
+		$elementor = \Elementor\Plugin::instance();
+
+		// Primary, authoritative signal: the `container` element type is registered.
+		if ( isset( $elementor->elements_manager ) && is_object( $elementor->elements_manager )
+			&& method_exists( $elementor->elements_manager, 'get_element_types' ) ) {
+			$types = $elementor->elements_manager->get_element_types();
+			if ( is_array( $types ) ) {
+				return isset( $types['container'] );
+			}
+		}
+
+		// Secondary: the Container experiment flag.
+		if ( isset( $elementor->experiments ) && is_object( $elementor->experiments )
+			&& method_exists( $elementor->experiments, 'is_feature_active' ) ) {
+			return (bool) $elementor->experiments->is_feature_active( 'container' );
+		}
+
+		// Could not determine (unusual): keep current behaviour.
+		return true;
+	}
 }

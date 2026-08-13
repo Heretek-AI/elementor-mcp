@@ -199,6 +199,19 @@ class EMCP_Tools_Layout_Abilities {
 			return new \WP_Error( 'missing_post_id', __( 'The post_id parameter is required.', 'emcp-tools' ) );
 		}
 
+		// A `container` element only renders when Elementor's Flexbox Container
+		// experiment is active. On long-lived installs where it is OFF, Elementor
+		// silently skips the element on render, leaving an empty page with no error
+		// (#111). Refuse up front with an actionable message instead of writing an
+		// unrenderable document. Atomic sites (e-flexbox) are unaffected — those go
+		// through add-flexbox, which registers only when atomic is supported.
+		if ( ! EMCP_Tools_Atomic_Props::is_container_supported() ) {
+			return new \WP_Error(
+				'container_unsupported',
+				__( 'This site has Elementor\'s Flexbox Container experiment disabled, so a container element would be stored but render empty. Enable Elementor → Settings → Features → "Flexbox Container" (or Atomic Elements and use the add-flexbox / atomic tools) before building pages via MCP. Editing existing pages is unaffected.', 'emcp-tools' )
+			);
+		}
+
 		$page_data = $this->data->get_page_data( $post_id );
 
 		if ( is_wp_error( $page_data ) ) {

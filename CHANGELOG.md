@@ -2,6 +2,11 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.12.1]
+
+### Added
+- **Upload a local image into the Media Library (#115).** A new `upload-media` tool takes a file's bytes as base64 straight from the client machine and adds it to the WordPress Media Library. It is the companion to `sideload-image`, which only fetches a URL the server can already reach: now you can ask your AI to upload an image from your own computer and it has a tool for it. Only WordPress-allowed file types are accepted (executable types are refused), with optional alt text, title, caption, description, and attachment to a post. Gated on `upload_files`, enabled by default, and it runs the same optimize/WebP pipeline as the other media tools.
+
 ## [3.12.0]
 
 ### Added

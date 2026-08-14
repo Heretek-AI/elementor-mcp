@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.12.0
+Stable tag: 3.12.1
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,10 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.12.1 =
+Upload local images to the Media Library straight from your AI.
+* Added: a new upload-media tool that uploads a file from your own computer into the WordPress Media Library (sent as base64), the companion to sideload-image which only fetches a server-reachable URL. Now you can ask your AI to upload a local image and it just works. Only standard WordPress file types are accepted, with optional alt text, title, caption, and description.
 
 = 3.12.0 =
 New Pro suite: Backup, Sync & Migrate. Back up your whole site, migrate it to a live server, and sync individual pages. Plus fixes for dynamic content and container-off sites.

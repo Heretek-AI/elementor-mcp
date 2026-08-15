@@ -170,7 +170,16 @@ function admin_url( $path = '' ): string {
 }
 
 function home_url( $path = '' ): string {
-	return 'http://example.test' . ( '' === $path ? '' : '/' . ltrim( (string) $path, '/' ) );
+	// Overridable per test (e.g. a subdirectory install) via the fixture global;
+	// defaults to the root host so existing tests are unaffected.
+	$base = rtrim( (string) ( $GLOBALS['emcp_test']['home_url'] ?? 'http://example.test' ), '/' );
+	return $base . ( '' === $path ? '' : '/' . ltrim( (string) $path, '/' ) );
+}
+
+if ( ! function_exists( 'untrailingslashit' ) ) {
+	function untrailingslashit( $s ) {
+		return rtrim( (string) $s, '/' );
+	}
 }
 
 function wp_parse_url( $url, $component = -1 ) {

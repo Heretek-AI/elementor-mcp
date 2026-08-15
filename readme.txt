@@ -177,7 +177,8 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 == Changelog ==
 
 = 3.12.2 =
-Uses noticeably less memory on the front end, so it stops crashing sites on 128 MB hosts.
+Uses noticeably less memory on the front end, and fixes OAuth sign-in on subfolder installs.
+* Fixed: on a WordPress site installed in a subfolder (for example example.com/gpt-build/), connecting over OAuth from ChatGPT, Claude, or another MCP client failed because the OAuth discovery document returned a 404. It is now served correctly on subfolder installs, so the connection completes and your tools appear.
 * Performance: the plugin no longer loads all of its AI tool code on every page view. The heavy MCP tool classes (roughly 120 of them, plus their audits, catalogs, guards and integrations) now load only when they are actually needed: an AI request, the admin Tools screen, WP-CLI, or cron. A normal front-end page view uses about 6 MB less memory per request, which gives sites on a 128 MB PHP memory limit real headroom. The full set of tools is unchanged for every AI, admin and CLI request.
 
 = 3.12.1 =

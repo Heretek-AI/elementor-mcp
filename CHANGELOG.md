@@ -4,6 +4,9 @@ All notable changes to MCP Tools for Elementor are documented in this file.
 
 ## [3.12.2]
 
+### Fixed
+- **OAuth sign-in failed on subdirectory installs (WordPress in a subfolder).** On a site installed under a path such as `example.com/gpt-build/`, the OAuth discovery document that clients need (`/.well-known/oauth-protected-resource`, RFC 9728) returned 404, so connecting over OAuth from ChatGPT, Claude, or any standard MCP client dead-ended before it could get a token, and no tools appeared. The plugin advertised the correct subfolder URL but did not serve it there, because the request path was matched against the site-root path without accounting for the subdirectory. It now strips the install's home-path prefix before matching, so discovery works on subfolder installs and is unchanged on root installs.
+
 ### Performance
 - **Lower memory use on every front-end page view.** The plugin used to load all ~180 of its PHP class files (about 10 MB) on every single request, including plain front-end page views that never touch the AI tools. The ~120 MCP ability classes and their supporting code (schema catalogs, guards, security and performance audits, and the theme/forms/SEO integrations) now load only when they are actually needed: an MCP request, the admin Tools screen, WP-CLI, or cron. A normal front-end page view now loads about 6 MB less per request, which gives sites on a 128 MB PHP memory limit real headroom and stops the out-of-memory crashes some hosts hit. The full tool surface is unchanged for every real MCP, admin, and CLI request, and a lazy fallback still loads everything the moment the Abilities API fires, so nothing is ever missing when a tool is called.
 

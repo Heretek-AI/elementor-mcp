@@ -142,8 +142,41 @@ class EMCP_Tools_OAuth_Metadata {
 	private static function request_path(): string {
 		$uri  = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
 		$path = (string) wp_parse_url( $uri, PHP_URL_PATH );
+
+		// Subdirectory installs (e.g. WordPress at /gpt-build/) receive the request
+		// as `/gpt-build/.well-known/oauth-protected-resource`, but the well-known
+		// paths we match against are site-root-relative (`/.well-known/…`). Strip
+		// the home path prefix so the match works there too — otherwise the
+		// metadata document we advertise in WWW-Authenticate 404s and OAuth
+		// discovery (ChatGPT, Claude, any RFC 9728 client) dead-ends. No-op on a
+		// root install where the home path is empty.
+		$path = self::strip_home_path( $path );
+
 		if ( '/' !== $path ) {
 			$path = untrailingslashit( $path );
+		}
+		return $path;
+	}
+
+	/**
+	 * Remove the WordPress home-URL path prefix (the subdirectory a site is
+	 * installed under) from a request path. `/gpt-build/.well-known/x` → `/.well-known/x`;
+	 * a root install (`home` path `''` or `/`) returns the path unchanged.
+	 *
+	 * @since 3.12.2
+	 *
+	 * @param string $path Request path.
+	 * @return string
+	 */
+	public static function strip_home_path( string $path ): string {
+		$home = function_exists( 'home_url' ) ? (string) wp_parse_url( home_url(), PHP_URL_PATH ) : '';
+		$home = untrailingslashit( (string) $home );
+		if ( '' === $home || '/' === $home ) {
+			return $path;
+		}
+		if ( 0 === strpos( $path, $home . '/' ) || $path === $home ) {
+			$stripped = substr( $path, strlen( $home ) );
+			return '' === $stripped ? '/' : $stripped;
 		}
 		return $path;
 	}

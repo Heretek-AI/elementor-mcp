@@ -21,11 +21,7 @@ final class EMCP_Tools_Pro_Loader {
 
 	/** Pro class files, in load order. Relative to the Pro root. */
 	private const FILES = array(
-		'includes/class-color-contrast.php',
-		'includes/class-content-extractor.php',
-		'includes/class-seo-meta.php',
 		'includes/class-sandbox-template-compiler.php',
-		'includes/class-block-generator.php',
 		'includes/class-block-store.php',
 		'includes/class-block-loader.php',
 		// Project Memory (Pro).
@@ -34,51 +30,17 @@ final class EMCP_Tools_Pro_Loader {
 		'includes/memory/class-memory-injector.php',
 		'includes/memory/class-memory-enforcer.php',
 		'includes/memory/class-memory-summarizer.php',
-		'includes/abilities/class-memory-abilities.php',
 		// Backup / Migrate / Sync MCP tools (Pro). The engine classes load with
 		// the module on init:5; this ability class is loaded here so the registrar
 		// (wp_abilities_api_init, earlier) can register the group when the module
 		// is enabled. Executors lazy-load the engines defensively.
-		'includes/abilities/class-migrate-abilities.php',
-		'includes/class-widget-generator.php',
-		'includes/abilities/class-system-kit-abilities.php',
-		'includes/abilities/class-widget-builder-abilities.php',
-		'includes/abilities/class-block-builder-abilities.php',
-		'includes/abilities/class-seo-abilities.php',
-		'includes/abilities/class-a11y-abilities.php',
-		'includes/abilities/class-woo-integration.php',
 		// Forms integrations (Pro adapters; the base + CF7 are free-tree).
-		'includes/abilities/forms/class-wpforms-integration.php',
-		'includes/abilities/forms/class-gravityforms-integration.php',
-		'includes/abilities/forms/class-fluentforms-integration.php',
-		'includes/abilities/forms/class-ninjaforms-integration.php',
-		'includes/abilities/forms/class-formidable-integration.php',
-		'includes/abilities/forms/class-metform-integration.php',
-		'includes/abilities/forms/class-sureforms-integration.php',
-		'includes/abilities/forms/class-forminator-integration.php',
 		// Elementor addon widget packs (discovery + curation only; placement
 		// stays on the generic add-free-widget tool).
-		'includes/abilities/addons/class-addon-pack-integration.php',
-		'includes/abilities/addons/class-essential-addons-integration.php',
-		'includes/abilities/addons/class-premium-addons-integration.php',
-		'includes/abilities/addons/class-uae-integration.php',
 		// SEO integrations (Pro adapters; the base + Slim SEO are free-tree).
-		'includes/abilities/seo/class-yoast-integration.php',
-		'includes/abilities/seo/class-rankmath-integration.php',
-		'includes/abilities/seo/class-aioseo-integration.php',
-		'includes/abilities/seo/class-seopress-integration.php',
-		'includes/abilities/seo/class-seoframework-integration.php',
-		'includes/abilities/seo/class-surerank-integration.php',
 		// GeneratePress + GenerateBlocks theme integration (Pro).
-		'includes/blocks-catalog/class-generateblocks-catalog.php',
-		'includes/abilities/class-generatepress-integration.php',
-		'includes/abilities/class-generateblocks-integration.php',
 		// Blocksy theme integration (Pro): blocks + Companion extensions.
-		'includes/blocks-catalog/class-blocksy-blocks-catalog.php',
-		'includes/abilities/class-blocksy-blocks-integration.php',
-		'includes/abilities/class-blocksy-extensions-integration.php',
 		'includes/class-skill-catalog.php',
-		'includes/abilities/class-skill-abilities.php',
 		'includes/class-page-snapshot-pro.php',
 		'includes/admin/class-pro-brand-kits.php',
 		'includes/ai-chat/class-key-crypto.php',
@@ -96,6 +58,55 @@ final class EMCP_Tools_Pro_Loader {
 		'includes/themer/class-themer-pro-matchers.php',
 		'includes/themer/class-themer-pro-conditions.php',
 		'includes/themer/class-themer-pro.php',
+	);
+
+	/**
+	 * Pro ability adapters + their exclusive infra, deferred off the boot path and
+	 * loaded by load_mcp_surface() only when the MCP tool surface is needed (an MCP
+	 * request, the admin Tools screen, WP-CLI, or cron) — the free surface is split
+	 * the same way in EMCP_Tools_Bootstrap. Runtime-wired Pro units (block store/
+	 * loader, memory infra, ai-chat, themer-pro, skill-catalog, page-snapshot-pro)
+	 * stay in FILES so their front-end hooks fire on every request.
+	 */
+	private const MCP_FILES = array(
+		'includes/class-color-contrast.php',
+		'includes/class-content-extractor.php',
+		'includes/class-seo-meta.php',
+		'includes/class-block-generator.php',
+		'includes/abilities/class-memory-abilities.php',
+		'includes/abilities/class-migrate-abilities.php',
+		'includes/class-widget-generator.php',
+		'includes/abilities/class-system-kit-abilities.php',
+		'includes/abilities/class-widget-builder-abilities.php',
+		'includes/abilities/class-block-builder-abilities.php',
+		'includes/abilities/class-seo-abilities.php',
+		'includes/abilities/class-a11y-abilities.php',
+		'includes/abilities/class-woo-integration.php',
+		'includes/abilities/forms/class-wpforms-integration.php',
+		'includes/abilities/forms/class-gravityforms-integration.php',
+		'includes/abilities/forms/class-fluentforms-integration.php',
+		'includes/abilities/forms/class-ninjaforms-integration.php',
+		'includes/abilities/forms/class-formidable-integration.php',
+		'includes/abilities/forms/class-metform-integration.php',
+		'includes/abilities/forms/class-sureforms-integration.php',
+		'includes/abilities/forms/class-forminator-integration.php',
+		'includes/abilities/addons/class-addon-pack-integration.php',
+		'includes/abilities/addons/class-essential-addons-integration.php',
+		'includes/abilities/addons/class-premium-addons-integration.php',
+		'includes/abilities/addons/class-uae-integration.php',
+		'includes/abilities/seo/class-yoast-integration.php',
+		'includes/abilities/seo/class-rankmath-integration.php',
+		'includes/abilities/seo/class-aioseo-integration.php',
+		'includes/abilities/seo/class-seopress-integration.php',
+		'includes/abilities/seo/class-seoframework-integration.php',
+		'includes/abilities/seo/class-surerank-integration.php',
+		'includes/blocks-catalog/class-generateblocks-catalog.php',
+		'includes/abilities/class-generatepress-integration.php',
+		'includes/abilities/class-generateblocks-integration.php',
+		'includes/blocks-catalog/class-blocksy-blocks-catalog.php',
+		'includes/abilities/class-blocksy-blocks-integration.php',
+		'includes/abilities/class-blocksy-extensions-integration.php',
+		'includes/abilities/class-skill-abilities.php',
 	);
 
 	/** Pro admin class files, in load order. Relative to the Pro root. */
@@ -177,6 +188,16 @@ final class EMCP_Tools_Pro_Loader {
 	/** require_once each Pro runtime file that exists (dual-root). */
 	public static function load_runtime(): void {
 		foreach ( self::FILES as $rel ) {
+			$path = self::path( $rel );
+			if ( '' !== $path ) {
+				require_once $path;
+			}
+		}
+	}
+
+	/** require_once each deferred Pro MCP-surface file that exists (dual-root). */
+	public static function load_mcp_surface(): void {
+		foreach ( self::MCP_FILES as $rel ) {
 			$path = self::path( $rel );
 			if ( '' !== $path ) {
 				require_once $path;

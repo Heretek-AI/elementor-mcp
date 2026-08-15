@@ -275,6 +275,10 @@ class EMCP_Tools_Plugin {
 	 * @since 1.0.0
 	 */
 	public function register_abilities(): void {
+		// The ~80 ability classes are deferred off the boot path (memory); ensure
+		// they're loaded before the registrar instantiates them. Idempotent, and
+		// a no-op when boot() already loaded the surface for this request.
+		EMCP_Tools_Bootstrap::load_mcp_surface();
 		$this->ability_names = $this->registrar->register_all( EMCP_Tools_Bootstrap::elementor_active() );
 	}
 

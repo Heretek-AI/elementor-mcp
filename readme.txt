@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.12.1
+Stable tag: 3.12.2
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,10 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.12.2 =
+Uses noticeably less memory on the front end, so it stops crashing sites on 128 MB hosts.
+* Performance: the plugin no longer loads all of its AI tool code on every page view. The heavy MCP tool classes (roughly 120 of them, plus their audits, catalogs, guards and integrations) now load only when they are actually needed: an AI request, the admin Tools screen, WP-CLI, or cron. A normal front-end page view uses about 6 MB less memory per request, which gives sites on a 128 MB PHP memory limit real headroom. The full set of tools is unchanged for every AI, admin and CLI request.
 
 = 3.12.1 =
 Upload local images to the Media Library straight from your AI.

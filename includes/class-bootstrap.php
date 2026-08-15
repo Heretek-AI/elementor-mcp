@@ -51,12 +51,66 @@ class EMCP_Tools_Bootstrap {
 
 		self::wire_hooks();
 
+		// The MCP tool surface (~80 ability classes + infra) is only used to
+		// register/run abilities: an MCP REST call, the admin Tools screen, WP-CLI,
+		// or cron. Load it eagerly for those requests; a plain front-end page view
+		// skips it entirely (saving ~10 MB/request). register_abilities() /
+		// register_mcp_server() also call load_mcp_surface() as a lazy fallback, so
+		// a request type the gate misses still works the moment the Abilities API
+		// fires.
+		if ( self::needs_mcp_surface() ) {
+			self::load_mcp_surface();
+		}
+
 		if ( is_admin() ) {
 			self::load_admin();
 		}
 
 		// Boot the plugin singleton.
 		EMCP_Tools_Plugin::instance();
+	}
+
+	/**
+	 * Whether this request needs the MCP tool surface loaded up front: the admin,
+	 * a REST request (the MCP endpoint + the plugin's own routes live there),
+	 * WP-CLI (the mcp-adapter stdio bridge + our CLI tools), or cron (background
+	 * jobs / library refresh). A plain front-end page view needs none of it.
+	 *
+	 * @since 3.12.2
+	 *
+	 * @return bool
+	 */
+	public static function needs_mcp_surface(): bool {
+		return is_admin()
+			|| ( defined( 'WP_CLI' ) && WP_CLI )
+			|| ( function_exists( 'wp_doing_cron' ) && wp_doing_cron() )
+			|| self::is_rest_request();
+	}
+
+	/**
+	 * Best-effort early detection of a REST request. `REST_REQUEST` is not defined
+	 * until `parse_request` (after plugins_loaded), so at boot time we fall back to
+	 * the request URI: the REST base (`/wp-json/`) or the plain-permalink
+	 * `?rest_route=` form. Deliberately broad — any REST request loads the full
+	 * surface, so a custom MCP route is never missed.
+	 *
+	 * @since 3.12.2
+	 *
+	 * @return bool
+	 */
+	public static function is_rest_request(): bool {
+		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+			return true;
+		}
+		if ( isset( $_GET['rest_route'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			return true;
+		}
+		$uri = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		if ( '' === $uri ) {
+			return false;
+		}
+		$prefix = function_exists( 'rest_get_url_prefix' ) ? rest_get_url_prefix() : 'wp-json';
+		return false !== strpos( $uri, '/' . $prefix . '/' ) || false !== strpos( $uri, '/wp-json/' );
 	}
 
 	/**
@@ -94,25 +148,7 @@ class EMCP_Tools_Bootstrap {
 		require_once EMCP_TOOLS_DIR . 'includes/validators/class-element-validator.php';
 		require_once EMCP_TOOLS_DIR . 'includes/validators/class-settings-validator.php';
 		// Widget catalog — source of truth for the 5 catalog-backed widget tools.
-		require_once EMCP_TOOLS_DIR . 'includes/widgets/class-widget-catalog.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-query-abilities.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-page-abilities.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-layout-abilities.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-widget-abilities.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-template-abilities.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-global-abilities.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-composite-abilities.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-secret.php';
-		require_once EMCP_TOOLS_DIR . 'includes/class-unsplash-client.php';
-		require_once EMCP_TOOLS_DIR . 'includes/class-pexels-client.php';
-		require_once EMCP_TOOLS_DIR . 'includes/class-pixabay-client.php';
-		require_once EMCP_TOOLS_DIR . 'includes/class-stock-image-providers.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-stock-image-abilities.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-media-library-abilities.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-image-resize-abilities.php';
-		require_once EMCP_TOOLS_DIR . 'includes/class-block-tree.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-gutenberg-abilities.php';
-		require_once EMCP_TOOLS_DIR . 'includes/class-page-snapshot.php';
 		require_once EMCP_TOOLS_DIR . 'includes/oauth/class-oauth-util.php';
 		require_once EMCP_TOOLS_DIR . 'includes/cloud/class-cloud.php';
 		require_once EMCP_TOOLS_DIR . 'includes/cloud/class-cloud-http.php';
@@ -128,85 +164,34 @@ class EMCP_Tools_Bootstrap {
 		require_once EMCP_TOOLS_DIR . 'includes/oauth/class-oauth-token.php';
 		require_once EMCP_TOOLS_DIR . 'includes/oauth/class-oauth-bearer.php';
 		require_once EMCP_TOOLS_DIR . 'includes/oauth/class-oauth-server.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-snapshot-abilities.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-change-log.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-change-blobs.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-change-recorder.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-transaction-abilities.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-search-ranker.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-search-index.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-search-abilities.php';
 		require_once EMCP_TOOLS_DIR . 'includes/redirects/class-redirect-store.php';
 		require_once EMCP_TOOLS_DIR . 'includes/redirects/class-redirect-handler.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-redirect-abilities.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-content-mirror.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-content-mirror-abilities.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-admin-bar.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-github-updater.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-notifications.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-content-abilities.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-dispatcher-abilities.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-settings-abilities.php';
-		require_once EMCP_TOOLS_DIR . 'includes/class-package-guard.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-plugin-abilities.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-theme-abilities.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-user-abilities.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-nav-menu-abilities.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-nav-menu-shortcode.php';
 		add_action( 'init', array( 'EMCP_Tools_Nav_Menu_Shortcode', 'register' ) );
 		// ACF tools (field values + field group discovery/authoring; writes off by default).
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-acf-abilities.php';
 		// Meta Box tools (field values + field group discovery; writes off by default).
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-metabox-abilities.php';
 
 		// Themes domain: the child-theme builder + the dispatcher base (must load
 		// before its subclasses) + the integrations.
-		require_once EMCP_TOOLS_DIR . 'includes/class-child-theme-builder.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-theme-integration.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-active-theme-integration.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-astra-integration.php';
-		require_once EMCP_TOOLS_DIR . 'includes/blocks-catalog/class-spectra-catalog.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-spectra-integration.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-kadence-integration.php';
-		require_once EMCP_TOOLS_DIR . 'includes/blocks-catalog/class-kadence-blocks-catalog.php';
-		require_once EMCP_TOOLS_DIR . 'includes/blocks-catalog/class-kadence-pattern-library.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-kadence-blocks-integration.php';
 		// Forms-tab integrations — abstract base + CF7 (free). Pro form adapters
 		// (WPForms/Gravity/Fluent/Ninja/Formidable) load via EMCP_Tools_Pro_Loader.
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/forms/class-form-integration.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/forms/class-cf7-integration.php';
 		// SEO plugin integrations — abstract base + Slim SEO (free). The 6 Pro SEO
 		// adapters (Yoast/RankMath/AIOSEO/SeoPress/SEOFramework/SureRank) load via
 		// EMCP_Tools_Pro_Loader.
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/seo/class-seo-integration.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/seo/class-slimseo-integration.php';
 		// Performance Analyzer (v3.0.0) — read-only server/WP/page audit.
-		require_once EMCP_TOOLS_DIR . 'includes/performance/class-performance-finding.php';
-		require_once EMCP_TOOLS_DIR . 'includes/performance/class-performance-server-audit.php';
-		require_once EMCP_TOOLS_DIR . 'includes/performance/class-performance-page-audit.php';
-		require_once EMCP_TOOLS_DIR . 'includes/performance/class-performance-analyzer.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-performance-abilities.php';
 		// Filesystem tools (read/scan + write/edit/delete; writes off by default).
-		require_once EMCP_TOOLS_DIR . 'includes/class-filesystem-guard.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-filesystem-abilities.php';
 		// Database tools (read-only query + structured writes; writes off by default).
-		require_once EMCP_TOOLS_DIR . 'includes/class-database-guard.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-database-abilities.php';
 		// WP-CLI tools (run + background jobs; disabled-by-default, manage_options).
-		require_once EMCP_TOOLS_DIR . 'includes/wpcli/class-wpcli-validator.php';
-		require_once EMCP_TOOLS_DIR . 'includes/wpcli/class-wpcli-runner.php';
-		require_once EMCP_TOOLS_DIR . 'includes/wpcli/class-wpcli-jobs.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-wpcli-abilities.php';
 		// Security & Malware Scanner (v3.0.0) — read-only multi-audit scan.
-		require_once EMCP_TOOLS_DIR . 'includes/security/class-security-finding.php';
-		require_once EMCP_TOOLS_DIR . 'includes/security/class-security-malware-audit.php';
-		require_once EMCP_TOOLS_DIR . 'includes/security/class-security-integrity-audit.php';
-		require_once EMCP_TOOLS_DIR . 'includes/security/class-security-hardening-audit.php';
-		require_once EMCP_TOOLS_DIR . 'includes/security/class-security-software-audit.php';
-		require_once EMCP_TOOLS_DIR . 'includes/security/class-security-scanner.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-security-abilities.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-svg-icon-abilities.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-custom-code-abilities.php';
 		// Brand Kits. The free writer + backup store + free-kit fetcher load
 		// unconditionally so the MCP REST/CLI/proxy surface can reach them. The
 		// Pro brand-kit admin + system-kit abilities live in the private Pro
@@ -234,24 +219,17 @@ class EMCP_Tools_Bootstrap {
 		// Sandbox Cloud abilities — export/import any sandbox artifact (block/
 		// widget/snippet) as a portable bundle over the cloud contract. Free tree;
 		// registration is wired by the ability registrar (a later task).
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-sandbox-cloud-abilities.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-cloud-abilities.php';
 		// PHP Code Snippets (Sandbox) — free, capability-gated. AI can author +
 		// validate drafts via MCP; only an admin can activate. The loader runs
 		// ACTIVE snippets (hash-verified, fatal-isolated).
 		require_once EMCP_TOOLS_DIR . 'includes/class-php-snippet-validator.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-php-snippet-store.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-php-snippet-loader.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-php-snippet-abilities.php';
 		// Atomic elements support (Elementor 4.0+).
 		require_once EMCP_TOOLS_DIR . 'includes/class-atomic-props.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-atomic-styles.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-atomic-widget-map.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-atomic-widget-abilities.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-atomic-layout-abilities.php';
 		// Global Classes (Class Manager) reader — self-gates on Elementor 4.0+.
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-global-classes-abilities.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-global-classes-write-abilities.php';
 		// Background library refresh.
 		require_once EMCP_TOOLS_DIR . 'includes/class-library-refresher.php';
 		// Modules framework (free) + built-in modules. The registry boots active
@@ -290,9 +268,7 @@ class EMCP_Tools_Bootstrap {
 		require_once EMCP_TOOLS_DIR . 'includes/themer/php/class-themer-php-store.php';
 		require_once EMCP_TOOLS_DIR . 'includes/themer/php/class-themer-php.php';
 		require_once EMCP_TOOLS_DIR . 'includes/themer/php/class-themer-php-renderer.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-themer-php-abilities.php';
 		require_once EMCP_TOOLS_DIR . 'includes/themer/php/class-themer-php-admin.php';
-		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-themer-abilities.php';
 		require_once EMCP_TOOLS_DIR . 'includes/modules/class-themer-module.php';
 		require_once EMCP_TOOLS_DIR . 'includes/modules/class-redirect-module.php';
 		// Pro-tier units (SEO/a11y helpers + abilities, widget generator + builder
@@ -300,6 +276,12 @@ class EMCP_Tools_Bootstrap {
 		// the private Pro overlay (pro/) and are absent from the free build; the
 		// loader require_once's each only when present, so the free plugin runs
 		// with zero Pro references. Each unit still self-gates on license.
+		// Integration BASE classes stay runtime: the Pro form/SEO/theme adapters
+		// (loaded eagerly by Pro_Loader::load_runtime below) extend them, and their
+		// free subclasses in the deferred MCP surface do too. Bases must precede both.
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-theme-integration.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/forms/class-form-integration.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/seo/class-seo-integration.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-pro-loader.php';
 		EMCP_Tools_Pro_Loader::load_runtime();
 
@@ -313,6 +295,115 @@ class EMCP_Tools_Bootstrap {
 	 *
 	 * @since 2.1.0
 	 */
+	/** @var bool Whether the MCP tool surface (ability classes + infra) is loaded. */
+	private static $mcp_surface_loaded = false;
+
+	/**
+	 * Loads the MCP tool surface: every ability class plus its exclusive infra
+	 * (schema catalogs, guards, audits, integrations, stock clients). This is the
+	 * heaviest part of the plugin (~80 files) and is only needed to register or run
+	 * abilities — an MCP request, the admin Tools screen, WP-CLI, or cron. A plain
+	 * front-end page view never touches it, so deferring these requires off the
+	 * boot path keeps the per-request footprint low (memory, #128MB-hosts).
+	 *
+	 * Idempotent + called from three places: eagerly in boot() when the request
+	 * needs the surface, and defensively at the top of register_abilities() /
+	 * register_mcp_server() so the classes are always present the moment the
+	 * Abilities API lazily fires, even on a request type not covered by the gate.
+	 *
+	 * @since 3.12.2
+	 */
+	public static function load_mcp_surface(): void {
+		if ( self::$mcp_surface_loaded ) {
+			return;
+		}
+		self::$mcp_surface_loaded = true;
+
+		require_once EMCP_TOOLS_DIR . 'includes/widgets/class-widget-catalog.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-query-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-page-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-layout-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-widget-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-template-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-global-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-composite-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/class-unsplash-client.php';
+		require_once EMCP_TOOLS_DIR . 'includes/class-pexels-client.php';
+		require_once EMCP_TOOLS_DIR . 'includes/class-pixabay-client.php';
+		require_once EMCP_TOOLS_DIR . 'includes/class-stock-image-providers.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-stock-image-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-media-library-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-image-resize-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/class-block-tree.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-gutenberg-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/class-page-snapshot.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-snapshot-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-transaction-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-search-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-redirect-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-content-mirror-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-content-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-dispatcher-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-settings-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/class-package-guard.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-plugin-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-theme-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-user-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-nav-menu-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-acf-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-metabox-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/class-child-theme-builder.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-active-theme-integration.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-astra-integration.php';
+		require_once EMCP_TOOLS_DIR . 'includes/blocks-catalog/class-spectra-catalog.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-spectra-integration.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-kadence-integration.php';
+		require_once EMCP_TOOLS_DIR . 'includes/blocks-catalog/class-kadence-blocks-catalog.php';
+		require_once EMCP_TOOLS_DIR . 'includes/blocks-catalog/class-kadence-pattern-library.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-kadence-blocks-integration.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/forms/class-cf7-integration.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/seo/class-slimseo-integration.php';
+		require_once EMCP_TOOLS_DIR . 'includes/performance/class-performance-finding.php';
+		require_once EMCP_TOOLS_DIR . 'includes/performance/class-performance-server-audit.php';
+		require_once EMCP_TOOLS_DIR . 'includes/performance/class-performance-page-audit.php';
+		require_once EMCP_TOOLS_DIR . 'includes/performance/class-performance-analyzer.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-performance-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/class-filesystem-guard.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-filesystem-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/class-database-guard.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-database-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/wpcli/class-wpcli-validator.php';
+		require_once EMCP_TOOLS_DIR . 'includes/wpcli/class-wpcli-runner.php';
+		require_once EMCP_TOOLS_DIR . 'includes/wpcli/class-wpcli-jobs.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-wpcli-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/security/class-security-finding.php';
+		require_once EMCP_TOOLS_DIR . 'includes/security/class-security-malware-audit.php';
+		require_once EMCP_TOOLS_DIR . 'includes/security/class-security-integrity-audit.php';
+		require_once EMCP_TOOLS_DIR . 'includes/security/class-security-hardening-audit.php';
+		require_once EMCP_TOOLS_DIR . 'includes/security/class-security-software-audit.php';
+		require_once EMCP_TOOLS_DIR . 'includes/security/class-security-scanner.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-security-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-svg-icon-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-custom-code-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-sandbox-cloud-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-cloud-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-php-snippet-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-atomic-widget-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-atomic-layout-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-global-classes-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-global-classes-write-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-themer-php-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-themer-abilities.php';
+
+		// Pro-tier ability classes (SEO/a11y, widget builder, system-kit, migrate,
+		// memory) defer here too once the Pro loader splits its file list; until
+		// then they load with the Pro runtime. method_exists-guarded so this is a
+		// no-op on builds without the deferred Pro surface.
+		if ( class_exists( 'EMCP_Tools_Pro_Loader' ) && method_exists( 'EMCP_Tools_Pro_Loader', 'load_mcp_surface' ) ) {
+			EMCP_Tools_Pro_Loader::load_mcp_surface();
+		}
+	}
+
 	private static function wire_hooks(): void {
 		// structuredContent must be a JSON object; the adapter assigns a tool's
 		// return value to it verbatim, so a list result makes strict clients

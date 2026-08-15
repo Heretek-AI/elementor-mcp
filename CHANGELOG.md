@@ -2,6 +2,11 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.12.2]
+
+### Performance
+- **Lower memory use on every front-end page view.** The plugin used to load all ~180 of its PHP class files (about 10 MB) on every single request, including plain front-end page views that never touch the AI tools. The ~120 MCP ability classes and their supporting code (schema catalogs, guards, security and performance audits, and the theme/forms/SEO integrations) now load only when they are actually needed: an MCP request, the admin Tools screen, WP-CLI, or cron. A normal front-end page view now loads about 6 MB less per request, which gives sites on a 128 MB PHP memory limit real headroom and stops the out-of-memory crashes some hosts hit. The full tool surface is unchanged for every real MCP, admin, and CLI request, and a lazy fallback still loads everything the moment the Abilities API fires, so nothing is ever missing when a tool is called.
+
 ## [3.12.1]
 
 ### Added

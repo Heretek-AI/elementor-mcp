@@ -86,6 +86,33 @@ class EMCP_Tools_Block_Tree {
 	 * @param array  $position  { mode: append|prepend|before|after|inside, path?: int[] }.
 	 * @return array New tree.
 	 */
+	/**
+	 * Whether a position can actually be applied to this tree.
+	 *
+	 * `insert()` (like the other editors) no-ops when an index path does not
+	 * resolve, returning the tree unchanged — so a caller that saves the result
+	 * and reports success silently DROPS the block, and the agent believes it
+	 * was added. Callers validate the position with this first and return an
+	 * error instead. `append`/`prepend` need no path and are always valid.
+	 *
+	 * @since 3.12.2
+	 *
+	 * @param array $blocks   Parsed block tree.
+	 * @param array $position { mode: append|prepend|before|after|inside, path?: int[] }.
+	 * @return bool
+	 */
+	public static function position_is_valid( array $blocks, array $position ): bool {
+		$mode = $position['mode'] ?? 'append';
+		if ( 'append' === $mode || 'prepend' === $mode ) {
+			return true;
+		}
+		$path = $position['path'] ?? array();
+		if ( empty( $path ) || ! is_array( $path ) ) {
+			return false; // inside/before/after are meaningless without a target.
+		}
+		return null !== self::at( $blocks, $path );
+	}
+
 	public static function insert( array $blocks, array $newBlocks, array $position ): array {
 		$mode = $position['mode'] ?? 'append';
 		$path = $position['path'] ?? array();

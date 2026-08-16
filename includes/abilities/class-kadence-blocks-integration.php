@@ -146,6 +146,11 @@ class EMCP_Tools_Kadence_Blocks_Integration extends EMCP_Tools_Theme_Integration
 
 		$block  = $this->build_block( $name, $attrs );
 		$tree   = EMCP_Tools_Block_Tree::from_markup( (string) $post->post_content );
+		// An unresolvable path makes insert() a silent no-op, which would report
+		// success while dropping the block. Fail loudly instead.
+		if ( ! EMCP_Tools_Block_Tree::position_is_valid( $tree, $position ) ) {
+			return new WP_Error( 'invalid_position', __( 'position.path does not resolve to a block in this post. List the blocks in this post first and use a real index path.', 'emcp-tools' ), array( 'status' => 400 ) );
+		}
 		$tree   = EMCP_Tools_Block_Tree::insert( $tree, array( $block ), $position );
 		$markup = EMCP_Tools_Block_Tree::to_markup( $tree );
 
@@ -225,6 +230,11 @@ class EMCP_Tools_Kadence_Blocks_Integration extends EMCP_Tools_Theme_Integration
 
 		$position = ( isset( $input['position'] ) && is_array( $input['position'] ) ) ? $input['position'] : array( 'mode' => 'append' );
 		$tree     = EMCP_Tools_Block_Tree::from_markup( (string) $post->post_content );
+		// An unresolvable path makes insert() a silent no-op, which would report
+		// success while dropping the block. Fail loudly instead.
+		if ( ! EMCP_Tools_Block_Tree::position_is_valid( $tree, $position ) ) {
+			return new WP_Error( 'invalid_position', __( 'position.path does not resolve to a block in this post. List the blocks in this post first and use a real index path.', 'emcp-tools' ), array( 'status' => 400 ) );
+		}
 		$tree     = EMCP_Tools_Block_Tree::insert( $tree, $new_blocks, $position );
 		$out      = EMCP_Tools_Block_Tree::to_markup( $tree );
 

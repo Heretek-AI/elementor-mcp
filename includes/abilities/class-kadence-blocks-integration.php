@@ -153,11 +153,18 @@ class EMCP_Tools_Kadence_Blocks_Integration extends EMCP_Tools_Theme_Integration
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
+		// Kadence blocks use a static JS save(), so server-built markup can never
+		// byte-match it. Flag the post so the block editor auto-repairs the
+		// inserted blocks on next open (runs the editor's own recovery). Must be
+		// AFTER wp_update_post — the save_post clear-hook fires on that update.
+		if ( class_exists( 'EMCP_Tools_Block_Repair' ) ) {
+			EMCP_Tools_Block_Repair::flag( $post_id );
+		}
 		return array(
 			'added'     => $name,
 			'unique_id' => $block['attrs']['uniqueID'],
 			'post_id'   => $post_id,
-			'note'      => __( 'Renders correctly on the front end. Kadence blocks use a static JS save(), so the block editor may show "Attempt recovery" on this block — one click regenerates valid markup and preserves the content.', 'emcp-tools' ),
+			'note'      => __( 'Renders correctly on the front end. Kadence blocks use a static JS save(), so the stored markup differs from the editor\'s; EMCP auto-repairs the inserted blocks the next time the post is opened in the block editor (the human just clicks Update once).', 'emcp-tools' ),
 		);
 	}
 
@@ -376,6 +383,20 @@ class EMCP_Tools_Kadence_Blocks_Integration extends EMCP_Tools_Theme_Integration
 		// selector, and drop it from the stored attributes (WordPress reads the
 		// value back from the HTML). $attrs is mutated by reference.
 		$inner_html = $this->render_source_fields( $name, $attrs );
+
+		// Wrap the rendered fields in a neutral root carrying ONLY the block's
+		// default generated class. Gutenberg's className support extracts any
+		// non-default class on the markup's ROOT element into the `className`
+		// attribute — with the title div as root, `kt-blocks-info-box-title`
+		// became className, Kadence's save() re-rendered it on the root, the
+		// title selector then matched the root and swallowed the whole block on
+		// every parse (observed live: infobox never converged). The default
+		// wp-block-* class is exempt from that extraction, so this root is inert;
+		// the field selectors still match the children. Advanced Heading is
+		// excluded: its rendered element IS the block root by design.
+		if ( '' !== $inner_html && 'kadence/advancedheading' !== $name ) {
+			$inner_html = '<div class="wp-block-' . str_replace( '/', '-', $name ) . '">' . $inner_html . '</div>';
+		}
 
 		return $this->block_array( $name, $attrs, $inner_blocks, $inner_html );
 	}

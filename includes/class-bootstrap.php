@@ -176,6 +176,8 @@ class EMCP_Tools_Bootstrap {
 		require_once EMCP_TOOLS_DIR . 'includes/class-github-updater.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-notifications.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-nav-menu-shortcode.php';
+		// Editor-side auto-repair for AI-inserted static-save blocks (Kadence).
+		require_once EMCP_TOOLS_DIR . 'includes/class-block-repair.php';
 		add_action( 'init', array( 'EMCP_Tools_Nav_Menu_Shortcode', 'register' ) );
 		// ACF tools (field values + field group discovery/authoring; writes off by default).
 		// Meta Box tools (field values + field group discovery; writes off by default).
@@ -430,6 +432,8 @@ class EMCP_Tools_Bootstrap {
 		EMCP_Tools_OAuth_Server::init();
 		// Content mirror: auto-export-on-save (gated by its option) + delete cleanup.
 		EMCP_Tools_Content_Mirror::init();
+		// Auto-repair flagged posts' AI-inserted blocks in the block editor.
+		EMCP_Tools_Block_Repair::init();
 		add_action( 'init', array( 'EMCP_Tools_Kit_Backup_Store', 'register_post_type' ) );
 		add_action( 'init', array( 'EMCP_Tools_Widget_Store', 'register_post_type' ) );
 		( new EMCP_Tools_Widget_Loader() )->register_hooks();

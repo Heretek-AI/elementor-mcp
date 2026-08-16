@@ -4,6 +4,9 @@ All notable changes to MCP Tools for Elementor are documented in this file.
 
 ## [3.12.2]
 
+### Added
+- **Kadence blocks inserted by AI now auto-repair in the editor.** Kadence blocks use a static JS save() the server cannot run, so blocks inserted through the tools rendered perfectly on the front end but showed "Attempt recovery" on every block in the editor. EMCP now runs that recovery automatically: when you open a post the AI added Kadence blocks to, the editor repairs each of them with its own recovery mechanism (regenerating the markup with Kadence's own save(), content preserved), shows a single notice, and one click on Update stores the clean markup for good. No more clicking "Attempt recovery" block by block. Other static-save block packs can opt in via the `emcp_tools_block_repair_namespaces` filter.
+
 ### Fixed
 - **OAuth sign-in failed on subdirectory installs (WordPress in a subfolder).** On a site installed under a path such as `example.com/gpt-build/`, the OAuth discovery document that clients need (`/.well-known/oauth-protected-resource`, RFC 9728) returned 404, so connecting over OAuth from ChatGPT, Claude, or any standard MCP client dead-ended before it could get a token, and no tools appeared. The plugin advertised the correct subfolder URL but did not serve it there, because the request path was matched against the site-root path without accounting for the subdirectory. It now strips the install's home-path prefix before matching, so discovery works on subfolder installs and is unchanged on root installs.
 

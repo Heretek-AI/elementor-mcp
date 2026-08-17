@@ -120,7 +120,7 @@ class EMCP_Tools_OAuth_Authorize {
 
 		// Client + redirect must be valid before we trust redirect_uri as a target.
 		if ( '' === $client_id || null === $client || '' === $redirect_uri || ! self::redirect_registered( $client, $redirect_uri ) ) {
-			self::error_page( __( 'Invalid client or redirect URI for this connection request.', 'emcp-tools' ) );
+			self::error_page( __( 'Invalid client or redirect URI for this connection request.', 'emcp-tools' ), self::stale_client_hint() );
 		}
 
 		$state = (string) ( $params['state'] ?? '' );
@@ -160,7 +160,7 @@ class EMCP_Tools_OAuth_Authorize {
 		$redirect_uri = (string) ( $p['redirect_uri'] ?? '' );
 		$client       = self::lookup_client( $client_id );
 		if ( null === $client || ! self::redirect_registered( $client, $redirect_uri ) ) {
-			self::error_page( __( 'Invalid client or redirect URI for this connection request.', 'emcp-tools' ) );
+			self::error_page( __( 'Invalid client or redirect URI for this connection request.', 'emcp-tools' ), self::stale_client_hint() );
 		}
 
 		$state = (string) ( $p['state'] ?? '' );
@@ -347,7 +347,7 @@ class EMCP_Tools_OAuth_Authorize {
 	 *
 	 * @param string $message Message.
 	 */
-	private static function error_page( string $message ): void {
+	private static function error_page( string $message, string $hint = '' ): void {
 		if ( ! headers_sent() ) {
 			status_header( 400 );
 			header( 'Content-Type: text/html; charset=utf-8' );
@@ -355,8 +355,24 @@ class EMCP_Tools_OAuth_Authorize {
 		echo '<!doctype html><meta charset="utf-8" /><title>' . esc_html__( 'Connection error', 'emcp-tools' ) . '</title>'
 			. '<div style="max-width:460px;margin:12vh auto;font-family:sans-serif;text-align:center;color:#0a0a14">'
 			. '<h1 style="font-size:20px">' . esc_html__( 'Connection error', 'emcp-tools' ) . '</h1>'
-			. '<p style="color:#3a3b52">' . esc_html( $message ) . '</p></div>';
+			. '<p style="color:#3a3b52">' . esc_html( $message ) . '</p>'
+			. ( '' !== $hint ? '<p style="color:#6b6c85;font-size:13px;line-height:1.5">' . esc_html( $hint ) . '</p>' : '' )
+			. '</div>';
 		exit;
+	}
+
+	/**
+	 * The recovery hint for an unrecognised client_id / redirect_uri. These
+	 * clients register themselves (dynamic client registration), so a stale
+	 * cached registration cannot be repaired from this page — the client has to
+	 * register again, which happens when the user removes and re-adds the
+	 * connector. Without this the page was a dead end and the client just kept
+	 * re-opening it.
+	 *
+	 * @return string
+	 */
+	private static function stale_client_hint(): string {
+		return __( 'This usually means the app is reconnecting with a registration this site no longer recognises. In your AI app, remove this MCP connector and add it again to start a fresh connection.', 'emcp-tools' );
 	}
 
 	/**

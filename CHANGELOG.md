@@ -2,6 +2,11 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.12.3]
+
+### Fixed
+- **Connected AI apps kept reopening a sign-in page that failed with "Invalid client or redirect URI".** Claude Desktop, ChatGPT, and other MCP clients would periodically pop open the OAuth page on their own, show that error, and never reconnect. The cause was housekeeping: the plugin deleted any registered app that currently had no tokens and was more than a day old, treating it as an abandoned registration. But an app whose tokens had simply lapsed (a refresh token expiring after 30 days idle, or anything else that cleared them) also has no tokens, so its registration was deleted while the app still had it saved. Every reconnect attempt then failed, permanently, because the app was asking about a registration the site had thrown away. An app that has completed sign-in once is now kept, so its tokens lapsing just means signing in again, the way it should. Only genuinely abandoned registrations that never completed sign-in are still cleaned up, and existing connections are protected automatically when you update. The error page also now tells you what to do if it ever appears (remove and re-add the connector) instead of being a dead end.
+
 ## [3.12.2]
 
 ### Added

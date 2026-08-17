@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.12.2
+Stable tag: 3.12.3
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,10 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.12.3 =
+Fixes connected AI apps repeatedly opening a sign-in page that failed with "Invalid client or redirect URI".
+* Fixed: Claude Desktop, ChatGPT and other MCP clients could periodically open the OAuth page by themselves, show a connection error, and never reconnect. Routine housekeeping was deleting the app's registration whenever its tokens had lapsed, so the app kept asking about a registration this site had already thrown away. Apps that have signed in once are now kept, so an expired token just means signing in again. Existing connections are protected automatically when you update.
 
 = 3.12.2 =
 Uses noticeably less memory on the front end, fixes a tool error on sites without Elementor Pro, auto-repairs AI-inserted Kadence blocks in the editor, and fixes OAuth sign-in on subfolder installs.

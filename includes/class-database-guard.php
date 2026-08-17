@@ -32,14 +32,18 @@ class EMCP_Tools_Database_Guard {
 	 * @param string $sql
 	 * @return string
 	 */
-	public static function normalize_sql( string $sql ): string {
+	public static function normalize_sql( string $sql, bool $backslash_escapes = true ): string {
 		$out = '';
 		$len = strlen( $sql );
 		$i   = 0;
 		while ( $i < $len ) {
 			$c   = $sql[ $i ];
 			$two = substr( $sql, $i, 2 );
-			if ( '--' === $two || '#' === $c ) {
+			// MySQL only starts a comment at `--` when the second dash is followed
+			// by whitespace or a control character. `1--1` is arithmetic (1 minus
+			// -1), NOT a comment. Treating every `--` as a comment let a caller
+			// hide the rest of the line while MySQL still executed it.
+			if ( '#' === $c || ( '--' === $two && self::starts_comment( $sql, $i + 2 ) ) ) {
 				$nl  = strpos( $sql, "\n", $i );
 				$i   = ( false === $nl ) ? $len : $nl + 1;
 				$out .= ' ';
@@ -55,7 +59,10 @@ class EMCP_Tools_Database_Guard {
 				$q = $c;
 				$i++;
 				while ( $i < $len ) {
-					if ( '\\' === $sql[ $i ] ) { $i += 2; continue; }
+					// Under NO_BACKSLASH_ESCAPES a backslash is an ordinary character,
+					// so the string ends earlier than a backslash-aware scan thinks and
+					// real SQL hides inside what we took for a literal.
+					if ( $backslash_escapes && '\\' === $sql[ $i ] ) { $i += 2; continue; }
 					if ( $sql[ $i ] === $q ) {
 						if ( $i + 1 < $len && $sql[ $i + 1 ] === $q ) { $i += 2; continue; }
 						$i++;
@@ -77,6 +84,45 @@ class EMCP_Tools_Database_Guard {
 			$i++;
 		}
 		return $out;
+	}
+
+	/**
+	 * Does a `--` at $at begin a MySQL comment?
+	 *
+	 * MySQL requires the second dash to be followed by whitespace or a control
+	 * character. Anything else (a digit, a letter, an open paren) makes it the
+	 * subtraction operator applied to a negated value.
+	 *
+	 * @param string $sql Raw SQL.
+	 * @param int    $at  Offset just past the two dashes.
+	 * @return bool
+	 */
+	private static function starts_comment( string $sql, int $at ): bool {
+		if ( $at >= strlen( $sql ) ) {
+			return false; // Nothing follows, so nothing can be hidden either way.
+		}
+		$next = $sql[ $at ];
+		return ' ' === $next || "\t" === $next || "\n" === $next || "\r" === $next
+			|| "\0" === $next || "\x0B" === $next || "\f" === $next;
+	}
+
+	/**
+	 * Every reading of $sql this server could plausibly take.
+	 *
+	 * Whether a backslash escapes inside a string literal depends on the
+	 * session's NO_BACKSLASH_ESCAPES mode, which this code cannot assume. Rather
+	 * than guess, produce both readings; the security checks then refuse the
+	 * query when EITHER reading contains something disallowed. A legitimate
+	 * query is unaffected, because the alternative reading of an innocent
+	 * literal is still innocent.
+	 *
+	 * @param string $sql Raw SQL.
+	 * @return string[] One entry when both readings agree, two when they differ.
+	 */
+	public static function normalize_variants( string $sql ): array {
+		$a = self::normalize_sql( $sql, true );
+		$b = self::normalize_sql( $sql, false );
+		return ( $a === $b ) ? array( $a ) : array( $a, $b );
 	}
 
 	/**
@@ -157,7 +203,25 @@ class EMCP_Tools_Database_Guard {
 	 * @return int|null
 	 */
 	public static function trailing_limit( string $sql ): ?int {
-		$norm = rtrim( trim( self::normalize_sql( $sql ) ), "; \t\r\n" );
+		$found = array();
+		foreach ( self::normalize_variants( $sql ) as $variant ) {
+			$found[] = self::trailing_limit_of( rtrim( trim( $variant ), "; \t\r\n" ) );
+		}
+		// If any reading shows no top-level bound, the statement is unbounded as
+		// far as we can prove, so report null and let the caller append one.
+		if ( in_array( null, $found, true ) ) {
+			return null;
+		}
+		return max( $found );
+	}
+
+	/**
+	 * Trailing LIMIT row count of ONE normalized reading.
+	 *
+	 * @param string $norm Normalized SQL, already right-trimmed.
+	 * @return int|null
+	 */
+	private static function trailing_limit_of( string $norm ): ?int {
 		// LIMIT <count> OFFSET <skip>
 		if ( preg_match( '/\blimit\s+(\d+)\s+offset\s+\d+$/i', $norm, $m ) ) {
 			return (int) $m[1];
@@ -222,7 +286,24 @@ class EMCP_Tools_Database_Guard {
 		if ( false !== strpos( $sql, '/*!' ) ) {
 			return new \WP_Error( 'executable_comment', __( 'MySQL executable comments (/*! ... */) are not allowed.', 'emcp-tools' ) );
 		}
-		$norm = trim( self::normalize_sql( $sql ) );
+		// Check every reading the server could take. A statement is read-only
+		// only if it is read-only under ALL of them.
+		foreach ( self::normalize_variants( $sql ) as $variant ) {
+			$verdict = self::read_only_check( trim( $variant ) );
+			if ( is_wp_error( $verdict ) ) {
+				return $verdict;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Read-only checks against ONE already-normalized reading of a statement.
+	 *
+	 * @param string $norm Normalized SQL.
+	 * @return true|\WP_Error
+	 */
+	private static function read_only_check( string $norm ) {
 		if ( '' === $norm ) {
 			return new \WP_Error( 'empty_sql', __( 'Empty query.', 'emcp-tools' ) );
 		}
@@ -335,14 +416,20 @@ class EMCP_Tools_Database_Guard {
 		// Remove backticks first so quoted identifiers survive normalization
 		// (normalize_sql empties backtick-quoted spans), then strip comments +
 		// string literals via the shared normalizer.
-		$scan = strtolower( self::normalize_sql( str_replace( '`', ' ', $sql ) ) );
+		// A reference that appears under ANY plausible reading counts as a touch.
+		$scans = array();
+		foreach ( self::normalize_variants( str_replace( '`', ' ', $sql ) ) as $variant ) {
+			$scans[] = strtolower( $variant );
+		}
 		foreach ( $tables as $t ) {
 			$t = strtolower( trim( (string) $t ) );
 			if ( '' === $t ) {
 				continue;
 			}
-			if ( preg_match( '/(?<![a-z0-9_])' . preg_quote( $t, '/' ) . '(?![a-z0-9_])/', $scan ) ) {
-				return true;
+			foreach ( $scans as $scan ) {
+				if ( preg_match( '/(?<![a-z0-9_])' . preg_quote( $t, '/' ) . '(?![a-z0-9_])/', $scan ) ) {
+					return true;
+				}
 			}
 		}
 		return false;

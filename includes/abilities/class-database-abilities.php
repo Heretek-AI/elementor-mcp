@@ -116,9 +116,10 @@ class EMCP_Tools_Database_Abilities {
 		// Bound the work in the DATABASE, not just the response. Previously the
 		// full result set was fetched into PHP and sliced afterwards, so a wide
 		// query could exhaust memory and run unbounded before the limit applied.
-		$bounded = EMCP_Tools_Database_Guard::can_append_limit( $sql )
-			? rtrim( trim( $sql ), ';' ) . ' LIMIT ' . ( $limit + 1 ) // +1 detects truncation.
-			: $sql;
+		$bounded = EMCP_Tools_Database_Guard::bound_sql( $sql, $limit + 1 ); // +1 detects truncation.
+		if ( is_wp_error( $bounded ) ) {
+			return $bounded;
+		}
 
 		// Server-side statement timeout, restored in the finally block below.
 		$restore_timeout = EMCP_Tools_Database_Guard::apply_statement_timeout( $wpdb );

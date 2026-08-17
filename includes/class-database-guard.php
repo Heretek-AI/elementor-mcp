@@ -141,11 +141,73 @@ class EMCP_Tools_Database_Guard {
 		if ( '' === $norm ) {
 			return false;
 		}
-		if ( ! preg_match( '/^(select|with)\b/i', $norm ) ) {
-			return false;
+		// Row-set shape only. A LIMIT elsewhere in the statement (typically in a
+		// subquery) does NOT bound the outer result, so it must not stop us from
+		// appending an outer bound; trailing_limit() handles the top-level case.
+		return (bool) preg_match( '/^(select|with)\b/i', $norm );
+	}
+
+	/**
+	 * Row count of a TOP-LEVEL trailing LIMIT, or null when the statement has
+	 * none. Anchored at the end of the normalized statement, so a LIMIT inside
+	 * a subquery (which bounds nothing at the outer level) returns null and the
+	 * caller appends its own bound.
+	 *
+	 * @param string $sql Raw SQL.
+	 * @return int|null
+	 */
+	public static function trailing_limit( string $sql ): ?int {
+		$norm = rtrim( trim( self::normalize_sql( $sql ) ), "; \t\r\n" );
+		// LIMIT <count> OFFSET <skip>
+		if ( preg_match( '/\blimit\s+(\d+)\s+offset\s+\d+$/i', $norm, $m ) ) {
+			return (int) $m[1];
 		}
-		// Any existing LIMIT (including inside a subquery) means we leave it alone.
-		return ! preg_match( '/\blimit\b/i', $norm );
+		// LIMIT <skip>, <count>
+		if ( preg_match( '/\blimit\s+\d+\s*,\s*(\d+)$/i', $norm, $m ) ) {
+			return (int) $m[1];
+		}
+		// LIMIT <count>
+		if ( preg_match( '/\blimit\s+(\d+)$/i', $norm, $m ) ) {
+			return (int) $m[1];
+		}
+		return null;
+	}
+
+	/**
+	 * Return $sql guaranteed to fetch at most $max rows, or a WP_Error when the
+	 * caller's own LIMIT exceeds the cap.
+	 *
+	 * Rewriting someone else's LIMIT in raw SQL is not safe (string literals
+	 * make positional edits unreliable), so an oversized LIMIT is REFUSED
+	 * rather than silently clamped.
+	 *
+	 * @param string $sql Raw SQL.
+	 * @param int    $max Maximum rows to fetch.
+	 * @return string|\WP_Error
+	 */
+	public static function bound_sql( string $sql, int $max ) {
+		$trimmed = rtrim( trim( $sql ), "; \t\r\n" );
+		$own     = self::trailing_limit( $sql );
+		if ( null !== $own ) {
+			if ( $own > $max ) {
+				return new \WP_Error(
+					'limit_too_large',
+					sprintf(
+						/* translators: 1: requested LIMIT, 2: maximum allowed. */
+						__( 'The query asks for %1$d rows, above the %2$d row cap. Lower the LIMIT.', 'emcp-tools' ),
+						$own,
+						$max
+					)
+				);
+			}
+			return $trimmed; // Already bounded at or below the cap.
+		}
+		if ( ! self::can_append_limit( $sql ) ) {
+			return $trimmed; // SHOW / DESCRIBE / EXPLAIN: inherently small.
+		}
+		// Newline first: a trailing line comment (-- / #) would otherwise swallow
+		// the clause and the query would run unbounded.
+		return $trimmed . "\n LIMIT " . (int) $max;
 	}
 
 	/**

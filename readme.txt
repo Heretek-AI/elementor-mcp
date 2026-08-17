@@ -181,8 +181,11 @@ Security release from an external audit. Please update.
 * Security (Pro): the migration connector now requires a one-time pairing code. Previously, while the pairing window was open on a destination site, anyone who could reach it could pair and then push a restore. The destination now shows a code when you arm pairing, you enter it on the source, and it works once. Re-install the connector on any destination before your next migration.
 * Security: AI Chat's "require approval" setting now covers every destructive tool automatically, including newer ones it previously missed, and fails closed if a tool's metadata cannot be read.
 * Security: AI Chat page fetching now connects to the exact address it validated, closing a DNS rebinding gap that could reach internal services.
-* Security: read-only database queries now refuse delay/lock/benchmark functions and are bounded by a server-side timeout and row limit.
-* Security: public OAuth client registration is now size-bounded and rate limited, and dangerous redirect schemes are refused.
+* Security: read-only database queries now refuse delay/lock/benchmark functions and are bounded by a server-side timeout. The row limit is applied by the database: a query with no limit of its own gets one, an oversized limit is refused rather than rewritten, and a limit inside a subquery no longer counts as bounding the result.
+* Security: public OAuth client registration is now size-bounded, and throttled by peer address so a forwarded header cannot mint a fresh allowance, with a hard ceiling on registrations that never complete sign-in. Redirect URIs must be https with a real host, http on loopback, or an app's own private-use scheme.
+* Security (Pro): a connector pairing created before pairing codes existed is now refused and deleted when you update, since reinstalling files does not remove stored settings. Pair the destination again.
+* Security (Pro): failed pairing attempts are counted per caller, so an outsider can no longer spend the attempt budget and lock the real source site out of its pairing window.
+* Security (Pro): AI Chat page fetching cancels rather than falling back to an unpinned connection on servers that cannot pin the checked address.
 
 = 3.12.3 =
 Fixes connected AI apps repeatedly opening a sign-in page that failed with "Invalid client or redirect URI".

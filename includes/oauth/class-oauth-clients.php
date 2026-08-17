@@ -30,12 +30,21 @@ class EMCP_Tools_OAuth_Clients {
 	/** Registrations allowed per IP inside REGISTER_WINDOW. */
 	const REGISTER_MAX    = 20;
 	const REGISTER_WINDOW = 900;
+	/** Ceiling on never-authorized client rows (address-rotation proof). */
+	const MAX_UNAUTHORIZED = 500;
 	/**
 	 * Schemes that must never be accepted as a redirect target. Native apps
 	 * legitimately use private-use schemes (RFC 8252 7.1), so the scheme rule
 	 * stays permissive, but browser-executable, local-file, and opaque schemes
 	 * have no place in a redirect and are refused outright.
 	 */
+	/** Registered IANA schemes that are transports or messaging, not app callbacks. */
+	const RESERVED_SCHEMES = array(
+		'ftp', 'ftps', 'sftp', 'tftp', 'mailto', 'tel', 'sms', 'fax', 'callto',
+		'telnet', 'ssh', 'rsync', 'ldap', 'ldaps', 'news', 'nntp', 'gopher',
+		'ws', 'wss', 'irc', 'ircs', 'smb', 'nfs', 'rtsp', 'rtmp', 'mms',
+		'magnet', 'bitcoin', 'webcal', 'feed', 'imap', 'pop', 'smtp', 'dns',
+	);
 	const DENIED_SCHEMES = array( 'javascript', 'data', 'vbscript', 'file', 'blob', 'about', 'jar', 'view-source', 'chrome', 'chrome-extension', 'resource', 'filesystem' );
 
 	public static function register_routes(): void {
@@ -61,6 +70,14 @@ class EMCP_Tools_OAuth_Clients {
 			return new WP_REST_Response(
 				array( 'error' => 'temporarily_unavailable', 'error_description' => 'Too many registration requests. Try again later.' ),
 				429
+			);
+		}
+		// Address-rotation proof ceiling: the per-caller throttle above can be
+		// sidestepped by changing source address, this cannot.
+		if ( self::unauthorized_at_capacity() ) {
+			return new WP_REST_Response(
+				array( 'error' => 'temporarily_unavailable', 'error_description' => 'Registration is temporarily closed. Try again later.' ),
+				503
 			);
 		}
 		$body = $request->get_json_params();
@@ -106,16 +123,46 @@ class EMCP_Tools_OAuth_Clients {
 	 *
 	 * @return bool True when the caller is over budget.
 	 */
-	public static function register_rate_limited(): bool {
-		$ip = '';
-		foreach ( array( 'HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR' ) as $key ) {
-			if ( ! empty( $_SERVER[ $key ] ) ) {
-				$raw = (string) wp_unslash( $_SERVER[ $key ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
-				$ip  = trim( explode( ',', $raw )[0] );
-				break;
+	public static function client_ip(): string {
+		$remote = isset( $_SERVER['REMOTE_ADDR'] ) ? trim( (string) wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		/**
+		 * Reverse proxies whose forwarded client-IP headers may be believed.
+		 *
+		 * EMPTY BY DEFAULT and deliberately so: this endpoint is unauthenticated,
+		 * so trusting CF-Connecting-IP / X-Forwarded-For without checking the peer
+		 * lets any direct caller mint a fresh throttle bucket per request simply by
+		 * varying a header. Only add the addresses of proxies you actually run.
+		 *
+		 * @param string[] $proxies Trusted proxy IPs (REMOTE_ADDR values).
+		 */
+		$trusted = (array) apply_filters( 'emcp_tools_trusted_proxies', array() );
+		if ( '' !== $remote && in_array( $remote, $trusted, true ) ) {
+			foreach ( array( 'HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR' ) as $key ) {
+				if ( empty( $_SERVER[ $key ] ) ) {
+					continue;
+				}
+				$raw   = (string) wp_unslash( $_SERVER[ $key ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+				$first = trim( explode( ',', $raw )[0] );
+				if ( filter_var( $first, FILTER_VALIDATE_IP ) ) {
+					return $first;
+				}
 			}
 		}
-		$ip = $ip ? $ip : 'unknown';
+		return '' !== $remote ? $remote : 'unknown';
+	}
+
+	/**
+	 * Per-caller registration throttle.
+	 *
+	 * Best-effort only: the transient counter is read-modify-write, so a burst of
+	 * simultaneous requests can slip a few past the cap. It exists to slow
+	 * table growth, and unauthorized_at_capacity() is the hard bound that an
+	 * attacker cannot sidestep by changing address.
+	 *
+	 * @return bool True when the caller is over budget.
+	 */
+	public static function register_rate_limited(): bool {
+		$ip = self::client_ip();
 		/** Allow a deployment to tune or disable the throttle. */
 		$max = (int) apply_filters( 'emcp_tools_oauth_register_max', self::REGISTER_MAX );
 		if ( $max <= 0 ) {
@@ -128,6 +175,27 @@ class EMCP_Tools_OAuth_Clients {
 		}
 		set_transient( $key, $n + 1, self::REGISTER_WINDOW );
 		return false;
+	}
+
+	/**
+	 * Hard ceiling on clients that registered but never completed authorization.
+	 *
+	 * This is the control that actually bounds table growth: unlike a per-IP
+	 * throttle it cannot be bypassed by rotating source address or forwarded
+	 * headers. Authorized clients are never counted, so real installs are
+	 * unaffected, and gc() prunes stale never-authorized rows.
+	 *
+	 * @return bool True when no further anonymous registrations are accepted.
+	 */
+	public static function unauthorized_at_capacity(): bool {
+		$max = (int) apply_filters( 'emcp_tools_oauth_max_unauthorized_clients', self::MAX_UNAUTHORIZED );
+		if ( $max <= 0 ) {
+			return false;
+		}
+		global $wpdb;
+		$table = EMCP_Tools_OAuth_Store::clients_table();
+		$n     = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$table}` WHERE authorized_at = 0" ); // phpcs:ignore WordPress.DB
+		return $n >= $max;
 	}
 
 	/**
@@ -199,8 +267,31 @@ class EMCP_Tools_OAuth_Clients {
 			$host = isset( $p['host'] ) ? strtolower( trim( $p['host'], '[]' ) ) : '';
 			return in_array( $host, array( '127.0.0.1', '::1', 'localhost' ), true );
 		}
-		// https and private-use / custom app schemes (RFC 8252 §7.1) are allowed —
-		// native MCP clients (Claude Desktop, VS Code, Cursor, …) register these.
+		// https must be a real absolute URL. "https:relative" parses as scheme
+		// https with no host and would otherwise be accepted.
+		if ( 'https' === $scheme ) {
+			return ! empty( $p['host'] );
+		}
+		/**
+		 * Strict allowlist of redirect schemes.
+		 *
+		 * Return a non-empty array to accept ONLY those schemes. Left empty by
+		 * default because native MCP clients register single-word private-use
+		 * schemes (vscode://, cursor://, …) that cannot be enumerated ahead of
+		 * time; those are accepted unless reserved. Deployments that know their
+		 * client set should pin it here.
+		 *
+		 * @param string[] $schemes Allowed schemes, lowercase.
+		 */
+		$allowlist = array_map( 'strtolower', (array) apply_filters( 'emcp_tools_oauth_redirect_scheme_allowlist', array() ) );
+		if ( $allowlist ) {
+			return in_array( $scheme, $allowlist, true );
+		}
+		// Registered IANA transport / messaging schemes are never app callbacks.
+		if ( in_array( $scheme, self::RESERVED_SCHEMES, true ) ) {
+			return false;
+		}
+		// Remaining private-use / custom app schemes (RFC 8252 §7.1).
 		return true;
 	}
 }

@@ -19,6 +19,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 class EMCP_Tools_Database_Guard {
 
 	const MAX_ROWS         = 1000;
+	/** Server-side statement timeout for read-only queries, in seconds. */
+	const MAX_QUERY_SECONDS = 10;
 	const BEFORE_IMAGE_CAP = 500;
 
 	/**
@@ -78,6 +80,75 @@ class EMCP_Tools_Database_Guard {
 	}
 
 	/**
+	 * Apply a server-side statement timeout for the next query, and return a
+	 * callable that restores the previous session value.
+	 *
+	 * MySQL 5.7.8+ uses `max_execution_time` (milliseconds, SELECT only);
+	 * MariaDB 10.1.1+ uses `max_statement_time` (seconds, as a double). We try
+	 * the matching one and simply do nothing on a server that has neither, so
+	 * this can never break a query on an unsupported database.
+	 *
+	 * @param object $wpdb WordPress database handle.
+	 * @return callable Restores the prior session setting.
+	 */
+	public static function apply_statement_timeout( $wpdb ): callable {
+		$noop = static function () {};
+		if ( ! is_object( $wpdb ) || ! method_exists( $wpdb, 'query' ) || ! method_exists( $wpdb, 'get_var' ) ) {
+			return $noop;
+		}
+		$seconds = (int) apply_filters( 'emcp_tools_db_query_max_seconds', self::MAX_QUERY_SECONDS );
+		$seconds = max( 1, $seconds );
+		$suppress = method_exists( $wpdb, 'suppress_errors' ) ? $wpdb->suppress_errors( true ) : null;
+		$restore  = $noop;
+
+		// MariaDB first: it also exposes max_statement_time, and asking for the
+		// MySQL-only variable there just returns null.
+		$maria = $wpdb->get_var( "SELECT @@SESSION.max_statement_time" );
+		if ( null !== $maria ) {
+			$prev = (float) $maria;
+			$wpdb->query( $wpdb->prepare( 'SET SESSION max_statement_time = %f', (float) $seconds ) );
+			$restore = static function () use ( $wpdb, $prev ) {
+				$wpdb->query( $wpdb->prepare( 'SET SESSION max_statement_time = %f', $prev ) );
+			};
+		} else {
+			$mysql = $wpdb->get_var( "SELECT @@SESSION.max_execution_time" );
+			if ( null !== $mysql ) {
+				$prev = (int) $mysql;
+				$wpdb->query( $wpdb->prepare( 'SET SESSION max_execution_time = %d', $seconds * 1000 ) );
+				$restore = static function () use ( $wpdb, $prev ) {
+					$wpdb->query( $wpdb->prepare( 'SET SESSION max_execution_time = %d', $prev ) );
+				};
+			}
+		}
+		if ( null !== $suppress && method_exists( $wpdb, 'suppress_errors' ) ) {
+			$wpdb->suppress_errors( $suppress );
+		}
+		return $restore;
+	}
+
+	/**
+	 * Whether a bounding `LIMIT` can safely be appended to this statement.
+	 *
+	 * Only for row-producing SELECT/WITH statements that do not already carry a
+	 * LIMIT (appending a second one is a syntax error). SHOW/DESCRIBE/EXPLAIN
+	 * return small fixed result sets and are left alone. Pure (no DB).
+	 *
+	 * @param string $sql Raw SQL.
+	 * @return bool
+	 */
+	public static function can_append_limit( string $sql ): bool {
+		$norm = trim( self::normalize_sql( $sql ) );
+		if ( '' === $norm ) {
+			return false;
+		}
+		if ( ! preg_match( '/^(select|with)\b/i', $norm ) ) {
+			return false;
+		}
+		// Any existing LIMIT (including inside a subquery) means we leave it alone.
+		return ! preg_match( '/\blimit\b/i', $norm );
+	}
+
+	/**
 	 * Validate that $sql is a single read-only statement. Pure (no DB).
 	 *
 	 * @param string $sql
@@ -117,6 +188,14 @@ class EMCP_Tools_Database_Guard {
 				/* translators: %s: SQL keyword */
 				sprintf( __( 'Only read-only queries are allowed (got %s).', 'emcp-tools' ), $kw )
 			);
+		}
+		// Resource / side-effect functions. A syntactically read-only SELECT can
+		// still pin a connection open (SLEEP), burn CPU (BENCHMARK), or take a
+		// named lock other requests wait on (GET_LOCK), so a row limit alone does
+		// not bound the work. Literals and comments are already normalized away,
+		// so these match real function tokens rather than text inside strings.
+		if ( preg_match( '/\b(sleep|benchmark|get_lock|release_lock|release_all_locks|is_free_lock|is_used_lock|master_pos_wait|source_pos_wait|wait_for_executed_gtid_set|sys_exec|lo_import|lo_export)\s*\(/i', $norm ) ) {
+			return new \WP_Error( 'unsafe_function_blocked', __( 'Delay, lock, and other resource-consuming SQL functions are not allowed.', 'emcp-tools' ) );
 		}
 		// Whole-statement write/DDL denylist (literals/comments already stripped,
 		// so these match only real keyword tokens, not strings or identifiers).

@@ -2,6 +2,17 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.12.4]
+
+Security release from an external audit of the shipped 3.12.3 packages. Please update.
+
+### Security
+- **The migration connector now requires a one-time pairing code (Pro).** While an administrator had the pairing window open on a destination site, the connector accepted a pairing from anyone who could reach it, and the caller supplied their own signing key. Winning that window meant being able to push and restore an archive, which replaces the database and files. The destination now shows a one-time code when you arm pairing, you enter it on the source, and it is checked in constant time, used once, and rate limited. Pairing state is cleared on disarm, unpair, expiry, and success. **Re-install the connector on any destination before your next migration; the new source and connector must both be on this version.**
+- **AI Chat approval now covers every destructive tool.** The "require approval" setting checked a hand-maintained list of tool names that had fallen behind, so newer destructive tools (deleting redirects, blocks, theme templates, custom blocks, and the migrate/sync tools) could run without the approval prompt. Approval is now decided from each tool's own metadata, so it covers every destructive tool automatically, including future ones, and it fails closed if that metadata cannot be read.
+- **AI Chat page fetching is now pinned to the address it validated.** The fetcher checked that a hostname resolved to a public address, but the connection itself resolved the name again, so a hostile DNS server could answer with a public address for the check and an internal one for the connection, reaching things like cloud metadata. Each request, and each redirect hop, is now pinned to the validated address while still verifying the certificate for the original hostname.
+- **Read-only database queries are now bounded in the database.** Delay, lock, and benchmark functions (`SLEEP`, `BENCHMARK`, `GET_LOCK` and similar) are refused, a server-side statement timeout is applied and restored, and the row limit is enforced by the database rather than after fetching the whole result into memory.
+- **Public OAuth client registration is bounded.** Registration stays open as the standard requires, but request size, client name length, and the number and length of redirect URIs are now capped before any database write, repeated registrations from one address are throttled, and browser-executable or local-file redirect schemes (`javascript:`, `data:`, `file:` and similar) are refused.
+
 ## [3.12.3]
 
 ### Fixed

@@ -22,6 +22,22 @@ class EMCP_Tools_OAuth_Clients {
 	/**
 	 * Register the REST route.
 	 */
+	/** Hard bounds on a public (unauthenticated) registration. */
+	const MAX_CLIENT_NAME     = 191;  // matches the stored column width.
+	const MAX_REDIRECT_URIS   = 10;   // native clients register 1-3 in practice.
+	const MAX_REDIRECT_URI_LEN = 512; // per URI.
+	const MAX_METADATA_BYTES  = 4096; // aggregate name + URIs.
+	/** Registrations allowed per IP inside REGISTER_WINDOW. */
+	const REGISTER_MAX    = 20;
+	const REGISTER_WINDOW = 900;
+	/**
+	 * Schemes that must never be accepted as a redirect target. Native apps
+	 * legitimately use private-use schemes (RFC 8252 7.1), so the scheme rule
+	 * stays permissive, but browser-executable, local-file, and opaque schemes
+	 * have no place in a redirect and are refused outright.
+	 */
+	const DENIED_SCHEMES = array( 'javascript', 'data', 'vbscript', 'file', 'blob', 'about', 'jar', 'view-source', 'chrome', 'chrome-extension', 'resource', 'filesystem' );
+
 	public static function register_routes(): void {
 		register_rest_route(
 			EMCP_Tools_OAuth_Server::REST_NAMESPACE,
@@ -41,6 +57,12 @@ class EMCP_Tools_OAuth_Clients {
 	 * @return WP_REST_Response
 	 */
 	public static function handle_register( $request ) {
+		if ( self::register_rate_limited() ) {
+			return new WP_REST_Response(
+				array( 'error' => 'temporarily_unavailable', 'error_description' => 'Too many registration requests. Try again later.' ),
+				429
+			);
+		}
 		$body = $request->get_json_params();
 		if ( ! is_array( $body ) ) {
 			$body = $request->get_params();
@@ -78,6 +100,37 @@ class EMCP_Tools_OAuth_Clients {
 	}
 
 	/**
+	 * Simple per-IP registration throttle. Public DCR must stay open (clients
+	 * self-register before any user exists), so this bounds abuse rather than
+	 * requiring auth. Behind a trusted proxy the forwarded client IP is used.
+	 *
+	 * @return bool True when the caller is over budget.
+	 */
+	public static function register_rate_limited(): bool {
+		$ip = '';
+		foreach ( array( 'HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR' ) as $key ) {
+			if ( ! empty( $_SERVER[ $key ] ) ) {
+				$raw = (string) wp_unslash( $_SERVER[ $key ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+				$ip  = trim( explode( ',', $raw )[0] );
+				break;
+			}
+		}
+		$ip = $ip ? $ip : 'unknown';
+		/** Allow a deployment to tune or disable the throttle. */
+		$max = (int) apply_filters( 'emcp_tools_oauth_register_max', self::REGISTER_MAX );
+		if ( $max <= 0 ) {
+			return false;
+		}
+		$key = 'emcp_dcr_' . md5( $ip );
+		$n   = (int) get_transient( $key );
+		if ( $n >= $max ) {
+			return true;
+		}
+		set_transient( $key, $n + 1, self::REGISTER_WINDOW );
+		return false;
+	}
+
+	/**
 	 * Validate + normalize a registration body.
 	 *
 	 * @param array $body Request body.
@@ -88,10 +141,16 @@ class EMCP_Tools_OAuth_Clients {
 		if ( ! is_array( $uris ) || array() === $uris ) {
 			return new WP_Error( 'invalid_redirect_uri', 'redirect_uris is required and must be a non-empty array.' );
 		}
+		// Registration is public by design (RFC 7591), so bound what one caller can
+		// persist BEFORE any database work: unbounded names/URI arrays let an
+		// unauthenticated caller grow the table faster than cleanup reclaims it.
+		if ( count( $uris ) > self::MAX_REDIRECT_URIS ) {
+			return new WP_Error( 'invalid_redirect_uri', 'Too many redirect_uris.' );
+		}
 
 		$clean = array();
 		foreach ( $uris as $uri ) {
-			if ( ! is_string( $uri ) || ! self::is_allowed_redirect_uri( $uri ) ) {
+			if ( ! is_string( $uri ) || strlen( $uri ) > self::MAX_REDIRECT_URI_LEN || ! self::is_allowed_redirect_uri( $uri ) ) {
 				return new WP_Error( 'invalid_redirect_uri', 'Each redirect_uri must be an absolute https URL (or an http loopback address).' );
 			}
 			$clean[] = $uri;
@@ -100,10 +159,17 @@ class EMCP_Tools_OAuth_Clients {
 		$name = ( isset( $body['client_name'] ) && is_string( $body['client_name'] ) && '' !== trim( $body['client_name'] ) )
 			? trim( $body['client_name'] )
 			: 'MCP Client';
+		if ( strlen( $name ) > self::MAX_CLIENT_NAME ) {
+			return new WP_Error( 'invalid_client_metadata', 'client_name is too long.' );
+		}
+		$clean = array_values( array_unique( $clean ) );
+		if ( strlen( $name ) + strlen( (string) wp_json_encode( $clean ) ) > self::MAX_METADATA_BYTES ) {
+			return new WP_Error( 'invalid_client_metadata', 'Client metadata is too large.' );
+		}
 
 		return array(
 			'client_name'   => $name,
-			'redirect_uris' => array_values( array_unique( $clean ) ),
+			'redirect_uris' => $clean,
 		);
 	}
 
@@ -122,6 +188,10 @@ class EMCP_Tools_OAuth_Clients {
 		$scheme = strtolower( (string) $p['scheme'] );
 		// Must be a syntactically valid URI scheme (RFC 3986).
 		if ( ! preg_match( '/^[a-z][a-z0-9+.\-]*$/', $scheme ) ) {
+			return false;
+		}
+		// Never accept a browser-executable / local-file / opaque scheme.
+		if ( in_array( $scheme, self::DENIED_SCHEMES, true ) ) {
 			return false;
 		}
 		// Plaintext http is allowed only for loopback (RFC 8252 §7.3).

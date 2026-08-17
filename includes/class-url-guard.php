@@ -155,10 +155,11 @@ class EMCP_Tools_Url_Guard {
 	/**
 	 * Strictly validate a URL before its contents are fetched for a model.
 	 *
-	 * KNOWN LIMIT: WordPress's HTTP API connects by hostname, so a TOCTOU
-	 * window remains between this check and the TCP connect (DNS rebinding).
-	 * Re-validating every redirect hop and using a short timeout narrow it;
-	 * closing it entirely needs CURLOPT_RESOLVE pinning.
+	 * Callers that actually fetch the URL should use validate_pinned() instead,
+	 * which returns the validated address so the connection can be pinned to it
+	 * (CURLOPT_RESOLVE). Validating by name alone leaves a TOCTOU window: the
+	 * name can resolve to a public address here and an internal one at connect
+	 * time (DNS rebinding).
 	 *
 	 * @since 3.2.0
 	 * @param string        $url      Absolute http(s) URL.
@@ -211,6 +212,50 @@ class EMCP_Tools_Url_Guard {
 		}
 
 		return $url;
+	}
+
+	/**
+	 * Validate a URL AND return the public address the request must be pinned to.
+	 *
+	 * Closing the rebinding window needs the connection to go to an address we
+	 * already validated, not to whatever DNS answers at connect time. Every
+	 * returned address must be public (a mixed public/private answer set is
+	 * rejected outright), and the caller pins the chosen one while keeping the
+	 * original hostname for the Host header and TLS verification.
+	 *
+	 * @since 3.12.4
+	 * @param string        $url      Absolute http(s) URL.
+	 * @param callable|null $resolver Optional `fn(string $host): string[]`.
+	 * @return array{url:string,host:string,ip:string,port:int}|\WP_Error
+	 */
+	public static function validate_pinned( string $url, ?callable $resolver = null ) {
+		$checked = self::validate( $url, $resolver );
+		if ( is_wp_error( $checked ) ) {
+			return $checked;
+		}
+		$parts  = wp_parse_url( $checked );
+		$host   = self::normalize_host( (string) ( $parts['host'] ?? '' ) );
+		$scheme = strtolower( (string) ( $parts['scheme'] ?? 'https' ) );
+		$port   = isset( $parts['port'] ) ? (int) $parts['port'] : ( 'http' === $scheme ? 80 : 443 );
+
+		// An IP literal is already the address we validated.
+		if ( false !== filter_var( $host, FILTER_VALIDATE_IP ) ) {
+			return array( 'url' => $checked, 'host' => $host, 'ip' => $host, 'port' => $port );
+		}
+
+		$resolver = $resolver ?? array( __CLASS__, 'resolve_host' );
+		$ips      = (array) call_user_func( $resolver, $host );
+		if ( empty( $ips ) ) {
+			return new \WP_Error( 'blocked_host', __( 'That host could not be resolved.', 'emcp-tools' ) );
+		}
+		// Re-check here too: this is the answer set we are about to pin to, and it
+		// may differ from the one validate() saw a moment ago.
+		foreach ( $ips as $ip ) {
+			if ( self::ip_is_blocked( (string) $ip ) ) {
+				return new \WP_Error( 'blocked_host', __( 'That host resolves to a private, loopback, or link-local address and cannot be fetched.', 'emcp-tools' ) );
+			}
+		}
+		return array( 'url' => $checked, 'host' => $host, 'ip' => (string) reset( $ips ), 'port' => $port );
 	}
 
 	/**

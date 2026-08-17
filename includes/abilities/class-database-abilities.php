@@ -112,7 +112,23 @@ class EMCP_Tools_Database_Abilities {
 		global $wpdb;
 		$limit = isset( $input['limit'] ) ? (int) $input['limit'] : EMCP_Tools_Database_Guard::MAX_ROWS;
 		$limit = min( EMCP_Tools_Database_Guard::MAX_ROWS, max( 1, $limit ) );
-		$rows  = $wpdb->get_results( $sql, ARRAY_A ); // phpcs:ignore WordPress.DB -- validated read-only; admin-authored.
+
+		// Bound the work in the DATABASE, not just the response. Previously the
+		// full result set was fetched into PHP and sliced afterwards, so a wide
+		// query could exhaust memory and run unbounded before the limit applied.
+		$bounded = EMCP_Tools_Database_Guard::can_append_limit( $sql )
+			? rtrim( trim( $sql ), ';' ) . ' LIMIT ' . ( $limit + 1 ) // +1 detects truncation.
+			: $sql;
+
+		// Server-side statement timeout, restored in the finally block below.
+		$restore_timeout = EMCP_Tools_Database_Guard::apply_statement_timeout( $wpdb );
+		try {
+			$rows = $wpdb->get_results( $bounded, ARRAY_A ); // phpcs:ignore WordPress.DB -- validated read-only; admin-authored.
+		} finally {
+			if ( is_callable( $restore_timeout ) ) {
+				$restore_timeout();
+			}
+		}
 		if ( null === $rows ) {
 			return new \WP_Error( 'query_failed', $wpdb->last_error ? $wpdb->last_error : __( 'Query failed.', 'emcp-tools' ) );
 		}

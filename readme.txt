@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.12.3
+Stable tag: 3.12.4
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,14 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.12.4 =
+Security release from an external audit. Please update.
+* Security (Pro): the migration connector now requires a one-time pairing code. Previously, while the pairing window was open on a destination site, anyone who could reach it could pair and then push a restore. The destination now shows a code when you arm pairing, you enter it on the source, and it works once. Re-install the connector on any destination before your next migration.
+* Security: AI Chat's "require approval" setting now covers every destructive tool automatically, including newer ones it previously missed, and fails closed if a tool's metadata cannot be read.
+* Security: AI Chat page fetching now connects to the exact address it validated, closing a DNS rebinding gap that could reach internal services.
+* Security: read-only database queries now refuse delay/lock/benchmark functions and are bounded by a server-side timeout and row limit.
+* Security: public OAuth client registration is now size-bounded and rate limited, and dangerous redirect schemes are refused.
 
 = 3.12.3 =
 Fixes connected AI apps repeatedly opening a sign-in page that failed with "Invalid client or redirect URI".

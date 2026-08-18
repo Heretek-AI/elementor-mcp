@@ -579,6 +579,26 @@ class EMCP_Tools_Themer_Dynamic {
 			case 'site-logo':
 				$out = self::image_value( (int) get_theme_mod( 'custom_logo' ) );
 				break;
+			case 'post-excerpt':
+				$id  = self::queried_id();
+				$out = $id ? (string) get_the_excerpt( $id ) : '';
+				break;
+			case 'post-url':
+				$id  = self::queried_id();
+				$out = $id ? (string) get_permalink( $id ) : '';
+				break;
+			case 'post-date':
+				$id  = self::queried_id();
+				$out = $id ? (string) get_post_time( 'c', false, $id ) : '';
+				break;
+			case 'post-id':
+				$id  = self::queried_id();
+				$out = $id ? (string) $id : '';
+				break;
+			case 'featured-image':
+				$id  = self::queried_id();
+				$out = self::image_value( $id ? (int) get_post_thumbnail_id( $id ) : 0 );
+				break;
 			default:
 				// html sources keep their markup as the value. Anything else with
 				// no value implementation resolves empty rather than guessing.

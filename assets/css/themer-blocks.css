@@ -268,3 +268,52 @@
 		aspect-ratio: 16 / 9;
 	}
 }
+
+/* --------------------------------------------------------------------------
+ * Themer widget library (3.13.0)
+ *
+ * Layout and spacing only. Colour and typography stay with the theme and with
+ * Elementor's own controls, so a widget never fights the site design.
+ * -------------------------------------------------------------------------- */
+
+.emcp-dyn-author-box__inner { display: flex; gap: 1rem; align-items: flex-start; }
+.emcp-dyn-author-box__inner.is-stacked { flex-direction: column; align-items: center; text-align: center; }
+.emcp-dyn-author-box__avatar img { display: block; border-radius: 50%; max-width: 100%; height: auto; }
+.emcp-dyn-author-box__body { flex: 1 1 auto; min-width: 0; }
+.emcp-dyn-author-box__name { margin: 0 0 .25rem; }
+.emcp-dyn-author-box__links { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: .5rem; }
+
+.emcp-dyn-post-navigation { display: flex; gap: 1rem; justify-content: space-between; flex-wrap: wrap; }
+.emcp-dyn-post-navigation__prev,
+.emcp-dyn-post-navigation__next { display: flex; align-items: baseline; gap: .4rem; min-width: 0; }
+.emcp-dyn-post-navigation__next { margin-inline-start: auto; text-align: end; }
+.emcp-dyn-post-navigation__label { opacity: .7; font-size: .875em; }
+
+.emcp-dyn-search-form__form { display: flex; gap: .5rem; align-items: stretch; }
+.emcp-dyn-search-form__form.is-full { width: 100%; }
+.emcp-dyn-search-form__input { flex: 1 1 auto; min-width: 0; }
+.emcp-dyn-search-form__submit { flex: 0 0 auto; cursor: pointer; }
+
+.emcp-dyn-sitemap__list { list-style: none; margin: 0 0 1rem; padding: 0; }
+.emcp-dyn-sitemap__list li { margin: 0 0 .25rem; }
+
+.emcp-dyn-post-info__list { display: flex; gap: .5rem; flex-wrap: wrap; align-items: baseline; }
+.emcp-dyn-post-info__list.is-stacked { flex-direction: column; gap: .25rem; }
+.emcp-dyn-post-info__sep { opacity: .5; }
+
+.emcp-dyn-archive-posts__wrap.is-grid { display: grid; gap: 1.5rem; grid-template-columns: repeat(1, minmax(0, 1fr)); }
+.emcp-dyn-archive-posts__wrap.is-list { display: flex; flex-direction: column; gap: 1.5rem; }
+.emcp-dyn-archive-posts__card { min-width: 0; }
+.emcp-dyn-archive-posts__image img { display: block; width: 100%; height: auto; }
+.emcp-dyn-archive-posts__title { margin: .5rem 0 .25rem; }
+.emcp-dyn-archive-posts__pagination { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: 1.5rem; }
+
+@media (min-width: 768px) {
+	.emcp-dyn-archive-posts__wrap.is-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.emcp-dyn-archive-posts__wrap.is-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+	.emcp-dyn-archive-posts__wrap.is-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+	.emcp-dyn-archive-posts__wrap.is-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+	.emcp-dyn-archive-posts__wrap.is-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+
+.emcp-dyn-featured-image img { display: block; max-width: 100%; height: auto; }

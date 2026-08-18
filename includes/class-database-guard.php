@@ -32,7 +32,7 @@ class EMCP_Tools_Database_Guard {
 	 * @param string $sql
 	 * @return string
 	 */
-	public static function normalize_sql( string $sql, bool $backslash_escapes = true ): string {
+	public static function normalize_sql( string $sql, bool $backslash_escapes = true, bool $keep_identifiers = false ): string {
 		$out = '';
 		$len = strlen( $sql );
 		$i   = 0;
@@ -75,9 +75,28 @@ class EMCP_Tools_Database_Guard {
 			}
 			if ( '`' === $c ) {
 				$i++;
-				while ( $i < $len && '`' !== $sql[ $i ] ) { $i++; }
-				$i++;
-				$out .= '``';
+				$ident = '';
+				while ( $i < $len ) {
+					if ( '`' === $sql[ $i ] ) {
+						// A doubled backtick is a literal backtick in the name.
+						if ( $i + 1 < $len && '`' === $sql[ $i + 1 ] ) {
+							$ident .= '`';
+							$i     += 2;
+							continue;
+						}
+						$i++;
+						break;
+					}
+					$ident .= $sql[ $i ];
+					$i++;
+				}
+				// Keeping the name lets the protected-table scan see `wp_users`
+				// without the caller stripping backticks first. Doing that before
+				// lexing fed identifier contents back through the lexer, so an
+				// alias like `x#` opened a comment and hid everything after it.
+				// Blanking it keeps identifiers out of the keyword denylist, so a
+				// column named `delete` is not mistaken for a write.
+				$out .= $keep_identifiers ? ' ' . $ident . ' ' : '``';
 				continue;
 			}
 			$out .= $c;
@@ -119,9 +138,9 @@ class EMCP_Tools_Database_Guard {
 	 * @param string $sql Raw SQL.
 	 * @return string[] One entry when both readings agree, two when they differ.
 	 */
-	public static function normalize_variants( string $sql ): array {
-		$a = self::normalize_sql( $sql, true );
-		$b = self::normalize_sql( $sql, false );
+	public static function normalize_variants( string $sql, bool $keep_identifiers = false ): array {
+		$a = self::normalize_sql( $sql, true, $keep_identifiers );
+		$b = self::normalize_sql( $sql, false, $keep_identifiers );
 		return ( $a === $b ) ? array( $a ) : array( $a, $b );
 	}
 
@@ -413,12 +432,13 @@ class EMCP_Tools_Database_Guard {
 	 * @return bool
 	 */
 	public static function query_touches_tables( string $sql, array $tables ): bool {
-		// Remove backticks first so quoted identifiers survive normalization
-		// (normalize_sql empties backtick-quoted spans), then strip comments +
-		// string literals via the shared normalizer.
+		// Ask the lexer to KEEP identifier names rather than stripping backticks
+		// beforehand: pre-stripping fed the contents of a quoted identifier back
+		// through the lexer, so an alias containing #, a quote, or "-- " opened a
+		// comment or string and hid the protected table that followed it.
 		// A reference that appears under ANY plausible reading counts as a touch.
 		$scans = array();
-		foreach ( self::normalize_variants( str_replace( '`', ' ', $sql ) ) as $variant ) {
+		foreach ( self::normalize_variants( $sql, true ) as $variant ) {
 			$scans[] = strtolower( $variant );
 		}
 		foreach ( $tables as $t ) {

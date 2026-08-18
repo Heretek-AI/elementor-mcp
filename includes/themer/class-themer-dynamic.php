@@ -766,6 +766,8 @@ class EMCP_Tools_Themer_Dynamic {
 				return self::post_content();
 			case 'archive-loop':
 				return self::archive_loop( $args );
+			case 'author-box':
+				return EMCP_Tools_Themer_Element_Author_Box::render( $args );
 		}
 		return '';
 	}

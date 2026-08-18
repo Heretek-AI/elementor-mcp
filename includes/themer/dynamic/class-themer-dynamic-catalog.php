@@ -44,6 +44,7 @@ class EMCP_Tools_Themer_Dynamic_Catalog {
 			'post-meta'     => array( 'label' => __( 'Post Meta', 'emcp-tools' ), 'icon' => 'list-view', 'type' => 'html', 'args' => array( 'show_date', 'show_author' ), 'element' => true ),
 			'breadcrumbs'   => array( 'label' => __( 'Breadcrumbs', 'emcp-tools' ), 'icon' => 'admin-links', 'type' => 'html', 'args' => array( 'separator', 'home_label' ), 'element' => true ),
 			'nav-menu'      => array( 'label' => __( 'Menu', 'emcp-tools' ), 'icon' => 'menu', 'type' => 'html', 'args' => array( 'menu' ), 'element' => true ),
+			'author-box'    => array( 'label' => __( 'Author Box', 'emcp-tools' ), 'icon' => 'admin-users', 'type' => 'html', 'args' => array( 'show_avatar', 'avatar_size', 'show_name', 'name_tag', 'show_bio', 'show_website', 'show_posts_link', 'layout', 'alignment' ), 'element' => true ),
 			'archive-loop'  => array( 'label' => __( 'Archive Posts', 'emcp-tools' ), 'icon' => 'grid-view', 'type' => 'html', 'args' => array( 'columns', 'show_excerpt' ), 'element' => true ),
 		);
 

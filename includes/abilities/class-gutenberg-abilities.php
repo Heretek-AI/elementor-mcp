@@ -360,6 +360,7 @@ class EMCP_Tools_Gutenberg_Abilities {
 					'properties' => array(
 						'post_id'  => array( 'type' => 'integer', 'description' => __( 'Post ID.', 'emcp-tools' ) ),
 						'markup'   => array( 'type' => 'string', 'description' => __( 'Gutenberg block markup, e.g. <!-- wp:heading --><h2>Hi</h2><!-- /wp:heading -->.', 'emcp-tools' ) ),
+						'bindings' => array( 'type' => 'object', 'description' => __( 'Bind attributes to live data: { attribute: { source, args } }. Call list-dynamic-sources for the keys. Applies to the first block in markup.', 'emcp-tools' ) ),
 						'position' => $this->position_schema(),
 					),
 					'required'   => array( 'post_id', 'markup' ),
@@ -374,6 +375,54 @@ class EMCP_Tools_Gutenberg_Abilities {
 	 * @param array $input
 	 * @return array
 	 */
+	/**
+	 * Merge a friendly binding map into block attributes.
+	 *
+	 * @since 3.13.0
+	 * @param array $attributes Block attributes.
+	 * @param array $bindings   { attribute: { source, args } }.
+	 * @return array|\WP_Error
+	 */
+	public static function apply_bindings( array $attributes, array $bindings ) {
+		if ( ! $bindings ) {
+			return $attributes;
+		}
+		if ( ! class_exists( 'EMCP_Tools_Themer_Dynamic_Compiler' ) ) {
+			return new \WP_Error( 'dynamic_unavailable', __( 'Dynamic sources are not available on this site.', 'emcp-tools' ) );
+		}
+		$compiled = EMCP_Tools_Themer_Dynamic_Compiler::for_blocks( $bindings );
+		if ( is_wp_error( $compiled ) ) {
+			return $compiled;
+		}
+		if ( ! isset( $attributes['metadata'] ) || ! is_array( $attributes['metadata'] ) ) {
+			$attributes['metadata'] = array();
+		}
+		$attributes['metadata']['bindings'] = $compiled;
+		return $attributes;
+	}
+
+	/**
+	 * Apply a binding map to the first parsed block, in place.
+	 *
+	 * The block tools take raw markup, so bindings are merged into the parsed
+	 * attributes before the tree is serialized again.
+	 *
+	 * @param array $blocks   Parsed blocks, by reference.
+	 * @param array $bindings { attribute: { source, args } }.
+	 * @return array|null Error payload, or null on success.
+	 */
+	private function bind_first_block( array &$blocks, array $bindings ): ?array {
+		if ( ! $bindings || ! $blocks ) {
+			return null;
+		}
+		$attrs = self::apply_bindings( (array) ( $blocks[0]['attrs'] ?? array() ), $bindings );
+		if ( is_wp_error( $attrs ) ) {
+			return array( 'error' => $attrs->get_error_message() );
+		}
+		$blocks[0]['attrs'] = $attrs;
+		return null;
+	}
+
 	public function execute_add_block( $input ): array {
 		list( $post, $err ) = $this->load_for_write( $input );
 		if ( $err ) {
@@ -383,7 +432,10 @@ class EMCP_Tools_Gutenberg_Abilities {
 		if ( ! $new ) {
 			return array( 'error' => __( 'markup did not parse to any block.', 'emcp-tools' ) );
 		}
-		$position = $this->position_from_input( $input );
+		$bind_err = $this->bind_first_block( $new, is_array( $input['bindings'] ?? null ) ? $input['bindings'] : array() );
+		if ( null !== $bind_err ) {
+			return $bind_err;
+		}		$position = $this->position_from_input( $input );
 		$tree     = EMCP_Tools_Block_Tree::from_markup( (string) $post->post_content );
 		if ( in_array( $position['mode'], array( 'before', 'after', 'inside' ), true ) && null === EMCP_Tools_Block_Tree::at( $tree, $position['path'] ) ) {
 			return array( 'error' => __( 'position.path does not resolve to a block. Call get-post-blocks first.', 'emcp-tools' ) );
@@ -411,6 +463,7 @@ class EMCP_Tools_Gutenberg_Abilities {
 						'post_id' => array( 'type' => 'integer', 'description' => __( 'Post ID.', 'emcp-tools' ) ),
 						'path'    => array( 'type' => 'array', 'items' => array( 'type' => 'integer' ), 'description' => __( 'Index path of the block to replace, e.g. [2,1].', 'emcp-tools' ) ),
 						'markup'  => array( 'type' => 'string', 'description' => __( 'Replacement block markup.', 'emcp-tools' ) ),
+						'bindings' => array( 'type' => 'object', 'description' => __( 'Bind attributes to live data: { attribute: { source, args } }. Call list-dynamic-sources for the keys. Applies to the first block in markup.', 'emcp-tools' ) ),
 					),
 					'required'   => array( 'post_id', 'path', 'markup' ),
 				),
@@ -438,7 +491,10 @@ class EMCP_Tools_Gutenberg_Abilities {
 		if ( ! $new ) {
 			return array( 'error' => __( 'markup did not parse to any block.', 'emcp-tools' ) );
 		}
-		$tree = EMCP_Tools_Block_Tree::replace( $tree, $path, $new );
+		$bind_err = $this->bind_first_block( $new, is_array( $input['bindings'] ?? null ) ? $input['bindings'] : array() );
+		if ( null !== $bind_err ) {
+			return $bind_err;
+		}		$tree = EMCP_Tools_Block_Tree::replace( $tree, $path, $new );
 		$this->save_tree( $post, $tree );
 		return array( 'post_id' => (int) $post->ID, 'path' => $path );
 	}

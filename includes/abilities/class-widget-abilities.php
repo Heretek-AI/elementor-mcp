@@ -138,6 +138,7 @@ class EMCP_Tools_Widget_Abilities {
 				'position'    => array( 'type' => 'integer', 'description' => __( 'Insert position. -1 = append.', 'emcp-tools' ) ),
 				'widget_type' => array( 'type' => 'string', 'description' => __( 'Widget type from list-widgets. Use get-widget-schema for its curated params.', 'emcp-tools' ) ),
 				'settings'    => array( 'type' => 'object', 'description' => __( 'Widget settings (see get-widget-schema). Any valid Elementor control passes through.', 'emcp-tools' ) ),
+				'dynamic'     => array( 'type' => 'object', 'description' => __( 'Bind settings to live data: { field: { source, args } }. Call list-dynamic-sources for the source keys. The matching value in settings is kept as the fallback.', 'emcp-tools' ) ),
 			),
 			'required'   => array( 'post_id', 'parent_id', 'widget_type' ),
 		);
@@ -237,6 +238,32 @@ class EMCP_Tools_Widget_Abilities {
 	 * @param string $expected_tier 'free' = free only; 'pro' = pro OR woo.
 	 * @return array|\WP_Error
 	 */
+	/**
+	 * Merge a friendly dynamic map into Elementor widget settings.
+	 *
+	 * The static value stays put and becomes the fallback Elementor shows when
+	 * the source resolves empty.
+	 *
+	 * @since 3.13.0
+	 * @param array $settings Widget settings.
+	 * @param array $dynamic  { field: { source, args } }.
+	 * @return array|\WP_Error
+	 */
+	public static function apply_dynamic( array $settings, array $dynamic ) {
+		if ( ! $dynamic ) {
+			return $settings;
+		}
+		if ( ! class_exists( 'EMCP_Tools_Themer_Dynamic_Compiler' ) ) {
+			return new \WP_Error( 'dynamic_unavailable', __( 'Dynamic sources are not available on this site.', 'emcp-tools' ) );
+		}
+		$compiled = EMCP_Tools_Themer_Dynamic_Compiler::for_elementor( $dynamic );
+		if ( is_wp_error( $compiled ) ) {
+			return $compiled;
+		}
+		$settings['__dynamic__'] = $compiled;
+		return $settings;
+	}
+
 	private function insert_catalog_widget( $input, string $expected_tier ) {
 		$widget_type = sanitize_text_field( $input['widget_type'] ?? '' );
 		if ( '' === $widget_type ) {
@@ -258,6 +285,11 @@ class EMCP_Tools_Widget_Abilities {
 		$settings = is_array( $input['settings'] ?? null ) ? $input['settings'] : array();
 		if ( null !== $entry && ! empty( $entry['defaults'] ) ) {
 			$settings = array_merge( $entry['defaults'], $settings );
+		}
+
+		$settings = self::apply_dynamic( $settings, is_array( $input['dynamic'] ?? null ) ? $input['dynamic'] : array() );
+		if ( is_wp_error( $settings ) ) {
+			return $settings;
 		}
 
 		return $this->execute_add_widget(

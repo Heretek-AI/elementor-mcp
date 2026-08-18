@@ -71,7 +71,7 @@ class EMCP_Tools_Themer_Dynamic_Compiler {
 				'dynamic_type_mismatch',
 				sprintf(
 					/* translators: 1: source key, 2: value type, 3: field name. */
-					__( 'The source "%1$s" produces a %2$s value, which cannot fill "%3$s".', 'emcp-tools' ),
+					__( 'The source "%1$s" produces a value of type %2$s, which cannot fill "%3$s".', 'emcp-tools' ),
 					$key,
 					$def['type'],
 					$field

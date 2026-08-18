@@ -117,3 +117,8 @@ docs/
 .freemius.env
 .freemius.env.local
 freemius.env
+
+# Internal security audit working documents. These contain reproducing
+# exploits for released versions, so they must never reach the public repo.
+SECURITY-REMEDIATION-*.md
+PRODUCTION-SECURITY-HANDOVER-*.md

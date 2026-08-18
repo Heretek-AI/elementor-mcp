@@ -24,6 +24,7 @@ includes/memory/class-memory-summarizer.php
 includes/abilities/class-memory-abilities.php
 includes/modules/class-memory-module.php
 includes/admin/views/page-memory.php
+includes/themer/dynamic/class-themer-dynamic-pro.php
 includes/themer/class-themer-pro.php
 includes/themer/class-themer-pro-matchers.php
 includes/themer/class-themer-pro-conditions.php

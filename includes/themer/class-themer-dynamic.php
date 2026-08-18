@@ -42,6 +42,20 @@ class EMCP_Tools_Themer_Dynamic {
 	 *
 	 * @return int
 	 */
+	/**
+	 * The post every dynamic source resolves against.
+	 *
+	 * Public so Pro sources use the SAME resolution as the free ones, including
+	 * the editor-preview fallback. Duplicating this logic is how two code paths
+	 * start disagreeing.
+	 *
+	 * @since 3.13.0
+	 * @return int
+	 */
+	public static function current_post_id(): int {
+		return self::queried_id();
+	}
+
 	private static function queried_id(): int {
 		$obj = get_queried_object();
 		if ( $obj instanceof WP_Post ) {
@@ -380,32 +394,6 @@ class EMCP_Tools_Themer_Dynamic {
 	}
 
 	/**
-	 * A custom field of the queried post (ACF-aware). Fills the "no dynamic-field
-	 * tags" gap for Gutenberg/Elementor dynamic templates.
-	 *
-	 * @param array $args { key (required), before, after, fallback }.
-	 * @return string
-	 */
-	public static function custom_field( array $args = array() ): string {
-		$id  = self::queried_id();
-		$key = isset( $args['key'] ) ? (string) $args['key'] : '';
-		if ( $id <= 0 || '' === $key ) {
-			return '';
-		}
-		$value = function_exists( 'get_field' ) ? get_field( $key, $id ) : get_post_meta( $id, $key, true );
-		if ( is_array( $value ) ) {
-			$value = implode( ', ', array_map( 'strval', $value ) );
-		}
-		$value = trim( (string) $value );
-		if ( '' === $value ) {
-			return isset( $args['fallback'] ) ? '<span class="emcp-dyn emcp-dyn-field">' . esc_html( (string) $args['fallback'] ) . '</span>' : '';
-		}
-		$before = isset( $args['before'] ) ? esc_html( (string) $args['before'] ) : '';
-		$after  = isset( $args['after'] ) ? esc_html( (string) $args['after'] ) : '';
-		return '<span class="emcp-dyn emcp-dyn-field">' . $before . esc_html( $value ) . $after . '</span>';
-	}
-
-	/**
 	 * The featured image of the queried post.
 	 *
 	 * @param array $args { size (default 'large') }.
@@ -635,6 +623,19 @@ class EMCP_Tools_Themer_Dynamic {
 				$out = self::image_value( $id ? (int) get_post_thumbnail_id( $id ) : 0 );
 				break;
 			default:
+				/**
+				 * Resolve a source the free provider does not implement.
+				 *
+				 * @since 3.13.0
+				 * @param mixed  $value Null when unresolved.
+				 * @param string $key   Source key.
+				 * @param array  $args  Source args.
+				 */
+				$filtered = apply_filters( 'emcp_themer_dynamic_value', null, $key, $args );
+				if ( null !== $filtered ) {
+					$out = $filtered;
+					break;
+				}
 				// html sources keep their markup as the value. Anything else with
 				// no value implementation resolves empty rather than guessing.
 				$out = ( 'html' === $type ) ? self::render( $key, $args ) : '';

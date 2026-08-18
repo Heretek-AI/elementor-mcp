@@ -544,18 +544,12 @@ class EMCP_Tools_Themer_Dynamic {
 	 * @return array<string,array{label:string,icon:string}>
 	 */
 	public static function catalog(): array {
-		return array(
-			'post-title'    => array( 'label' => __( 'Post/Page Title', 'emcp-tools' ), 'icon' => 'heading' ),
-			'archive-title' => array( 'label' => __( 'Archive Title', 'emcp-tools' ), 'icon' => 'archive' ),
-			'breadcrumbs'   => array( 'label' => __( 'Breadcrumbs', 'emcp-tools' ), 'icon' => 'admin-links' ),
-			'post-meta'     => array( 'label' => __( 'Post Meta', 'emcp-tools' ), 'icon' => 'list-view' ),
-			'site-logo'     => array( 'label' => __( 'Site Logo', 'emcp-tools' ), 'icon' => 'format-image' ),
-			'site-title'    => array( 'label' => __( 'Site Title', 'emcp-tools' ), 'icon' => 'admin-home' ),
-			'nav-menu'      => array( 'label' => __( 'Menu', 'emcp-tools' ), 'icon' => 'menu' ),
-			'description'   => array( 'label' => __( 'Description', 'emcp-tools' ), 'icon' => 'text' ),
-			'post-content'  => array( 'label' => __( 'Post Content', 'emcp-tools' ), 'icon' => 'media-document' ),
-			'archive-loop'  => array( 'label' => __( 'Archive Posts', 'emcp-tools' ), 'icon' => 'grid-view' ),
-		);
+		$out = array();
+		foreach ( EMCP_Tools_Themer_Dynamic_Catalog::all() as $key => $def ) {
+			// Existing callers (blocks, widgets) read only label and icon.
+			$out[ $key ] = array( 'label' => $def['label'], 'icon' => $def['icon'] );
+		}
+		return $out;
 	}
 
 	/**

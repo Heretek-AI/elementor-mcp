@@ -29,6 +29,17 @@
  * NO_BACKSLASH_ESCAPES. Both are parameters here rather than assumptions, and
  * EMCP_Tools_SQL_Policy runs every combination. See MODE_FLAGS there.
  *
+ * ONE NUANCE, because "always a hard error" would be too strong a claim:
+ * an error from THIS class always aborts THIS reading. What the policy above
+ * does with that depends on the error. An unterminated quote is mode-dependent,
+ * so a statement whose quoting only balances under one mode is a syntax error
+ * under the other, and that unbalanced reading is not a statement the server
+ * could have executed; the policy skips it, provided some other reading parses
+ * and every reading that parses is safe. Every other failure here (unknown
+ * byte, bad encoding, executable comment, unterminated comment) is
+ * mode-independent and refuses the statement outright. See
+ * EMCP_Tools_SQL_Policy::MODE_DEPENDENT_ERRORS.
+ *
  * @package EMCP_Tools
  * @since   3.13.0
  */

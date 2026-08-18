@@ -103,6 +103,15 @@ class EMCP_Tools_Database_Abilities {
 		// Read-path secret guard: the user tables hold password hashes, session
 		// tokens, and activation keys. Refuse raw reads that touch them and point
 		// the agent at the dedicated, redacting user tools.
+		// Cross-schema secrets. The protected-table list covers the WordPress
+		// user tables only, so mysql.user (server account password hashes) and
+		// the metadata schemas would otherwise be readable straight through.
+		if ( EMCP_Tools_Database_Guard::references_system_schema( $sql ) ) {
+			return new \WP_Error(
+				'protected_read',
+				__( 'Reading the server system schemas (mysql, information_schema, performance_schema, sys) is not allowed.', 'emcp-tools' )
+			);
+		}
 		if ( EMCP_Tools_Database_Guard::query_touches_protected( $sql ) ) {
 			return new \WP_Error(
 				'protected_read',

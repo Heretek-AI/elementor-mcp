@@ -32,7 +32,7 @@ class EMCP_Tools_Database_Guard {
 	 * @param string $sql
 	 * @return string
 	 */
-	public static function normalize_sql( string $sql, bool $backslash_escapes = true, bool $keep_identifiers = false ): string {
+	public static function normalize_sql( string $sql, bool $backslash_escapes = true, bool $keep_identifiers = false, bool $ansi_quotes = false ): string {
 		$out = '';
 		$len = strlen( $sql );
 		$i   = 0;
@@ -55,7 +55,10 @@ class EMCP_Tools_Database_Guard {
 				$out .= ' ';
 				continue;
 			}
-			if ( "'" === $c || '"' === $c ) {
+			// Under ANSI_QUOTES a double quote delimits an IDENTIFIER, not a string,
+			// so it must fall through to the identifier branch below. Treating it as
+			// a literal blanked the token and hid a protected table inside it.
+			if ( "'" === $c || ( '"' === $c && ! $ansi_quotes ) ) {
 				$q = $c;
 				$i++;
 				while ( $i < $len ) {
@@ -73,14 +76,15 @@ class EMCP_Tools_Database_Guard {
 				$out .= "''";
 				continue;
 			}
-			if ( '`' === $c ) {
+			if ( '`' === $c || ( '"' === $c && $ansi_quotes ) ) {
+				$delim = $c;
 				$i++;
 				$ident = '';
 				while ( $i < $len ) {
-					if ( '`' === $sql[ $i ] ) {
-						// A doubled backtick is a literal backtick in the name.
-						if ( $i + 1 < $len && '`' === $sql[ $i + 1 ] ) {
-							$ident .= '`';
+					if ( $delim === $sql[ $i ] ) {
+						// A doubled delimiter is a literal one inside the name.
+						if ( $i + 1 < $len && $delim === $sql[ $i + 1 ] ) {
+							$ident .= $delim;
 							$i     += 2;
 							continue;
 						}
@@ -139,9 +143,49 @@ class EMCP_Tools_Database_Guard {
 	 * @return string[] One entry when both readings agree, two when they differ.
 	 */
 	public static function normalize_variants( string $sql, bool $keep_identifiers = false ): array {
-		$a = self::normalize_sql( $sql, true, $keep_identifiers );
-		$b = self::normalize_sql( $sql, false, $keep_identifiers );
-		return ( $a === $b ) ? array( $a ) : array( $a, $b );
+		$out = array();
+		// Two independent sql_mode switches change how a statement tokenizes:
+		// NO_BACKSLASH_ESCAPES (is a backslash an escape?) and ANSI_QUOTES (is a
+		// double quote a string or an identifier?). Neither is visible to a pure
+		// function and a session can carry either, so read the statement every
+		// way and let the caller refuse if ANY reading is unsafe.
+		foreach ( array( true, false ) as $escapes ) {
+			foreach ( array( false, true ) as $ansi ) {
+				$out[] = self::normalize_sql( $sql, $escapes, $keep_identifiers, $ansi );
+			}
+		}
+		return array_values( array_unique( $out ) );
+	}
+
+	/**
+	 * Schemas that are never legitimate targets of this read-only tool.
+	 *
+	 * mysql.user holds account password hashes, and the metadata schemas expose
+	 * the whole server. The protected-table list only covers the WordPress user
+	 * tables, so without this a cross-schema reference walked straight past it.
+	 *
+	 * @var string[]
+	 */
+	const SYSTEM_SCHEMAS = array( 'mysql', 'information_schema', 'performance_schema', 'sys' );
+
+	/**
+	 * Does $sql reference a server system schema?
+	 *
+	 * Scanned with identifiers KEPT, so `mysql`.`user` is caught as well as the
+	 * bare form, and whitespace around the dot is tolerated because keeping an
+	 * identifier emits it padded.
+	 *
+	 * @param string $sql Raw SQL.
+	 * @return bool
+	 */
+	public static function references_system_schema( string $sql ): bool {
+		$names = implode( '|', array_map( 'preg_quote', self::SYSTEM_SCHEMAS ) );
+		foreach ( self::normalize_variants( $sql, true ) as $variant ) {
+			if ( preg_match( '/(?<![a-z0-9_])(' . $names . ')\s*\.\s*[a-z0-9_]/i', $variant ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -338,8 +382,10 @@ class EMCP_Tools_Database_Guard {
 		if ( preg_match( '/\b(into\s+outfile|into\s+dumpfile|load_file\s*\(|load\s+data\b)/i', $norm ) ) {
 			return new \WP_Error( 'file_access_blocked', __( 'File-access SQL (OUTFILE/DUMPFILE/LOAD_FILE/LOAD DATA) is not allowed.', 'emcp-tools' ) );
 		}
-		// First keyword must be read-only.
-		if ( ! preg_match( '/^([a-z]+)/i', $norm, $m ) ) {
+		// First keyword must be read-only. Skip leading parens so a parenthesized
+		// UNION branch, which is a valid read, is not refused.
+		if ( ! preg_match( '/^([a-z]+)/i', ltrim( $norm, "( 	
+" ), $m ) ) {
 			return new \WP_Error( 'not_read_only', __( 'Only read-only queries are allowed.', 'emcp-tools' ) );
 		}
 		$kw      = strtoupper( $m[1] );

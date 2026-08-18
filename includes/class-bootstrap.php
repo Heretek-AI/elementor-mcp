@@ -372,6 +372,8 @@ class EMCP_Tools_Bootstrap {
 		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-performance-abilities.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-filesystem-guard.php';
 		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-filesystem-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/sql/class-sql-lexer.php';
+		require_once EMCP_TOOLS_DIR . 'includes/sql/class-sql-policy.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-database-guard.php';
 		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-database-abilities.php';
 		require_once EMCP_TOOLS_DIR . 'includes/wpcli/class-wpcli-validator.php';

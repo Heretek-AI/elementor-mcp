@@ -2,11 +2,17 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
-## [3.12.4]
+## [3.13.0]
 
-Security release from an external audit of the shipped 3.12.3 packages. Please update.
+Security release. It began as a patch for an external audit of 3.12.3 and grew into a rewrite of how raw SQL is checked, after five review rounds kept finding ways past the old check. Please update.
+
+### Changed
+- **The read-only database guard was rebuilt around a real tokenizer.** The old design normalized a query into a plain string and then pattern-matched it, which meant a query only had to be read slightly differently from how MySQL reads it for something to slip through. Five review rounds found four such differences, three of which could expose data from the user table. The guard now splits a query into typed pieces and inspects those, so a table name inside quotes is a piece of text and a keyword inside quotes is a piece of text, whatever characters surround them. Anything it cannot account for is refused outright instead of guessed at, and a query is allowed only if it is safe under every way the server could read it. Some deliberately malformed or exotic queries that previously slipped through are now refused; ordinary reporting queries are unaffected.
 
 ### Security
+- **Queries could hide a table name from the safety check.** Several different tricks (a comment marker MySQL does not treat as a comment, a backslash in a text value, a column alias in backquotes, a name in double quotes) made the guard read a query differently from the database, so a query that looked harmless to the guard could still read the user table. All four are closed, and the guard is now built so this class of mistake fails safe rather than quietly allowing the query.
+- **Server system tables are now off limits.** The guard protected the WordPress user tables but not the database server's own account tables, so a query naming them directly went through. Reading `mysql`, `information_schema`, `performance_schema`, and `sys` is now refused.
+- **Assigning a variable inside a read-only query is refused,** since that changes state rather than reading it.
 - **The migration connector now requires a one-time pairing code (Pro).** While an administrator had the pairing window open on a destination site, the connector accepted a pairing from anyone who could reach it, and the caller supplied their own signing key. Winning that window meant being able to push and restore an archive, which replaces the database and files. The destination now shows a one-time code when you arm pairing, you enter it on the source, and it is checked in constant time, used once, and rate limited. Pairing state is cleared on disarm, unpair, expiry, and success. **Re-install the connector on any destination before your next migration; the new source and connector must both be on this version.**
 - **AI Chat approval now covers every destructive tool.** The "require approval" setting checked a hand-maintained list of tool names that had fallen behind, so newer destructive tools (deleting redirects, blocks, theme templates, custom blocks, and the migrate/sync tools) could run without the approval prompt. Approval is now decided from each tool's own metadata, so it covers every destructive tool automatically, including future ones, and it fails closed if that metadata cannot be read.
 - **AI Chat page fetching is now pinned to the address it validated.** The fetcher checked that a hostname resolved to a public address, but the connection itself resolved the name again, so a hostile DNS server could answer with a public address for the check and an internal one for the connection, reaching things like cloud metadata. Each request, and each redirect hop, is now pinned to the validated address while still verifying the certificate for the original hostname.

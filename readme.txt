@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.12.4
+Stable tag: 3.13.0
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -176,8 +176,12 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 
 == Changelog ==
 
-= 3.12.4 =
-Security release from an external audit. Please update.
+= 3.13.0 =
+Security release. Started as a patch for an external audit and grew into a rewrite of how raw SQL is checked. Please update.
+* Changed: the read-only database guard was rebuilt around a real tokenizer. The old version turned a query into plain text and pattern-matched it, so a query only had to be read slightly differently from how MySQL reads it for something to slip past. It now inspects typed pieces of the query instead, refuses anything it cannot account for, and allows a query only if it is safe under every way the server could read it.
+* Security: several tricks could hide a table name from the check (a comment marker MySQL does not treat as a comment, a backslash in a text value, a column alias in backquotes, a name in double quotes), so a query that looked harmless could still read the user table. All are closed.
+* Security: the database server's own tables (mysql, information_schema, performance_schema, sys) are now off limits to the query tool.
+* Security: assigning a variable inside a read-only query is refused.
 * Security (Pro): the migration connector now requires a one-time pairing code. Previously, while the pairing window was open on a destination site, anyone who could reach it could pair and then push a restore. The destination now shows a code when you arm pairing, you enter it on the source, and it works once. Re-install the connector on any destination before your next migration.
 * Security: AI Chat's "require approval" setting now covers every destructive tool automatically, including newer ones it previously missed, and fails closed if a tool's metadata cannot be read.
 * Security: AI Chat page fetching now connects to the exact address it validated, closing a DNS rebinding gap that could reach internal services.

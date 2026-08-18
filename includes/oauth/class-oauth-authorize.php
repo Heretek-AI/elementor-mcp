@@ -119,8 +119,20 @@ class EMCP_Tools_OAuth_Authorize {
 		$client       = self::lookup_client( $client_id );
 
 		// Client + redirect must be valid before we trust redirect_uri as a target.
-		if ( '' === $client_id || null === $client || '' === $redirect_uri || ! self::redirect_registered( $client, $redirect_uri ) ) {
-			self::error_page( __( 'Invalid client or redirect URI for this connection request.', 'emcp-tools' ), self::stale_client_hint() );
+		// The two failures need different fixes from the person reading the page,
+		// so they are reported separately. Nothing is disclosed by doing so: the
+		// caller supplied both values.
+		if ( '' === $client_id || null === $client ) {
+			self::error_page(
+				__( 'This site does not recognise the app making this connection request.', 'emcp-tools' ),
+				self::stale_client_hint()
+			);
+		}
+		if ( '' === $redirect_uri || ! self::redirect_registered( $client, $redirect_uri ) ) {
+			self::error_page(
+				__( 'The return address this app asked for does not match the one it registered.', 'emcp-tools' ),
+				self::redirect_mismatch_hint( $client, $redirect_uri )
+			);
 		}
 
 		$state = (string) ( $params['state'] ?? '' );
@@ -159,8 +171,17 @@ class EMCP_Tools_OAuth_Authorize {
 		$client_id    = (string) ( $p['client_id'] ?? '' );
 		$redirect_uri = (string) ( $p['redirect_uri'] ?? '' );
 		$client       = self::lookup_client( $client_id );
-		if ( null === $client || ! self::redirect_registered( $client, $redirect_uri ) ) {
-			self::error_page( __( 'Invalid client or redirect URI for this connection request.', 'emcp-tools' ), self::stale_client_hint() );
+		if ( null === $client ) {
+			self::error_page(
+				__( 'This site does not recognise the app making this connection request.', 'emcp-tools' ),
+				self::stale_client_hint()
+			);
+		}
+		if ( ! self::redirect_registered( $client, $redirect_uri ) ) {
+			self::error_page(
+				__( 'The return address this app asked for does not match the one it registered.', 'emcp-tools' ),
+				self::redirect_mismatch_hint( $client, $redirect_uri )
+			);
 		}
 
 		$state = (string) ( $p['state'] ?? '' );
@@ -371,6 +392,23 @@ class EMCP_Tools_OAuth_Authorize {
 	 *
 	 * @return string
 	 */
+	private static function redirect_mismatch_hint( array $client, string $redirect_uri ): string {
+		$registered = array_values( array_filter( (array) ( $client['redirect_uris'] ?? array() ), 'is_string' ) );
+		$hint       = __( 'The app registered a different return address than the one it is now asking for. Removing this MCP connector in the app and adding it again usually clears it.', 'emcp-tools' );
+		if ( ! $registered ) {
+			return $hint;
+		}
+		// Show both sides. Whoever is debugging this needs to compare them, and
+		// both values already came from the request or from this app's own
+		// registration, so neither is a secret.
+		return $hint . ' ' . sprintf(
+			/* translators: 1: the address requested, 2: comma-separated list of registered addresses. */
+			__( 'Requested: %1$s. Registered: %2$s.', 'emcp-tools' ),
+			'' !== $redirect_uri ? $redirect_uri : __( '(none)', 'emcp-tools' ),
+			implode( ', ', $registered )
+		);
+	}
+
 	private static function stale_client_hint(): string {
 		return __( 'This usually means the app is reconnecting with a registration this site no longer recognises. In your AI app, remove this MCP connector and add it again to start a fresh connection.', 'emcp-tools' );
 	}

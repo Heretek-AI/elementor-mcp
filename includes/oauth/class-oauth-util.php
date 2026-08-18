@@ -149,19 +149,58 @@ class EMCP_Tools_OAuth_Util {
 			return false;
 		}
 
-		$loopback = array( '127.0.0.1', '::1', 'localhost' );
-		$r_host   = isset( $r['host'] ) ? strtolower( trim( $r['host'], '[]' ) ) : '';
-		$g_host   = isset( $g['host'] ) ? strtolower( trim( $g['host'], '[]' ) ) : '';
+		$r_host = isset( $r['host'] ) ? strtolower( trim( $r['host'], '[]' ) ) : '';
+		$g_host = isset( $g['host'] ) ? strtolower( trim( $g['host'], '[]' ) ) : '';
 
+		// Loopback redirects get a relaxed comparison; everything else, notably
+		// every https callback, stays an exact string match. Only a loopback URI
+		// is safe to relax, because it can only ever deliver the code to a
+		// listener on the user's OWN machine.
 		if (
-			'http' === ( $r['scheme'] ?? '' ) && 'http' === ( $g['scheme'] ?? '' )
-			&& in_array( $r_host, $loopback, true ) && $r_host === $g_host
-			&& ( $r['path'] ?? '/' ) === ( $g['path'] ?? '/' )
+			'http' !== ( $r['scheme'] ?? '' ) || 'http' !== ( $g['scheme'] ?? '' )
+			|| ! self::is_loopback_host( $r_host ) || ! self::is_loopback_host( $g_host )
 		) {
-			// Same loopback host + path; port is allowed to differ.
-			return true;
+			return false;
 		}
 
-		return false;
+		// `localhost`, `127.0.0.1` and `::1` all name the same machine. Clients
+		// routinely register one form and authorize with another (or the OS
+		// resolves one to the other), and refusing that mismatch was rejecting
+		// legitimate connections from CLI clients with nothing gained.
+		//
+		// The port is likewise ignored: RFC 8252 section 7.3 requires it, because
+		// a native client binds an ephemeral port that it cannot know at
+		// registration time.
+		$r_path = self::normalize_loopback_path( $r['path'] ?? '/' );
+		$g_path = self::normalize_loopback_path( $g['path'] ?? '/' );
+
+		return $r_path === $g_path;
+	}
+
+	/**
+	 * Is $host one of the names that mean "this machine"?
+	 *
+	 * @since 3.13.0
+	 * @param string $host Lowercased host, brackets already stripped.
+	 * @return bool
+	 */
+	public static function is_loopback_host( string $host ): bool {
+		return in_array( $host, array( '127.0.0.1', '::1', 'localhost' ), true );
+	}
+
+	/**
+	 * Normalize a loopback callback path so a trailing slash is not a mismatch.
+	 *
+	 * `/callback` and `/callback/` reach the same local listener, and clients are
+	 * inconsistent about which they send.
+	 *
+	 * @since 3.13.0
+	 * @param string $path Path component.
+	 * @return string
+	 */
+	private static function normalize_loopback_path( string $path ): string {
+		$path = '' === $path ? '/' : $path;
+		$trimmed = rtrim( $path, '/' );
+		return '' === $trimmed ? '/' : $trimmed;
 	}
 }

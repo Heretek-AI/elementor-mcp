@@ -315,10 +315,19 @@ $emcp_tools_server_enabled = class_exists( 'EMCP_Tools_Plugin' )
 		<?php // ===== Connected apps (authorized OAuth clients) ===== ?>
 		<?php
 		$emcp_oauth_clients = ( $emcp_oauth_ok && class_exists( 'EMCP_Tools_OAuth_Store' ) ) ? EMCP_Tools_OAuth_Store::list_authorized_clients() : array();
-		if ( ! empty( $emcp_oauth_clients ) ) :
+		// Rendered whenever OAuth is available, even with nothing connected yet.
+		// The "Manage connected apps" link above targets this element, so hiding
+		// it on an empty list made that link silently do nothing, which is exactly
+		// when someone is most likely to click it: while a connection is failing.
+		if ( $emcp_oauth_ok ) :
 			?>
 			<div class="elementor-mcp-section" id="emcp-conn-manage-apps" data-authfor="oauth">
 				<h2><?php esc_html_e( 'Connected apps', 'emcp-tools' ); ?></h2>
+			<?php if ( empty( $emcp_oauth_clients ) ) : ?>
+				<p class="description" style="max-width:760px;">
+					<?php esc_html_e( 'No apps are connected yet. An app appears here once it has completed sign-in and holds a valid token. An app that has registered but not finished signing in is not listed.', 'emcp-tools' ); ?>
+				</p>
+			<?php else : ?>
 				<table class="widefat striped" style="max-width:760px;">
 					<thead>
 						<tr>
@@ -351,6 +360,7 @@ $emcp_tools_server_enabled = class_exists( 'EMCP_Tools_Plugin' )
 					<?php endforeach; ?>
 					</tbody>
 				</table>
+			<?php endif; ?>
 			</div>
 		<?php endif; ?>
 

@@ -179,6 +179,9 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 = 3.13.0 =
 Security release. Started as a patch for an external audit and grew into a rewrite of how raw SQL is checked. Please update.
 * Changed: the read-only database guard was rebuilt around a real tokenizer. The old version turned a query into plain text and pattern-matched it, so a query only had to be read slightly differently from how MySQL reads it for something to slip past. It now inspects typed pieces of the query instead, refuses anything it cannot account for, and allows a query only if it is safe under every way the server could read it.
+* Fixed: Codex and other command-line AI apps could not finish signing in, failing with "Invalid client or redirect URI". A command-line app can spell your own machine three ways (localhost, 127.0.0.1, ::1) on a port it picks fresh each run; the check accepted a changing port but insisted the spelling match exactly. All three are now treated as the same machine, and a trailing slash no longer counts as a difference. Return addresses that leave your machine, including every https one, are still matched exactly.
+* Fixed: the sign-in error page now says which of the two things went wrong, the app not being recognised or its return address not matching, and shows both addresses.
+* Fixed: "Manage connected apps" went nowhere when no apps were connected yet. The section is now always shown.
 * Security: several tricks could hide a table name from the check (a comment marker MySQL does not treat as a comment, a backslash in a text value, a column alias in backquotes, a name in double quotes), so a query that looked harmless could still read the user table. All are closed.
 * Security: the database server's own tables (mysql, information_schema, performance_schema, sys) are now off limits to the query tool.
 * Security: assigning a variable inside a read-only query is refused.

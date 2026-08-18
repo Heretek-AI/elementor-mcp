@@ -59,7 +59,7 @@ class EMCP_Tools_Themer_Dynamic {
 	public static function post_title( array $args = array() ): string {
 		$tag  = self::tag( (string) ( $args['tag'] ?? 'h1' ), 'h1' );
 		$id   = self::queried_id();
-		$text = $id ? get_the_title( $id ) : ( is_home() ? get_the_title( (int) get_option( 'page_for_posts' ) ) : '' );
+		$text = self::post_title_text();
 		if ( '' === $text ) {
 			return '';
 		}
@@ -543,6 +543,85 @@ class EMCP_Tools_Themer_Dynamic {
 	 *
 	 * @return array<string,array{label:string,icon:string}>
 	 */
+	/**
+	 * Resolve a source to its raw value.
+	 *
+	 * This is the single resolution point. render() composes markup on top of
+	 * it, and the Elementor tags, block bindings and MCP compiler all read it
+	 * directly. Presentation arguments (tag, link) are deliberately ignored
+	 * here: a bound heading wants the title, not a wrapped <h1>.
+	 *
+	 * @since 3.13.0
+	 * @param string $key  Source key.
+	 * @param array  $args Source arguments.
+	 * @return array{type:string,value:mixed}
+	 */
+	public static function value( string $key, array $args = array() ): array {
+		$def = EMCP_Tools_Themer_Dynamic_Catalog::get( $key );
+		if ( null === $def ) {
+			return array( 'type' => 'text', 'value' => '' );
+		}
+		$type = $def['type'];
+
+		switch ( $key ) {
+			case 'post-title':
+				$out = self::post_title_text();
+				break;
+			case 'archive-title':
+				$out = self::archive_title_text();
+				break;
+			case 'site-title':
+				$out = (string) get_bloginfo( 'name' );
+				break;
+			case 'description':
+				$out = (string) get_bloginfo( 'description' );
+				break;
+			case 'site-logo':
+				$out = self::image_value( (int) get_theme_mod( 'custom_logo' ) );
+				break;
+			default:
+				// html sources keep their markup as the value. Anything else with
+				// no value implementation resolves empty rather than guessing.
+				$out = ( 'html' === $type ) ? self::render( $key, $args ) : '';
+		}
+
+		if ( 'image' === $type && ! is_array( $out ) ) {
+			$out = self::image_value( 0 );
+		}
+		return array( 'type' => $type, 'value' => $out );
+	}
+
+	/**
+	 * Plain text of the queried post's title.
+	 *
+	 * @return string
+	 */
+	private static function post_title_text(): string {
+		$id = self::queried_id();
+		if ( $id ) {
+			return (string) get_the_title( $id );
+		}
+		return is_home() ? (string) get_the_title( (int) get_option( 'page_for_posts' ) ) : '';
+	}
+
+	/**
+	 * Normalize an attachment id into the image value shape.
+	 *
+	 * @param int $id Attachment id.
+	 * @return array{id:int,url:string,alt:string}
+	 */
+	private static function image_value( int $id ): array {
+		if ( $id <= 0 ) {
+			return array( 'id' => 0, 'url' => '', 'alt' => '' );
+		}
+		$src = wp_get_attachment_image_src( $id, 'full' );
+		return array(
+			'id'  => $id,
+			'url' => is_array( $src ) && isset( $src[0] ) ? (string) $src[0] : '',
+			'alt' => (string) get_post_meta( $id, '_wp_attachment_image_alt', true ),
+		);
+	}
+
 	public static function catalog(): array {
 		$out = array();
 		foreach ( EMCP_Tools_Themer_Dynamic_Catalog::all() as $key => $def ) {

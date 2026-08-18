@@ -210,6 +210,16 @@ class EMCP_Tools_Ability_Registrar {
 			$this->ability_names = array_merge( $this->ability_names, $themer->get_ability_names() );
 		}
 
+		// Dynamic-source discovery. Gated with the Themer tools above, since a
+		// source list is meaningless without templates to bind it into.
+		if ( class_exists( 'EMCP_Tools_Themer_Dynamic_Abilities' )
+			&& class_exists( 'EMCP_Tools_Themer_Module' )
+			&& EMCP_Tools_Themer_Module::is_enabled() ) {
+			$themer_dynamic = new EMCP_Tools_Themer_Dynamic_Abilities();
+			$themer_dynamic->register();
+			$this->ability_names = array_merge( $this->ability_names, $themer_dynamic->get_ability_names() );
+		}
+
 		// EMCP Themer PHP-Template MCP tools — only when the feature toggle is on
 		// (its own option, independent of the base Themer tools above).
 		if ( class_exists( 'EMCP_Tools_Themer_PHP_Abilities' )

@@ -89,6 +89,10 @@ class EMCP_Tools_Themer_Dynamic_Abilities {
 	public static function list_sources( array $input = array() ): array {
 		$only = ! empty( $input['bindable_only'] );
 		$out  = array();
+		// The block registrar is the only honest source of block coverage.
+		$blocks = class_exists( 'EMCP_Tools_Themer_Blocks' )
+			? EMCP_Tools_Themer_Blocks::blocks()
+			: array();
 		foreach ( EMCP_Tools_Themer_Dynamic_Catalog::all() as $key => $def ) {
 			if ( $only && empty( $def['bindable'] ) ) {
 				continue;
@@ -96,10 +100,15 @@ class EMCP_Tools_Themer_Dynamic_Abilities {
 			// Report only surfaces that actually exist. A source can be bindable
 			// without shipping its own block or widget, and claiming otherwise
 			// sends an agent looking for something that was never registered.
+			// Widget and block coverage are not the same set: five sources ship
+			// an Elementor widget with no block counterpart, because the block
+			// editor already has a core block for them.
 			$surfaces = array();
 			if ( ! empty( $def['element'] ) ) {
-				$surfaces[] = 'block';
 				$surfaces[] = 'widget';
+			}
+			if ( isset( $blocks[ $key ] ) ) {
+				$surfaces[] = 'block';
 			}
 			if ( ! empty( $def['bindable'] ) ) {
 				$surfaces[] = 'elementor-tag';

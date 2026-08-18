@@ -145,6 +145,65 @@ class EMCP_Tools_Themer_Blocks {
 					array( 'key' => 'showComments', 'type' => 'toggle', 'label' => __( 'Comments', 'emcp-tools' ) ),
 				),
 			),
+			'featured-image' => array(
+				'title'      => __( 'Featured Image', 'emcp-tools' ),
+				'icon'       => 'format-image',
+				'supports'   => $box_supports,
+				'attributes' => array(
+					'size' => array( 'type' => 'string', 'default' => 'large' ),
+					'link' => array( 'type' => 'boolean', 'default' => false ),
+				),
+				'controls'   => array(
+					array( 'key' => 'size', 'type' => 'text', 'label' => __( 'Image size', 'emcp-tools' ) ),
+					array( 'key' => 'link', 'type' => 'toggle', 'label' => __( 'Link to post', 'emcp-tools' ) ),
+				),
+			),
+			'post-excerpt'  => array(
+				'title'      => __( 'Post Excerpt', 'emcp-tools' ),
+				'icon'       => 'excerpt-view',
+				'supports'   => $text_supports,
+				'attributes' => array(
+					'words' => array( 'type' => 'number', 'default' => 0 ),
+				),
+				'controls'   => array(
+					array( 'key' => 'words', 'type' => 'number', 'label' => __( 'Word limit (0 = theme default)', 'emcp-tools' ) ),
+				),
+			),
+			'author-box'    => array(
+				'title'      => __( 'Author Box', 'emcp-tools' ),
+				'icon'       => 'admin-users',
+				'supports'   => $box_supports,
+				'attributes' => array(
+					'showAvatar'    => array( 'type' => 'boolean', 'default' => true ),
+					'showName'      => array( 'type' => 'boolean', 'default' => true ),
+					'showBio'       => array( 'type' => 'boolean', 'default' => true ),
+					'showWebsite'   => array( 'type' => 'boolean', 'default' => true ),
+					'showPostsLink' => array( 'type' => 'boolean', 'default' => true ),
+					'layout'        => array( 'type' => 'string', 'default' => 'side' ),
+				),
+				'controls'   => array(
+					array( 'key' => 'showAvatar', 'type' => 'toggle', 'label' => __( 'Avatar', 'emcp-tools' ) ),
+					array( 'key' => 'showName', 'type' => 'toggle', 'label' => __( 'Name', 'emcp-tools' ) ),
+					array( 'key' => 'showBio', 'type' => 'toggle', 'label' => __( 'Biography', 'emcp-tools' ) ),
+					array( 'key' => 'showWebsite', 'type' => 'toggle', 'label' => __( 'Website link', 'emcp-tools' ) ),
+					array( 'key' => 'showPostsLink', 'type' => 'toggle', 'label' => __( 'Archive link', 'emcp-tools' ) ),
+				),
+			),
+			'sitemap'       => array(
+				'title'      => __( 'Sitemap', 'emcp-tools' ),
+				'icon'       => 'list-view',
+				'supports'   => $box_supports,
+				'attributes' => array(
+					'hideEmpty' => array( 'type' => 'boolean', 'default' => true ),
+					'nofollow'  => array( 'type' => 'boolean', 'default' => false ),
+					'limit'     => array( 'type' => 'number', 'default' => 50 ),
+				),
+				'controls'   => array(
+					array( 'key' => 'hideEmpty', 'type' => 'toggle', 'label' => __( 'Hide empty terms', 'emcp-tools' ) ),
+					array( 'key' => 'nofollow', 'type' => 'toggle', 'label' => __( 'Add nofollow', 'emcp-tools' ) ),
+					array( 'key' => 'limit', 'type' => 'number', 'label' => __( 'Items per list (max 100)', 'emcp-tools' ) ),
+				),
+			),
 			'site-logo'     => array(
 				'title'      => __( 'Site Logo', 'emcp-tools' ),
 				'icon'       => 'format-image',

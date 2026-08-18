@@ -43,6 +43,8 @@ abstract class EMCP_Tools_Themer_Widget_Base extends \Elementor\Widget_Base {
 			'EMCP_Tools_Themer_Widget_Description',
 			'EMCP_Tools_Themer_Widget_Post_Content',
 			'EMCP_Tools_Themer_Widget_Archive_Loop',
+			'EMCP_Tools_Themer_Widget_Featured_Image',
+			'EMCP_Tools_Themer_Widget_Post_Excerpt',
 		);
 	}
 
@@ -58,7 +60,9 @@ abstract class EMCP_Tools_Themer_Widget_Base extends \Elementor\Widget_Base {
 			'nav-menu'      => array( __( 'Menu', 'emcp-tools' ), 'eicon-nav-menu' ),
 			'description'   => array( __( 'Description', 'emcp-tools' ), 'eicon-text' ),
 			'post-content'  => array( __( 'Post Content', 'emcp-tools' ), 'eicon-post-content' ),
-			'archive-loop'  => array( __( 'Archive Posts', 'emcp-tools' ), 'eicon-posts-grid' ),
+			'archive-loop'  => array( __( 'Archive Posts (classic)', 'emcp-tools' ), 'eicon-posts-grid' ),
+			'featured-image' => array( __( 'Featured Image', 'emcp-tools' ), 'eicon-featured-image' ),
+			'post-excerpt'   => array( __( 'Post Excerpt', 'emcp-tools' ), 'eicon-post-excerpt' ),
 		);
 	}
 
@@ -382,4 +386,11 @@ class EMCP_Tools_Themer_Widget_Post_Content extends EMCP_Tools_Themer_Widget_Bas
 }
 class EMCP_Tools_Themer_Widget_Archive_Loop extends EMCP_Tools_Themer_Widget_Base {
 	protected function emcp_key(): string { return 'archive-loop'; }
+}
+
+class EMCP_Tools_Themer_Widget_Featured_Image extends EMCP_Tools_Themer_Widget_Base {
+	protected function emcp_key(): string { return 'featured-image'; }
+}
+class EMCP_Tools_Themer_Widget_Post_Excerpt extends EMCP_Tools_Themer_Widget_Base {
+	protected function emcp_key(): string { return 'post-excerpt'; }
 }

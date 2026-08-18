@@ -766,6 +766,10 @@ class EMCP_Tools_Themer_Dynamic {
 				return self::post_content();
 			case 'archive-loop':
 				return self::archive_loop( $args );
+			case 'archive-posts':
+				return EMCP_Tools_Themer_Element_Archive_Posts::render( $args );
+			case 'post-info':
+				return EMCP_Tools_Themer_Element_Post_Info::render( $args );
 			case 'sitemap':
 				return EMCP_Tools_Themer_Element_Sitemap::render( $args );
 			case 'search-form':

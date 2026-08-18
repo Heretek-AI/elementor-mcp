@@ -49,6 +49,8 @@ class EMCP_Tools_Themer_Dynamic_Catalog {
 			'post-comments'  => array( 'label' => __( 'Post Comments', 'emcp-tools' ), 'icon' => 'admin-comments', 'type' => 'html', 'args' => array( 'hide_when_closed' ), 'element' => true ),
 			'search-form'    => array( 'label' => __( 'Search Form', 'emcp-tools' ), 'icon' => 'search', 'type' => 'html', 'args' => array( 'placeholder', 'button_type', 'button_text', 'full_width' ), 'element' => true ),
 			'sitemap'        => array( 'label' => __( 'Sitemap', 'emcp-tools' ), 'icon' => 'list-view', 'type' => 'html', 'args' => array( 'post_types', 'taxonomies', 'hide_empty', 'exclude_ids', 'nofollow', 'limit' ), 'element' => true ),
+			'post-info'      => array( 'label' => __( 'Post Info', 'emcp-tools' ), 'icon' => 'list-view', 'type' => 'html', 'args' => array( 'items', 'taxonomy', 'meta_key', 'separator', 'layout', 'link_author', 'link_terms' ), 'element' => true ),
+			'archive-posts'  => array( 'label' => __( 'Archive Posts', 'emcp-tools' ), 'icon' => 'grid-view', 'type' => 'html', 'args' => array( 'layout', 'columns', 'show_image', 'show_excerpt', 'excerpt_words', 'show_more', 'more_text', 'show_pagination' ), 'element' => true ),
 			'archive-loop'  => array( 'label' => __( 'Archive Posts', 'emcp-tools' ), 'icon' => 'grid-view', 'type' => 'html', 'args' => array( 'columns', 'show_excerpt' ), 'element' => true ),
 		);
 

@@ -47,7 +47,42 @@ class EMCP_Tools_Themer_Dynamic {
 		if ( $obj instanceof WP_Post ) {
 			return (int) $obj->ID;
 		}
-		return in_the_loop() ? (int) get_the_ID() : 0;
+		if ( in_the_loop() ) {
+			return (int) get_the_ID();
+		}
+		// Nothing is being queried. Inside the editor that is normal, and a
+		// blank field would make the feature look broken before it is used.
+		return self::preview_post_id();
+	}
+
+	/**
+	 * A representative post to resolve against while editing a template.
+	 *
+	 * There is no queried post inside the Themer editor, so without this every
+	 * dynamic field renders blank. The sample is chosen at render time and is
+	 * never persisted into the template.
+	 *
+	 * @since 3.13.0
+	 * @param string $template_type Themer template type, when known. Accepted so a
+	 *                              later task can sample a matching CPT; every free
+	 *                              template type samples a post.
+	 * @return int Post id, or 0 outside preview.
+	 */
+	public static function preview_post_id( string $template_type = '' ): int {
+		unset( $template_type );
+		if ( ! self::is_preview_context() ) {
+			return 0;
+		}
+		$ids = get_posts(
+			array(
+				'post_type'        => 'post',
+				'post_status'      => 'publish',
+				'numberposts'      => 1,
+				'fields'           => 'ids',
+				'suppress_filters' => false,
+			)
+		);
+		return $ids ? (int) $ids[0] : 0;
 	}
 
 	/**

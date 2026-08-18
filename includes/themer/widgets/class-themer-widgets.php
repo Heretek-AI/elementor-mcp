@@ -63,6 +63,18 @@ class EMCP_Tools_Themer_Widgets {
 				$manager->register( new $class() );
 			}
 		}
+
+		// The rich widgets have bespoke controls, so they extend a second base
+		// and delegate rendering to the shared element classes.
+		require_once __DIR__ . '/rich/class-themer-widget-rich-base.php';
+		if ( class_exists( 'EMCP_Tools_Themer_Widget_Rich_Base' ) ) {
+			require_once __DIR__ . '/rich/class-themer-widget-rich-set.php';
+			foreach ( EMCP_Tools_Themer_Widget_Rich_Base::rich_widget_classes() as $class ) {
+				if ( class_exists( $class ) ) {
+					$manager->register( new $class() );
+				}
+			}
+		}
 	}
 
 	/** Reuse the block stylesheet for the widgets' shared layout CSS. */

@@ -60,7 +60,7 @@ abstract class EMCP_Tools_Themer_Widget_Base extends \Elementor\Widget_Base {
 			'nav-menu'      => array( __( 'Menu', 'emcp-tools' ), 'eicon-nav-menu' ),
 			'description'   => array( __( 'Description', 'emcp-tools' ), 'eicon-text' ),
 			'post-content'  => array( __( 'Post Content', 'emcp-tools' ), 'eicon-post-content' ),
-			'archive-loop'  => array( __( 'Archive Posts', 'emcp-tools' ), 'eicon-posts-grid' ),
+			'archive-loop'  => array( __( 'Archive Posts (classic)', 'emcp-tools' ), 'eicon-posts-grid' ),
 			'featured-image' => array( __( 'Featured Image', 'emcp-tools' ), 'eicon-featured-image' ),
 			'post-excerpt'   => array( __( 'Post Excerpt', 'emcp-tools' ), 'eicon-post-excerpt' ),
 		);

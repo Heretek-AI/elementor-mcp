@@ -30,21 +30,21 @@ class EMCP_Tools_Themer_Dynamic_Catalog {
 	 */
 	public static function all(): array {
 		$sources = array(
-			'post-title'    => array( 'label' => __( 'Post/Page Title', 'emcp-tools' ), 'icon' => 'heading', 'type' => 'text', 'args' => array( 'tag', 'link' ) ),
-			'archive-title' => array( 'label' => __( 'Archive Title', 'emcp-tools' ), 'icon' => 'archive', 'type' => 'text', 'args' => array( 'tag', 'show_prefix' ) ),
-			'site-title'    => array( 'label' => __( 'Site Title', 'emcp-tools' ), 'icon' => 'admin-home', 'type' => 'text', 'args' => array( 'tag', 'link' ) ),
-			'description'   => array( 'label' => __( 'Description', 'emcp-tools' ), 'icon' => 'text', 'type' => 'text', 'args' => array() ),
+			'post-title'    => array( 'label' => __( 'Post/Page Title', 'emcp-tools' ), 'icon' => 'heading', 'type' => 'text', 'args' => array( 'tag', 'link' ), 'element' => true ),
+			'archive-title' => array( 'label' => __( 'Archive Title', 'emcp-tools' ), 'icon' => 'archive', 'type' => 'text', 'args' => array( 'tag', 'show_prefix' ), 'element' => true ),
+			'site-title'    => array( 'label' => __( 'Site Title', 'emcp-tools' ), 'icon' => 'admin-home', 'type' => 'text', 'args' => array( 'tag', 'link' ), 'element' => true ),
+			'description'   => array( 'label' => __( 'Description', 'emcp-tools' ), 'icon' => 'text', 'type' => 'text', 'args' => array(), 'element' => true ),
 			'post-excerpt'   => array( 'label' => __( 'Post Excerpt', 'emcp-tools' ), 'icon' => 'excerpt-view', 'type' => 'text', 'args' => array() ),
 			'post-url'       => array( 'label' => __( 'Post URL', 'emcp-tools' ), 'icon' => 'admin-links', 'type' => 'url', 'args' => array() ),
 			'post-date'      => array( 'label' => __( 'Post Date', 'emcp-tools' ), 'icon' => 'calendar-alt', 'type' => 'date', 'args' => array( 'format' ) ),
 			'post-id'        => array( 'label' => __( 'Post ID', 'emcp-tools' ), 'icon' => 'info', 'type' => 'text', 'args' => array() ),
 			'featured-image' => array( 'label' => __( 'Featured Image', 'emcp-tools' ), 'icon' => 'format-image', 'type' => 'image', 'args' => array( 'size' ) ),
-			'site-logo'     => array( 'label' => __( 'Site Logo', 'emcp-tools' ), 'icon' => 'format-image', 'type' => 'image', 'args' => array( 'link' ) ),
-			'post-content'  => array( 'label' => __( 'Post Content', 'emcp-tools' ), 'icon' => 'media-document', 'type' => 'html', 'args' => array() ),
-			'post-meta'     => array( 'label' => __( 'Post Meta', 'emcp-tools' ), 'icon' => 'list-view', 'type' => 'html', 'args' => array( 'show_date', 'show_author' ) ),
-			'breadcrumbs'   => array( 'label' => __( 'Breadcrumbs', 'emcp-tools' ), 'icon' => 'admin-links', 'type' => 'html', 'args' => array( 'separator', 'home_label' ) ),
-			'nav-menu'      => array( 'label' => __( 'Menu', 'emcp-tools' ), 'icon' => 'menu', 'type' => 'html', 'args' => array( 'menu' ) ),
-			'archive-loop'  => array( 'label' => __( 'Archive Posts', 'emcp-tools' ), 'icon' => 'grid-view', 'type' => 'html', 'args' => array( 'columns', 'show_excerpt' ) ),
+			'site-logo'     => array( 'label' => __( 'Site Logo', 'emcp-tools' ), 'icon' => 'format-image', 'type' => 'image', 'args' => array( 'link' ), 'element' => true ),
+			'post-content'  => array( 'label' => __( 'Post Content', 'emcp-tools' ), 'icon' => 'media-document', 'type' => 'html', 'args' => array(), 'element' => true ),
+			'post-meta'     => array( 'label' => __( 'Post Meta', 'emcp-tools' ), 'icon' => 'list-view', 'type' => 'html', 'args' => array( 'show_date', 'show_author' ), 'element' => true ),
+			'breadcrumbs'   => array( 'label' => __( 'Breadcrumbs', 'emcp-tools' ), 'icon' => 'admin-links', 'type' => 'html', 'args' => array( 'separator', 'home_label' ), 'element' => true ),
+			'nav-menu'      => array( 'label' => __( 'Menu', 'emcp-tools' ), 'icon' => 'menu', 'type' => 'html', 'args' => array( 'menu' ), 'element' => true ),
+			'archive-loop'  => array( 'label' => __( 'Archive Posts', 'emcp-tools' ), 'icon' => 'grid-view', 'type' => 'html', 'args' => array( 'columns', 'show_excerpt' ), 'element' => true ),
 		);
 
 		/**
@@ -67,6 +67,10 @@ class EMCP_Tools_Themer_Dynamic_Catalog {
 				'args'     => isset( $def['args'] ) ? array_values( (array) $def['args'] ) : array(),
 				// html sources emit markup, so they can never fill a typed field.
 				'bindable' => 'html' !== $type,
+				// Does a rendered block and widget exist for this key? A source can
+				// be bindable without having its own element, and saying otherwise
+				// sends an agent looking for a block that was never registered.
+				'element'  => ! empty( $def['element'] ),
 			);
 		}
 		return $out;

@@ -93,9 +93,14 @@ class EMCP_Tools_Themer_Dynamic_Abilities {
 			if ( $only && empty( $def['bindable'] ) ) {
 				continue;
 			}
-			// A markup source is still usable as a block or widget; it simply
-			// cannot fill a typed field.
-			$surfaces = array( 'block', 'widget' );
+			// Report only surfaces that actually exist. A source can be bindable
+			// without shipping its own block or widget, and claiming otherwise
+			// sends an agent looking for something that was never registered.
+			$surfaces = array();
+			if ( ! empty( $def['element'] ) ) {
+				$surfaces[] = 'block';
+				$surfaces[] = 'widget';
+			}
 			if ( ! empty( $def['bindable'] ) ) {
 				$surfaces[] = 'elementor-tag';
 				$surfaces[] = 'block-binding';

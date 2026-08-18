@@ -579,6 +579,48 @@ class EMCP_Tools_Themer_Dynamic {
 	 * @param array  $args Source arguments.
 	 * @return array{type:string,value:mixed}
 	 */
+	/**
+	 * Featured image markup, composed on the image value.
+	 *
+	 * @since 3.13.0
+	 * @param array $args size, link.
+	 * @return string
+	 */
+	private static function featured_image_markup( array $args = array() ): string {
+		$v = self::value( 'featured-image' )['value'];
+		if ( empty( $v['id'] ) || '' === (string) $v['url'] ) {
+			return '';
+		}
+		$size = (string) ( $args['size'] ?? 'large' );
+		$img  = wp_get_attachment_image( (int) $v['id'], $size, false, array( 'alt' => (string) $v['alt'] ) );
+		if ( ! $img ) {
+			$img = '<img src="' . esc_url( (string) $v['url'] ) . '" alt="' . esc_attr( (string) $v['alt'] ) . '" />';
+		}
+		if ( ! empty( $args['link'] ) && self::queried_id() ) {
+			$img = '<a href="' . esc_url( (string) get_permalink( self::queried_id() ) ) . '">' . $img . '</a>';
+		}
+		return '<div class="emcp-dyn emcp-dyn-featured-image">' . $img . '</div>';
+	}
+
+	/**
+	 * Post excerpt markup, composed on the text value.
+	 *
+	 * @since 3.13.0
+	 * @param array $args words (0 keeps the theme default).
+	 * @return string
+	 */
+	private static function post_excerpt_markup( array $args = array() ): string {
+		$text = (string) self::value( 'post-excerpt' )['value'];
+		if ( '' === trim( $text ) ) {
+			return '';
+		}
+		$words = (int) ( $args['words'] ?? 0 );
+		if ( $words > 0 ) {
+			$text = wp_trim_words( $text, max( 5, min( 200, $words ) ) );
+		}
+		return '<div class="emcp-dyn emcp-dyn-post-excerpt">' . esc_html( $text ) . '</div>';
+	}
+
 	public static function value( string $key, array $args = array() ): array {
 		$def = EMCP_Tools_Themer_Dynamic_Catalog::get( $key );
 		if ( null === $def ) {
@@ -766,6 +808,10 @@ class EMCP_Tools_Themer_Dynamic {
 				return self::post_content();
 			case 'archive-loop':
 				return self::archive_loop( $args );
+			case 'featured-image':
+				return self::featured_image_markup( $args );
+			case 'post-excerpt':
+				return self::post_excerpt_markup( $args );
 			case 'archive-posts':
 				return EMCP_Tools_Themer_Element_Archive_Posts::render( $args );
 			case 'post-info':

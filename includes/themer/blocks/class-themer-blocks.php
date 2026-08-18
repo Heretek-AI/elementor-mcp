@@ -145,6 +145,30 @@ class EMCP_Tools_Themer_Blocks {
 					array( 'key' => 'showComments', 'type' => 'toggle', 'label' => __( 'Comments', 'emcp-tools' ) ),
 				),
 			),
+			'featured-image' => array(
+				'title'      => __( 'Featured Image', 'emcp-tools' ),
+				'icon'       => 'format-image',
+				'supports'   => $box_supports,
+				'attributes' => array(
+					'size' => array( 'type' => 'string', 'default' => 'large' ),
+					'link' => array( 'type' => 'boolean', 'default' => false ),
+				),
+				'controls'   => array(
+					array( 'key' => 'size', 'type' => 'text', 'label' => __( 'Image size', 'emcp-tools' ) ),
+					array( 'key' => 'link', 'type' => 'toggle', 'label' => __( 'Link to post', 'emcp-tools' ) ),
+				),
+			),
+			'post-excerpt'  => array(
+				'title'      => __( 'Post Excerpt', 'emcp-tools' ),
+				'icon'       => 'excerpt-view',
+				'supports'   => $text_supports,
+				'attributes' => array(
+					'words' => array( 'type' => 'number', 'default' => 0 ),
+				),
+				'controls'   => array(
+					array( 'key' => 'words', 'type' => 'number', 'label' => __( 'Word limit (0 = theme default)', 'emcp-tools' ) ),
+				),
+			),
 			'site-logo'     => array(
 				'title'      => __( 'Site Logo', 'emcp-tools' ),
 				'icon'       => 'format-image',

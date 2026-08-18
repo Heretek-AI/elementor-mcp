@@ -42,12 +42,61 @@ class EMCP_Tools_Themer_Dynamic {
 	 *
 	 * @return int
 	 */
+	/**
+	 * The post every dynamic source resolves against.
+	 *
+	 * Public so Pro sources use the SAME resolution as the free ones, including
+	 * the editor-preview fallback. Duplicating this logic is how two code paths
+	 * start disagreeing.
+	 *
+	 * @since 3.13.0
+	 * @return int
+	 */
+	public static function current_post_id(): int {
+		return self::queried_id();
+	}
+
 	private static function queried_id(): int {
 		$obj = get_queried_object();
 		if ( $obj instanceof WP_Post ) {
 			return (int) $obj->ID;
 		}
-		return in_the_loop() ? (int) get_the_ID() : 0;
+		if ( in_the_loop() ) {
+			return (int) get_the_ID();
+		}
+		// Nothing is being queried. Inside the editor that is normal, and a
+		// blank field would make the feature look broken before it is used.
+		return self::preview_post_id();
+	}
+
+	/**
+	 * A representative post to resolve against while editing a template.
+	 *
+	 * There is no queried post inside the Themer editor, so without this every
+	 * dynamic field renders blank. The sample is chosen at render time and is
+	 * never persisted into the template.
+	 *
+	 * @since 3.13.0
+	 * @param string $template_type Themer template type, when known. Accepted so a
+	 *                              later task can sample a matching CPT; every free
+	 *                              template type samples a post.
+	 * @return int Post id, or 0 outside preview.
+	 */
+	public static function preview_post_id( string $template_type = '' ): int {
+		unset( $template_type );
+		if ( ! self::is_preview_context() ) {
+			return 0;
+		}
+		$ids = get_posts(
+			array(
+				'post_type'        => 'post',
+				'post_status'      => 'publish',
+				'numberposts'      => 1,
+				'fields'           => 'ids',
+				'suppress_filters' => false,
+			)
+		);
+		return $ids ? (int) $ids[0] : 0;
 	}
 
 	/**
@@ -59,7 +108,7 @@ class EMCP_Tools_Themer_Dynamic {
 	public static function post_title( array $args = array() ): string {
 		$tag  = self::tag( (string) ( $args['tag'] ?? 'h1' ), 'h1' );
 		$id   = self::queried_id();
-		$text = $id ? get_the_title( $id ) : ( is_home() ? get_the_title( (int) get_option( 'page_for_posts' ) ) : '' );
+		$text = self::post_title_text();
 		if ( '' === $text ) {
 			return '';
 		}
@@ -345,32 +394,6 @@ class EMCP_Tools_Themer_Dynamic {
 	}
 
 	/**
-	 * A custom field of the queried post (ACF-aware). Fills the "no dynamic-field
-	 * tags" gap for Gutenberg/Elementor dynamic templates.
-	 *
-	 * @param array $args { key (required), before, after, fallback }.
-	 * @return string
-	 */
-	public static function custom_field( array $args = array() ): string {
-		$id  = self::queried_id();
-		$key = isset( $args['key'] ) ? (string) $args['key'] : '';
-		if ( $id <= 0 || '' === $key ) {
-			return '';
-		}
-		$value = function_exists( 'get_field' ) ? get_field( $key, $id ) : get_post_meta( $id, $key, true );
-		if ( is_array( $value ) ) {
-			$value = implode( ', ', array_map( 'strval', $value ) );
-		}
-		$value = trim( (string) $value );
-		if ( '' === $value ) {
-			return isset( $args['fallback'] ) ? '<span class="emcp-dyn emcp-dyn-field">' . esc_html( (string) $args['fallback'] ) . '</span>' : '';
-		}
-		$before = isset( $args['before'] ) ? esc_html( (string) $args['before'] ) : '';
-		$after  = isset( $args['after'] ) ? esc_html( (string) $args['after'] ) : '';
-		return '<span class="emcp-dyn emcp-dyn-field">' . $before . esc_html( $value ) . $after . '</span>';
-	}
-
-	/**
 	 * The featured image of the queried post.
 	 *
 	 * @param array $args { size (default 'large') }.
@@ -543,19 +566,125 @@ class EMCP_Tools_Themer_Dynamic {
 	 *
 	 * @return array<string,array{label:string,icon:string}>
 	 */
-	public static function catalog(): array {
+	/**
+	 * Resolve a source to its raw value.
+	 *
+	 * This is the single resolution point. render() composes markup on top of
+	 * it, and the Elementor tags, block bindings and MCP compiler all read it
+	 * directly. Presentation arguments (tag, link) are deliberately ignored
+	 * here: a bound heading wants the title, not a wrapped <h1>.
+	 *
+	 * @since 3.13.0
+	 * @param string $key  Source key.
+	 * @param array  $args Source arguments.
+	 * @return array{type:string,value:mixed}
+	 */
+	public static function value( string $key, array $args = array() ): array {
+		$def = EMCP_Tools_Themer_Dynamic_Catalog::get( $key );
+		if ( null === $def ) {
+			return array( 'type' => 'text', 'value' => '' );
+		}
+		$type = $def['type'];
+
+		switch ( $key ) {
+			case 'post-title':
+				$out = self::post_title_text();
+				break;
+			case 'archive-title':
+				$out = self::archive_title_text();
+				break;
+			case 'site-title':
+				$out = (string) get_bloginfo( 'name' );
+				break;
+			case 'description':
+				$out = (string) get_bloginfo( 'description' );
+				break;
+			case 'site-logo':
+				$out = self::image_value( (int) get_theme_mod( 'custom_logo' ) );
+				break;
+			case 'post-excerpt':
+				$id  = self::queried_id();
+				$out = $id ? (string) get_the_excerpt( $id ) : '';
+				break;
+			case 'post-url':
+				$id  = self::queried_id();
+				$out = $id ? (string) get_permalink( $id ) : '';
+				break;
+			case 'post-date':
+				$id  = self::queried_id();
+				$out = $id ? (string) get_post_time( 'c', false, $id ) : '';
+				break;
+			case 'post-id':
+				$id  = self::queried_id();
+				$out = $id ? (string) $id : '';
+				break;
+			case 'featured-image':
+				$id  = self::queried_id();
+				$out = self::image_value( $id ? (int) get_post_thumbnail_id( $id ) : 0 );
+				break;
+			default:
+				/**
+				 * Resolve a source the free provider does not implement.
+				 *
+				 * @since 3.13.0
+				 * @param mixed  $value Null when unresolved.
+				 * @param string $key   Source key.
+				 * @param array  $args  Source args.
+				 */
+				$filtered = apply_filters( 'emcp_themer_dynamic_value', null, $key, $args );
+				if ( null !== $filtered ) {
+					$out = $filtered;
+					break;
+				}
+				// html sources keep their markup as the value. Anything else with
+				// no value implementation resolves empty rather than guessing.
+				$out = ( 'html' === $type ) ? self::render( $key, $args ) : '';
+		}
+
+		if ( 'image' === $type && ! is_array( $out ) ) {
+			$out = self::image_value( 0 );
+		}
+		return array( 'type' => $type, 'value' => $out );
+	}
+
+	/**
+	 * Plain text of the queried post's title.
+	 *
+	 * @return string
+	 */
+	private static function post_title_text(): string {
+		$id = self::queried_id();
+		if ( $id ) {
+			return (string) get_the_title( $id );
+		}
+		return is_home() ? (string) get_the_title( (int) get_option( 'page_for_posts' ) ) : '';
+	}
+
+	/**
+	 * Normalize an attachment id into the image value shape.
+	 *
+	 * @param int $id Attachment id.
+	 * @return array{id:int,url:string,alt:string}
+	 */
+	private static function image_value( int $id ): array {
+		if ( $id <= 0 ) {
+			return array( 'id' => 0, 'url' => '', 'alt' => '' );
+		}
+		$src = wp_get_attachment_image_src( $id, 'full' );
 		return array(
-			'post-title'    => array( 'label' => __( 'Post/Page Title', 'emcp-tools' ), 'icon' => 'heading' ),
-			'archive-title' => array( 'label' => __( 'Archive Title', 'emcp-tools' ), 'icon' => 'archive' ),
-			'breadcrumbs'   => array( 'label' => __( 'Breadcrumbs', 'emcp-tools' ), 'icon' => 'admin-links' ),
-			'post-meta'     => array( 'label' => __( 'Post Meta', 'emcp-tools' ), 'icon' => 'list-view' ),
-			'site-logo'     => array( 'label' => __( 'Site Logo', 'emcp-tools' ), 'icon' => 'format-image' ),
-			'site-title'    => array( 'label' => __( 'Site Title', 'emcp-tools' ), 'icon' => 'admin-home' ),
-			'nav-menu'      => array( 'label' => __( 'Menu', 'emcp-tools' ), 'icon' => 'menu' ),
-			'description'   => array( 'label' => __( 'Description', 'emcp-tools' ), 'icon' => 'text' ),
-			'post-content'  => array( 'label' => __( 'Post Content', 'emcp-tools' ), 'icon' => 'media-document' ),
-			'archive-loop'  => array( 'label' => __( 'Archive Posts', 'emcp-tools' ), 'icon' => 'grid-view' ),
+			'id'  => $id,
+			'url' => is_array( $src ) && isset( $src[0] ) ? (string) $src[0] : '',
+			'alt' => (string) get_post_meta( $id, '_wp_attachment_image_alt', true ),
 		);
+	}
+
+	public static function catalog(): array {
+		$out = array();
+		foreach ( EMCP_Tools_Themer_Dynamic_Catalog::all() as $key => $def ) {
+			// Existing callers (blocks, widgets) read only label and icon.
+			$out[ $key ] = array( 'label' => $def['label'], 'icon' => $def['icon'] );
+		}
+		return $out;
 	}
 
 	/**

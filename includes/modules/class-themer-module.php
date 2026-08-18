@@ -101,6 +101,15 @@ class EMCP_Tools_Themer_Module extends EMCP_Tools_Module {
 		if ( class_exists( 'EMCP_Tools_Themer_Widgets' ) ) {
 			( new EMCP_Tools_Themer_Widgets() )->init();
 		}
+		// Dynamic tags let ANY Elementor widget bind a field to these sources,
+		// not just the Themer widgets above.
+		if ( class_exists( 'EMCP_Tools_Themer_Elementor_Tags' ) ) {
+			EMCP_Tools_Themer_Elementor_Tags::init();
+		}
+		// Gutenberg counterpart: core blocks bind to the same sources.
+		if ( class_exists( 'EMCP_Tools_Themer_Block_Bindings' ) ) {
+			EMCP_Tools_Themer_Block_Bindings::init();
+		}
 		if ( class_exists( 'EMCP_Tools_Themer_PHP' ) ) {
 			( new EMCP_Tools_Themer_PHP() )->init();
 		}

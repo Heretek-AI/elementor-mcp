@@ -1,0 +1,99 @@
+<?php
+/**
+ * Dynamic source definitions.
+ *
+ * Split out of EMCP_Tools_Themer_Dynamic so the four surfaces (Gutenberg
+ * blocks, Elementor widgets, Elementor dynamic tags, block bindings) have one
+ * file to agree with. Every source declares a value TYPE, which decides where
+ * it may be bound: a text source can fill a heading, an image source cannot.
+ *
+ * @package EMCP_Tools
+ * @since   3.13.0
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * @since 3.13.0
+ */
+class EMCP_Tools_Themer_Dynamic_Catalog {
+
+	/** Value types a source may declare. */
+	const TYPES = array( 'text', 'url', 'image', 'date', 'html' );
+
+	/**
+	 * All sources, free plus any registered by Pro.
+	 *
+	 * @return array<string,array{label:string,icon:string,type:string,args:string[],bindable:bool}>
+	 */
+	public static function all(): array {
+		$sources = array(
+			'post-title'    => array( 'label' => __( 'Post/Page Title', 'emcp-tools' ), 'icon' => 'heading', 'type' => 'text', 'args' => array( 'tag', 'link' ) ),
+			'archive-title' => array( 'label' => __( 'Archive Title', 'emcp-tools' ), 'icon' => 'archive', 'type' => 'text', 'args' => array( 'tag', 'show_prefix' ) ),
+			'site-title'    => array( 'label' => __( 'Site Title', 'emcp-tools' ), 'icon' => 'admin-home', 'type' => 'text', 'args' => array( 'tag', 'link' ) ),
+			'description'   => array( 'label' => __( 'Description', 'emcp-tools' ), 'icon' => 'text', 'type' => 'text', 'args' => array() ),
+			'post-excerpt'   => array( 'label' => __( 'Post Excerpt', 'emcp-tools' ), 'icon' => 'excerpt-view', 'type' => 'text', 'args' => array() ),
+			'post-url'       => array( 'label' => __( 'Post URL', 'emcp-tools' ), 'icon' => 'admin-links', 'type' => 'url', 'args' => array() ),
+			'post-date'      => array( 'label' => __( 'Post Date', 'emcp-tools' ), 'icon' => 'calendar-alt', 'type' => 'date', 'args' => array( 'format' ) ),
+			'post-id'        => array( 'label' => __( 'Post ID', 'emcp-tools' ), 'icon' => 'info', 'type' => 'text', 'args' => array() ),
+			'featured-image' => array( 'label' => __( 'Featured Image', 'emcp-tools' ), 'icon' => 'format-image', 'type' => 'image', 'args' => array( 'size' ) ),
+			'site-logo'     => array( 'label' => __( 'Site Logo', 'emcp-tools' ), 'icon' => 'format-image', 'type' => 'image', 'args' => array( 'link' ) ),
+			'post-content'  => array( 'label' => __( 'Post Content', 'emcp-tools' ), 'icon' => 'media-document', 'type' => 'html', 'args' => array() ),
+			'post-meta'     => array( 'label' => __( 'Post Meta', 'emcp-tools' ), 'icon' => 'list-view', 'type' => 'html', 'args' => array( 'show_date', 'show_author' ) ),
+			'breadcrumbs'   => array( 'label' => __( 'Breadcrumbs', 'emcp-tools' ), 'icon' => 'admin-links', 'type' => 'html', 'args' => array( 'separator', 'home_label' ) ),
+			'nav-menu'      => array( 'label' => __( 'Menu', 'emcp-tools' ), 'icon' => 'menu', 'type' => 'html', 'args' => array( 'menu' ) ),
+			'archive-loop'  => array( 'label' => __( 'Archive Posts', 'emcp-tools' ), 'icon' => 'grid-view', 'type' => 'html', 'args' => array( 'columns', 'show_excerpt' ) ),
+		);
+
+		/**
+		 * Register additional dynamic sources (Pro attaches here).
+		 *
+		 * @since 3.13.0
+		 * @param array $sources Source definitions keyed by source key.
+		 */
+		$sources = (array) apply_filters( 'emcp_themer_dynamic_sources', $sources );
+
+		$out = array();
+		foreach ( $sources as $key => $def ) {
+			$def  = (array) $def;
+			$type = isset( $def['type'] ) && in_array( $def['type'], self::TYPES, true ) ? $def['type'] : 'text';
+
+			$out[ (string) $key ] = array(
+				'label'    => isset( $def['label'] ) ? (string) $def['label'] : (string) $key,
+				'icon'     => isset( $def['icon'] ) ? (string) $def['icon'] : 'admin-generic',
+				'type'     => $type,
+				'args'     => isset( $def['args'] ) ? array_values( (array) $def['args'] ) : array(),
+				// html sources emit markup, so they can never fill a typed field.
+				'bindable' => 'html' !== $type,
+			);
+		}
+		return $out;
+	}
+
+	/**
+	 * One source definition.
+	 *
+	 * @param string $key Source key.
+	 * @return array|null
+	 */
+	public static function get( string $key ): ?array {
+		$all = self::all();
+		return isset( $all[ $key ] ) ? $all[ $key ] : null;
+	}
+
+	/**
+	 * Sources that can fill a typed field.
+	 *
+	 * @return array
+	 */
+	public static function bindable(): array {
+		return array_filter(
+			self::all(),
+			static function ( $def ) {
+				return ! empty( $def['bindable'] );
+			}
+		);
+	}
+}

@@ -4,7 +4,16 @@ All notable changes to MCP Tools for Elementor are documented in this file.
 
 ## [3.13.0]
 
-Security release. It began as a patch for an external audit of 3.12.3 and grew into a rewrite of how raw SQL is checked, after five review rounds kept finding ways past the old check. Please update.
+Adds dynamic data to EMCP Themer, and rewrites how raw SQL is checked. Please update.
+
+### Added
+- **Themer templates can pull in live data, the way Elementor Pro's dynamic widgets do.** A heading can show the post title, an image can show the featured image, a button can link to the post. Pick the source from the field itself rather than hunting for a special widget: in Elementor it appears in the dynamic picker on any field that accepts one, and in the block editor it binds to a Heading, Paragraph, Image, or Button.
+  **This works on free Elementor.** Elementor ships the machinery for dynamic fields but none of the sources, so on a free install the picker is empty. EMCP fills it. Ten sources are free: post title, post excerpt, post URL, post date, post ID, featured image, archive title, site title, site logo, and the site description.
+  Pro adds the sources that need configuring, plus a fallback value for when a field is empty: custom fields (ACF-aware), author name, bio, URL and avatar, and taxonomy terms.
+- **Connected AI agents can build dynamic templates too.** A new `list-dynamic-sources` tool tells an agent what is available and what each source produces, and the existing widget and block tools accept a binding alongside the usual settings. A binding that cannot work, such as an image source in a heading, is refused when the agent makes the call rather than rendering blank later.
+- **Five sources that were missing.** Post excerpt, post URL, post date and post ID are new. Featured image existed in the code but was never listed anywhere, so nothing could actually use it.
+
+Security release notes below. It began as a patch for an external audit of 3.12.3 and grew into a rewrite of how raw SQL is checked, after five review rounds kept finding ways past the old check. Please update.
 
 ### Changed
 - **The read-only database guard was rebuilt around a real tokenizer.** The old design normalized a query into a plain string and then pattern-matched it, which meant a query only had to be read slightly differently from how MySQL reads it for something to slip through. Five review rounds found four such differences, three of which could expose data from the user table. The guard now splits a query into typed pieces and inspects those, so a table name inside quotes is a piece of text and a keyword inside quotes is a piece of text, whatever characters surround them. Anything it cannot account for is refused outright instead of guessed at, and a query is allowed only if it is safe under every way the server could read it. Some deliberately malformed or exotic queries that previously slipped through are now refused; ordinary reporting queries are unaffected.

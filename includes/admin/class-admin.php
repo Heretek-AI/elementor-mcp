@@ -1370,6 +1370,28 @@ class EMCP_Tools_Admin {
 	 * @since 3.13.0
 	 * @return string[]
 	 */
+	/**
+	 * The EMCP Cloud + Marketplace tool slugs.
+	 *
+	 * Doubly conditional: the Cloud module must be on AND the site must be
+	 * connected to an account, so their absence is the normal case and must not
+	 * read as drift.
+	 *
+	 * @since 3.13.0
+	 * @return string[]
+	 */
+	public static function cloud_tool_slugs(): array {
+		return array(
+			'emcp-tools/cloud-status',
+			'emcp-tools/cloud-list',
+			'emcp-tools/cloud-backup',
+			'emcp-tools/cloud-pull',
+			'emcp-tools/cloud-config-sync',
+			'emcp-tools/cloud-marketplace-list',
+			'emcp-tools/cloud-marketplace-install',
+		);
+	}
+
 	public static function themer_tool_slugs(): array {
 		return array(
 			'emcp-tools/create-theme-template',
@@ -3408,6 +3430,9 @@ class EMCP_Tools_Admin {
 			'plugins'   => __( 'Plugins', 'emcp-tools' ),
 			'themes'    => __( 'Themes', 'emcp-tools' ),
 			'gutenberg' => __( 'Gutenberg', 'emcp-tools' ),
+			// EMCP's own subsystems: features this plugin implements rather than
+			// WordPress APIs it drives. Keeps the WordPress tab to core management.
+			'modules'   => __( 'EMCP Modules', 'emcp-tools' ),
 		);
 	}
 
@@ -4130,6 +4155,7 @@ class EMCP_Tools_Admin {
 			// legitimately absent — skip them so the guard flags genuine drift
 			// (renamed/removed tools) and not expected environment-gating.
 			$emcp_conditional = array_merge(
+				self::cloud_tool_slugs(),
 				self::themer_tool_slugs(),
 				self::themer_php_tool_slugs(),
 				self::acf_tool_slugs(),
@@ -4250,7 +4276,7 @@ class EMCP_Tools_Admin {
 				),
 			),
 			'redirects'        => array(
-				'platform' => 'wordpress',
+				'platform' => 'modules',
 				'label' => __( 'Redirects', 'emcp-tools' ),
 				'tools' => array(
 					'emcp-tools/list-redirects'    => array(
@@ -4281,7 +4307,7 @@ class EMCP_Tools_Admin {
 				),
 			),
 			'migrate'          => array(
-				'platform' => 'wordpress',
+				'platform' => 'modules',
 				'label' => __( 'Backup & Migrate', 'emcp-tools' ),
 				'tools' => array(
 					'emcp-tools/create-backup' => array(
@@ -4509,7 +4535,7 @@ class EMCP_Tools_Admin {
 				),
 			),
 			'transactions'     => array(
-				'platform' => 'wordpress',
+				'platform' => 'modules',
 				'label' => __( 'Changes & Rollback', 'emcp-tools' ),
 				'tools' => array(
 					'emcp-tools/list-changes'    => array( 'label' => __( 'List Changes', 'emcp-tools' ),    'description' => __( 'List recent AI-made changes (Elementor/filesystem/database), newest first.', 'emcp-tools' ), 'badges' => array( 'read-only' ) ),
@@ -4518,7 +4544,7 @@ class EMCP_Tools_Admin {
 				),
 			),
 			'search'           => array(
-				'platform' => 'wordpress',
+				'platform' => 'modules',
 				'label' => __( 'Content Search', 'emcp-tools' ),
 				'tools' => array(
 					'emcp-tools/search-content'  => array( 'label' => __( 'Search Content', 'emcp-tools' ),  'description' => __( 'Search the site\'s pages, templates, widgets, and global styles to reuse existing content.', 'emcp-tools' ), 'badges' => array( 'read-only' ) ),
@@ -4526,7 +4552,7 @@ class EMCP_Tools_Admin {
 				),
 			),
 			'content_mirror'   => array(
-				'platform' => 'wordpress',
+				'platform' => 'modules',
 				'label' => __( 'Content Mirror (Git)', 'emcp-tools' ),
 				'tools' => array(
 					'emcp-tools/export-content'        => array( 'label' => __( 'Export Content', 'emcp-tools' ),        'description' => __( 'Export page/template content to git-trackable JSON files.', 'emcp-tools' ), 'badges' => array() ),
@@ -5568,11 +5594,6 @@ class EMCP_Tools_Admin {
 						'description' => __( 'Edit an attachment\'s alt text, title, caption, description.', 'emcp-tools' ),
 						'badges'      => array(),
 					),
-					'emcp-tools/resize-media'     => array(
-						'label'       => __( 'Resize Media', 'emcp-tools' ),
-						'description' => __( 'Resize a Media Library image in place (scale to fit or crop), reversible via backup. Registers only when the Image Optimization module is enabled.', 'emcp-tools' ),
-						'badges'      => array(),
-					),
 					'emcp-tools/delete-media'     => array(
 						'label'       => __( 'Delete Media', 'emcp-tools' ),
 						'description' => __( 'Delete an attachment (permanent; requires confirm).', 'emcp-tools' ),
@@ -5784,7 +5805,7 @@ class EMCP_Tools_Admin {
 		// v4) and the admin re-enables them here. There is no "activate" tool: an
 		// AI can only create drafts; a human admin activates them on the Sandbox tab.
 		$tools['php_snippets'] = array(
-			'platform' => 'wordpress',
+			'platform' => 'modules',
 			'label' => __( 'PHP Snippets (Sandbox)', 'emcp-tools' ),
 			'tools' => array(
 				'emcp-tools/validate-php-snippet' => array(
@@ -5826,7 +5847,7 @@ class EMCP_Tools_Admin {
 		// install. Both read/write in nature but low-risk (data movement, not
 		// arbitrary execution) — enabled-by-default, unlike the sandboxes themselves.
 		$tools['sandbox_cloud'] = array(
-			'platform' => 'wordpress',
+			'platform' => 'modules',
 			'label' => __( 'Sandbox Cloud (Export / Import)', 'emcp-tools' ),
 			'tools' => array(
 				'emcp-tools/export-sandbox-artifact' => array(
@@ -5845,7 +5866,7 @@ class EMCP_Tools_Admin {
 		// Project Memory (Pro) — recall/remember/save-session-summary. Disabled by
 		// default; the approved-guidance injection works with these off.
 		$tools['memory'] = array(
-			'platform' => 'wordpress',
+			'platform' => 'modules',
 			'pro'      => true,
 			'label'    => __( 'Project Memory (Pro)', 'emcp-tools' ),
 			'tools'    => array(
@@ -5867,6 +5888,80 @@ class EMCP_Tools_Admin {
 			),
 		);
 
+		// EMCP Cloud — free module, but the tools only register once the site is
+		// actually connected to a cloud account, so the whole section is gated on
+		// that rather than showing toggles that control nothing.
+		if ( class_exists( 'EMCP_Tools_Cloud_Module' ) && EMCP_Tools_Cloud_Module::is_enabled()
+			&& class_exists( 'EMCP_Tools_Cloud' ) && EMCP_Tools_Cloud::is_connected() ) {
+			$tools['cloud'] = array(
+				'platform' => 'modules',
+				'label'    => __( 'EMCP Cloud', 'emcp-tools' ),
+				'note'     => __( 'Back up and sync your sandbox artifacts and settings to your EMCP Cloud account. These tools appear once this site is connected.', 'emcp-tools' ),
+				'tools'    => array(
+					'emcp-tools/cloud-status'      => array(
+						'label'       => __( 'Cloud Status', 'emcp-tools' ),
+						'description' => __( 'Plan, limits, and usage for the connected account.', 'emcp-tools' ),
+						'badges'      => array( 'read-only' ),
+					),
+					'emcp-tools/cloud-list'        => array(
+						'label'       => __( 'Cloud List', 'emcp-tools' ),
+						'description' => __( 'List the artifacts backed up to your account, optionally by kind.', 'emcp-tools' ),
+						'badges'      => array( 'read-only' ),
+					),
+					'emcp-tools/cloud-backup'      => array(
+						'label'       => __( 'Cloud Backup', 'emcp-tools' ),
+						'description' => __( 'Back up a local sandbox artifact (block, widget, or PHP snippet) to your account.', 'emcp-tools' ),
+						'badges'      => array(),
+					),
+					'emcp-tools/cloud-pull'        => array(
+						'label'       => __( 'Cloud Pull', 'emcp-tools' ),
+						'description' => __( 'Pull a cloud artifact into this site by UUID. It lands as a new inactive draft.', 'emcp-tools' ),
+						'badges'      => array(),
+					),
+					'emcp-tools/cloud-config-sync' => array(
+						'label'       => __( 'Cloud Config Sync', 'emcp-tools' ),
+						'description' => __( 'Push or pull a config blob (settings, brand kit, tool toggles) to or from EMCP Cloud.', 'emcp-tools' ),
+						'badges'      => array(),
+					),
+				),
+			);
+
+			$tools['marketplace'] = array(
+				'platform' => 'modules',
+				'label'    => __( 'Marketplace', 'emcp-tools' ),
+				'note'     => __( 'Browse and install published EMCP Cloud marketplace listings. An install always lands as a new inactive draft for you to review before it runs.', 'emcp-tools' ),
+				'tools'    => array(
+					'emcp-tools/cloud-marketplace-list'    => array(
+						'label'       => __( 'Marketplace List', 'emcp-tools' ),
+						'description' => __( 'Browse published marketplace listings (blocks, widgets, snippets).', 'emcp-tools' ),
+						'badges'      => array( 'read-only' ),
+					),
+					'emcp-tools/cloud-marketplace-install' => array(
+						'label'       => __( 'Marketplace Install', 'emcp-tools' ),
+						'description' => __( 'Install a listing by slug. It is imported as a new inactive draft.', 'emcp-tools' ),
+						'badges'      => array(),
+					),
+				),
+			);
+		}
+
+		// Image Optimization — free, opt-in module (it mutates uploads). One tool;
+		// the compression and WebP pipeline itself is settings, not MCP surface.
+		if ( class_exists( 'EMCP_Tools_Image_Optimization_Module' ) && EMCP_Tools_Image_Optimization_Module::module_is_active() ) {
+			$tools['image_optimization'] = array(
+				'platform' => 'modules',
+				'label'    => __( 'Image Optimization', 'emcp-tools' ),
+				'note'     => __( 'Compression, WebP generation, and the bulk optimizer are configured on the Modules tab. This is the one operation exposed over MCP.', 'emcp-tools' ),
+				'tools'    => array(
+					'emcp-tools/resize-media' => array(
+						'label'       => __( 'Resize Media', 'emcp-tools' ),
+						'description' => __( 'Resize a Media Library image in place (scale to fit, or crop to exact size). The attachment id and URLs are unchanged, and the original is backed up.', 'emcp-tools' ),
+						'badges'      => array(),
+					),
+				),
+			);
+		}
+
 		// EMCP Themer — free, module-gated. The template CPT lives under its own
 		// top-level menu, but the tools belong on this grid like every other
 		// domain, so an admin can see and toggle them individually. All nine are
@@ -5874,7 +5969,7 @@ class EMCP_Tools_Admin {
 		// kill switch for the whole feature.
 		if ( class_exists( 'EMCP_Tools_Themer_Module' ) && EMCP_Tools_Themer_Module::is_enabled() ) {
 			$tools['themer'] = array(
-				'platform' => 'wordpress',
+				'platform' => 'modules',
 				'label'    => __( 'EMCP Themer (theme builder)', 'emcp-tools' ),
 				'note'     => __( 'Build headers, footers, and single/archive/search/404 layouts with any page builder, then decide where each one applies. Template CONTENT is built with the Gutenberg or Elementor tools against the returned template_id; these tools create and route the templates.', 'emcp-tools' ),
 				'tools'    => array(
@@ -5933,7 +6028,7 @@ class EMCP_Tools_Admin {
 		// module is active, alongside where the feature actually lives.
 		if ( class_exists( 'EMCP_Tools_Themer_Module' ) && EMCP_Tools_Themer_Module::is_enabled() ) {
 			$tools['themer_php'] = array(
-				'platform' => 'wordpress',
+				'platform' => 'modules',
 				'label'    => __( 'Themer PHP Templates', 'emcp-tools' ),
 				'tools'    => array(
 					'emcp-tools/create-theme-php-template' => array(

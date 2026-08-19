@@ -178,6 +178,7 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 
 = 3.13.1 =
 Fixes a critical error on the front end when a dynamic value is used on a standard Elementor widget. If you are on 3.13.0 and using dynamic data, please update.
+* Fixed: saving an Elementor document could hang the site and fill the error log (#119). Opening or saving a document the builder had not yet converted sent the search indexer into a loop until PHP ran out of memory. Thanks to @HopeItBuilds for the report and @HafizMMoaz for the fix.
 * Fixed: a page showed "There has been a critical error on this website" when a normal Elementor widget such as a Heading was given a dynamic value. Elementor rebuilds a dynamic source from its class when the page renders, and 3.13.0 used one shared class for all seventeen sources, so the rebuilt source no longer knew which one it was. Each source is now its own class. Nothing was damaged: affected pages render again as soon as you update, with nothing to redo. The block editor was never affected.
 
 = 3.13.0 =

@@ -55,6 +55,9 @@ final class EMCP_Tools_Pro_Loader {
 		'includes/ai-chat/class-ai-chat-image-reader.php',
 		'includes/ai-chat/class-ai-chat-usage.php',
 		'includes/ai-chat/class-ai-chat-controller.php',
+		// Loaded here, not lazily: Themer_Pro::init() guards on class_exists, so a
+		// missing file silently drops every Pro dynamic source instead of erroring.
+		'includes/themer/dynamic/class-themer-dynamic-pro.php',
 		'includes/themer/class-themer-pro-matchers.php',
 		'includes/themer/class-themer-pro-conditions.php',
 		'includes/themer/class-themer-pro.php',

@@ -1360,6 +1360,30 @@ class EMCP_Tools_Admin {
 	 *
 	 * @return string[]
 	 */
+	/**
+	 * The EMCP Themer tool slugs.
+	 *
+	 * Module-gated: they only register while the Themer module is active, so the
+	 * drift guard has to treat their absence as expected rather than as a
+	 * renamed or removed tool.
+	 *
+	 * @since 3.13.0
+	 * @return string[]
+	 */
+	public static function themer_tool_slugs(): array {
+		return array(
+			'emcp-tools/create-theme-template',
+			'emcp-tools/list-theme-templates',
+			'emcp-tools/get-theme-template',
+			'emcp-tools/update-theme-template',
+			'emcp-tools/set-template-conditions',
+			'emcp-tools/delete-theme-template',
+			'emcp-tools/resolve-template',
+			'emcp-tools/list-condition-targets',
+			'emcp-tools/list-dynamic-sources',
+		);
+	}
+
 	public static function themer_php_tool_slugs(): array {
 		return array(
 			'emcp-tools/create-theme-php-template',
@@ -4106,6 +4130,7 @@ class EMCP_Tools_Admin {
 			// legitimately absent — skip them so the guard flags genuine drift
 			// (renamed/removed tools) and not expected environment-gating.
 			$emcp_conditional = array_merge(
+				self::themer_tool_slugs(),
 				self::themer_php_tool_slugs(),
 				self::acf_tool_slugs(),
 				self::woo_tool_slugs(),
@@ -5841,6 +5866,66 @@ class EMCP_Tools_Admin {
 				),
 			),
 		);
+
+		// EMCP Themer — free, module-gated. The template CPT lives under its own
+		// top-level menu, but the tools belong on this grid like every other
+		// domain, so an admin can see and toggle them individually. All nine are
+		// on by default; the module toggle on the Modules tab remains the single
+		// kill switch for the whole feature.
+		if ( class_exists( 'EMCP_Tools_Themer_Module' ) && EMCP_Tools_Themer_Module::is_enabled() ) {
+			$tools['themer'] = array(
+				'platform' => 'wordpress',
+				'label'    => __( 'EMCP Themer (theme builder)', 'emcp-tools' ),
+				'note'     => __( 'Build headers, footers, and single/archive/search/404 layouts with any page builder, then decide where each one applies. Template CONTENT is built with the Gutenberg or Elementor tools against the returned template_id; these tools create and route the templates.', 'emcp-tools' ),
+				'tools'    => array(
+					'emcp-tools/create-theme-template'   => array(
+						'label'       => __( 'Create Theme Template', 'emcp-tools' ),
+						'description' => __( 'Create a typed theme template (header, footer, single, archive, search, 404).', 'emcp-tools' ),
+						'badges'      => array(),
+					),
+					'emcp-tools/list-theme-templates'    => array(
+						'label'       => __( 'List Theme Templates', 'emcp-tools' ),
+						'description' => __( 'List theme templates, optionally filtered by type.', 'emcp-tools' ),
+						'badges'      => array( 'read-only' ),
+					),
+					'emcp-tools/get-theme-template'      => array(
+						'label'       => __( 'Get Theme Template', 'emcp-tools' ),
+						'description' => __( 'Full detail for one template: type, conditions, detected builder, content status.', 'emcp-tools' ),
+						'badges'      => array( 'read-only' ),
+					),
+					'emcp-tools/update-theme-template'   => array(
+						'label'       => __( 'Update Theme Template', 'emcp-tools' ),
+						'description' => __( "Update a template's title or type.", 'emcp-tools' ),
+						'badges'      => array(),
+					),
+					'emcp-tools/set-template-conditions' => array(
+						'label'       => __( 'Set Template Conditions', 'emcp-tools' ),
+						'description' => __( 'Set where a template applies. Granular selectors, Exclude rules, and priority require Pro.', 'emcp-tools' ),
+						'badges'      => array(),
+					),
+					'emcp-tools/delete-theme-template'   => array(
+						'label'       => __( 'Delete Theme Template', 'emcp-tools' ),
+						'description' => __( 'Delete a theme template.', 'emcp-tools' ),
+						'badges'      => array( 'destructive' ),
+					),
+					'emcp-tools/resolve-template'        => array(
+						'label'       => __( 'Resolve Template', 'emcp-tools' ),
+						'description' => __( 'Show which template wins each slot (header/body/footer) for a given post or context. Use it to debug conditions.', 'emcp-tools' ),
+						'badges'      => array( 'read-only' ),
+					),
+					'emcp-tools/list-condition-targets'  => array(
+						'label'       => __( 'List Condition Targets', 'emcp-tools' ),
+						'description' => __( 'Discovery: the selectors and objects a template can target, so conditions are built from real values.', 'emcp-tools' ),
+						'badges'      => array( 'read-only' ),
+					),
+					'emcp-tools/list-dynamic-sources'    => array(
+						'label'       => __( 'List Dynamic Sources', 'emcp-tools' ),
+						'description' => __( 'Discovery: the dynamic sources this site offers, what each produces, and where each can be used (widget, block, Elementor tag, block binding).', 'emcp-tools' ),
+						'badges'      => array( 'read-only' ),
+					),
+				),
+			);
+		}
 
 		// Themer PHP Templates — free, capability-gated + master-switch-gated;
 		// disabled by default. AI authors DRAFTS; a human attaches one in a

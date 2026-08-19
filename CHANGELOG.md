@@ -2,6 +2,15 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.13.1]
+
+Fixes a critical error on the front end when a dynamic value is used on a standard Elementor widget. If you are on 3.13.0 and using dynamic data, please update.
+
+### Fixed
+- **A page died with "There has been a critical error on this website" when a normal Elementor widget, such as a Heading, was given a dynamic value.** The dynamic picker offered every source and the editor looked right, so the problem only appeared once a visitor loaded the page.
+  Elementor stores a dynamic source by class name and rebuilds it when the page renders. 3.13.0 registered all seventeen sources as one shared class that was told which source it was when it was created, and that instruction was lost by the time Elementor rebuilt it, so rendering failed outright. Each source is now its own class, which is how Elementor's own dynamic sources are built, so a rebuilt source always knows what it is. No page content or setting was damaged: affected pages render correctly again as soon as you update, with nothing to redo.
+  The block editor was never affected. Its bindings use a different mechanism and worked throughout.
+
 ## [3.13.0]
 
 Adds nine widgets and dynamic data to EMCP Themer, and rewrites how raw SQL is checked. Please update.

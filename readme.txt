@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.13.0
+Stable tag: 3.13.1
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -175,6 +175,10 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.13.1 =
+Fixes a critical error on the front end when a dynamic value is used on a standard Elementor widget. If you are on 3.13.0 and using dynamic data, please update.
+* Fixed: a page showed "There has been a critical error on this website" when a normal Elementor widget such as a Heading was given a dynamic value. Elementor rebuilds a dynamic source from its class when the page renders, and 3.13.0 used one shared class for all seventeen sources, so the rebuilt source no longer knew which one it was. Each source is now its own class. Nothing was damaged: affected pages render again as soon as you update, with nothing to redo. The block editor was never affected.
 
 = 3.13.0 =
 Adds nine widgets and dynamic data to EMCP Themer, and rewrites how raw SQL is checked. Please update.

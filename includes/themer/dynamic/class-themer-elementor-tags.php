@@ -95,7 +95,20 @@ class EMCP_Tools_Themer_Elementor_Tags {
 			return;
 		}
 		foreach ( self::taggable_keys() as $key ) {
-			$manager->register( new EMCP_Tools_Themer_Elementor_Tag( $key ) );
+			// Each source needs its OWN class: Elementor stores only the class
+			// name and rebuilds the tag from it, so a shared class cannot tell
+			// which source it was and the front end fatals on render.
+			$class = EMCP_Tools_Themer_Elementor_Tag::class_for( $key );
+			if ( '' === $class ) {
+				// A catalogued source with no tag class. Skip rather than
+				// register something that cannot be rebuilt.
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+					error_log( '[EMCP Tools] dynamic source "' . $key . '" has no Elementor tag class; not registered.' );
+				}
+				continue;
+			}
+			$manager->register( new $class() );
 		}
 	}
 }

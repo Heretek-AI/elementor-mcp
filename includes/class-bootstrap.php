@@ -263,6 +263,7 @@ class EMCP_Tools_Bootstrap {
 		require_once EMCP_TOOLS_DIR . 'includes/themer/class-themer-theme-adapters.php';
 		require_once EMCP_TOOLS_DIR . 'includes/themer/class-themer-render-controller.php';
 		require_once EMCP_TOOLS_DIR . 'includes/themer/class-themer-hfe-conflict.php';
+		require_once EMCP_TOOLS_DIR . 'includes/themer/class-themer-betheme-conflict.php';
 		require_once EMCP_TOOLS_DIR . 'includes/themer/elements/class-themer-element-base.php';
 		require_once EMCP_TOOLS_DIR . 'includes/themer/elements/class-themer-element-archive-posts.php';
 		require_once EMCP_TOOLS_DIR . 'includes/themer/elements/class-themer-element-post-info.php';

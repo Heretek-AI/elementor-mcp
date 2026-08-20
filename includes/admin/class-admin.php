@@ -1607,6 +1607,19 @@ class EMCP_Tools_Admin {
 	 * @since 3.4.0
 	 * @return string[]
 	 */
+	/**
+	 * True when BeTheme is the active theme.
+	 *
+	 * Keys off the template rather than the stylesheet so a child theme of
+	 * BeTheme counts, which is how most production BeTheme sites are built.
+	 *
+	 * @since 3.14.0
+	 * @return bool
+	 */
+	public static function betheme_available(): bool {
+		return 'betheme' === strtolower( (string) get_template() );
+	}
+
 	public static function theme_tool_slugs(): array {
 		return array(
 			'emcp-tools/theme-read',
@@ -1625,6 +1638,8 @@ class EMCP_Tools_Admin {
 			'emcp-tools/generateblocks-write',
 			'emcp-tools/blocksy-blocks-read',
 			'emcp-tools/blocksy-blocks-write',
+			'emcp-tools/betheme-read',
+			'emcp-tools/betheme-write',
 			'emcp-tools/blocksy-extensions-read',
 			'emcp-tools/blocksy-extensions-write',
 		);
@@ -5404,6 +5419,30 @@ class EMCP_Tools_Admin {
 						'operations'       => array( 'add-block' ),
 						'available'        => self::generateblocks_available(),
 						'requires'         => array( 'name' => 'GenerateBlocks', 'kind' => 'plugin' ),
+					),
+				),
+			),
+			'theme_betheme'    => array(
+				'platform' => 'themes',
+				'pro'      => true,
+				'label'    => __( 'BeTheme + BeBuilder', 'emcp-tools' ),
+				'note'     => __( 'BeTheme (Muffin Group) and its BeBuilder page builder, as one pack. Read and write a curated set of the theme\'s 830 settings, and build page content as BeBuilder sections. Enabled only when BeTheme is the active theme. BeTheme\'s own template system is not covered here: use EMCP Themer, or BeTheme\'s Templates screen directly.', 'emcp-tools' ),
+				'tools'    => array(
+					'emcp-tools/betheme-read'  => array(
+						'label'            => __( 'BeTheme Read', 'emcp-tools' ),
+						'description'      => __( 'Read theme context, curated settings (colors, typography, layout, header/footer, blog), the BeBuilder item catalog with per-item schemas, and a page\'s BeBuilder structure.', 'emcp-tools' ),
+						'badges'           => array( 'read-only' ),
+						'operations'       => array( 'get-context', 'get-settings', 'list-item-types', 'get-item-schema', 'get-page' ),
+						'available'        => self::betheme_available(),
+						'requires'         => array( 'name' => 'BeTheme', 'kind' => 'theme' ),
+					),
+					'emcp-tools/betheme-write' => array(
+						'label'            => __( 'BeTheme Write', 'emcp-tools' ),
+						'description'      => __( 'Write curated theme settings, replace a page\'s BeBuilder content, or append a section. Settings outside the curated list are reported in skipped[]; an unknown item type is refused rather than written.', 'emcp-tools' ),
+						'badges'           => array(),
+						'operations'       => array( 'update-settings', 'set-page', 'add-section' ),
+						'available'        => self::betheme_available(),
+						'requires'         => array( 'name' => 'BeTheme', 'kind' => 'theme' ),
 					),
 				),
 			),

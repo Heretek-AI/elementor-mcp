@@ -109,6 +109,7 @@ final class EMCP_Tools_Pro_Loader {
 		'includes/blocks-catalog/class-blocksy-blocks-catalog.php',
 		'includes/abilities/class-blocksy-blocks-integration.php',
 		'includes/abilities/class-blocksy-extensions-integration.php',
+		'includes/abilities/class-betheme-integration.php',
 		'includes/abilities/class-skill-abilities.php',
 	);
 

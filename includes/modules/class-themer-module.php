@@ -74,6 +74,13 @@ class EMCP_Tools_Themer_Module extends EMCP_Tools_Module {
 			EMCP_Tools_Themer_HFE_Conflict::init();
 		}
 
+		// BeTheme renders page content with BeBuilder, which a Themer body
+		// template replaces wholesale. Nothing errors, the content is just
+		// absent, so the admin is told rather than left to debug a blank page.
+		if ( class_exists( 'EMCP_Tools_Themer_BeTheme_Conflict' ) ) {
+			EMCP_Tools_Themer_BeTheme_Conflict::init();
+		}
+
 		EMCP_Tools_Themer_Index::register_hooks();
 
 		// One-time heal: a prior build could leave the condition index empty (the

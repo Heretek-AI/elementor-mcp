@@ -356,6 +356,11 @@ class EMCP_Tools_Ability_Registrar {
 		if ( class_exists( 'EMCP_Tools_GenerateBlocks_Integration' ) ) {
 			$theme_integrations[] = new EMCP_Tools_GenerateBlocks_Integration();
 		}
+		// BeTheme (Pro): theme options + BeBuilder page content. Registers only
+		// when BeTheme is the active template, so a child theme counts too.
+		if ( class_exists( 'EMCP_Tools_BeTheme_Integration' ) ) {
+			$theme_integrations[] = new EMCP_Tools_BeTheme_Integration();
+		}
 		// Blocksy (Pro): blocks + Companion extensions.
 		if ( class_exists( 'EMCP_Tools_Blocksy_Blocks_Integration' ) ) {
 			$theme_integrations[] = new EMCP_Tools_Blocksy_Blocks_Integration();

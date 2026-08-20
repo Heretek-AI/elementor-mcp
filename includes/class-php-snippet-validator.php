@@ -5,9 +5,22 @@
  * Two layers:
  *   1. PARSE — token_get_all( …, TOKEN_PARSE ) so the snippet must be
  *      syntactically valid PHP before it can be stored as runnable.
- *   2. SECURITY SCAN — a token walk that flags dangerous constructs. CRITICAL
- *      findings block creation/activation outright; WARNING findings are surfaced
- *      to the human reviewer in the Sandbox UI.
+ *   2. SECURITY SCAN — a token walk that flags dangerous constructs, at three
+ *      severities:
+ *        critical — blocks creation and activation outright.
+ *        warning  — does not block. Changes site state or reaches outside the
+ *                   snippet, so a reviewer should read it before activating.
+ *        notice   — does not block. Ordinary in working code, reported only so
+ *                   the report is complete.
+ *
+ *      The notice tier exists because everything used to be a warning, which
+ *      meant a well-written snippet arrived covered in them. A reviewer who is
+ *      told that ten routine things are warnings learns to skim, and skimming
+ *      is exactly how the one that mattered gets waved through. Every message
+ *      therefore says what the code does AND what to check.
+ *
+ *      Use summary() to describe a report to a person; do not count findings at
+ *      the call site.
  *
  * IMPORTANT — this is a GUARDRAIL, not a guarantee. PHP is expressive enough to
  * hide intent (variable functions, decoded strings, reflection), so static
@@ -106,58 +119,67 @@ class EMCP_Tools_PHP_Snippet_Validator {
 	);
 
 	/**
-	 * Function names that are flagged for the human reviewer but do not block.
+	 * Functions worth a reviewer's attention: they change site state, reach
+	 * outside the snippet, or read something the snippet did not create. None of
+	 * them block. Each message says what happens and what to check, because
+	 * "flagged" without "so look at this" only makes a reviewer uneasy.
 	 *
 	 * @var array<string,string>
 	 */
-	private static $warn_funcs = array(
-		'fopen'             => 'Opens a file (could read or write).',
-		'file_get_contents' => 'Reads a file or a remote URL.',
-		'readfile'          => 'Reads and outputs a file.',
-		'fread'             => 'Reads from a file handle.',
-		'fgets'             => 'Reads from a file handle.',
-		'scandir'           => 'Lists a directory.',
-		'glob'              => 'Lists files by pattern.',
-		'opendir'           => 'Opens a directory.',
-		'define'            => 'Defines a constant (could override core/config constants).',
-		'header'            => 'Sends an HTTP header (could redirect).',
-		'setcookie'         => 'Sets a cookie.',
-		'error_reporting'   => 'Changes error reporting.',
-		'update_option'     => 'Writes a site option.',
-		'delete_option'     => 'Deletes a site option.',
-		'add_option'        => 'Adds a site option.',
-		'wp_mail'           => 'Sends email.',
-		'wp_delete_post'    => 'Deletes a post.',
-		'wp_delete_user'    => 'Deletes a user.',
-		'wp_insert_user'    => 'Creates a user.',
-		'wp_update_user'    => 'Updates a user (could escalate privileges).',
-		'switch_theme'      => 'Switches the active theme.',
+	private static $review_funcs = array(
+		// Reads from disk or a remote URL.
+		'fopen'             => 'Opens a file. Check the path is fixed rather than built from request input.',
+		'file_get_contents' => 'Reads a file or a remote URL. Check the path is fixed rather than built from request input.',
+		'readfile'          => 'Reads a file and sends it to the browser. Check what it can be pointed at.',
+		'fread'             => 'Reads from a file handle. Check where the handle came from.',
+		'fgets'             => 'Reads from a file handle. Check where the handle came from.',
+		'scandir'           => 'Lists the contents of a directory. Check which directory.',
+		'glob'              => 'Lists files matching a pattern. Check which directory it searches.',
+		'opendir'           => 'Opens a directory for reading. Check which directory.',
+		// Changes configuration or the request itself.
+		'define'            => 'Defines a constant. Check it is not overriding one that core or wp-config already sets.',
+		'header'            => 'Sends an HTTP header, which can redirect the visitor. Check the destination.',
+		'setcookie'         => 'Sets a cookie in the visitor\'s browser. Check the name, value, and expiry.',
+		'error_reporting'   => 'Changes which PHP errors are reported. Usually belongs in wp-config, not a snippet.',
+		'set_exception_handler' => 'Takes over handling of uncaught exceptions site-wide, not just for this snippet.',
+		// Writes site data.
+		'update_option'     => 'Writes a site option. Check which option, and that the value is validated.',
+		'delete_option'     => 'Deletes a site option. Check which one, and that nothing else depends on it.',
+		'add_option'        => 'Adds a site option. Check the name is prefixed so it cannot collide.',
+		'wp_mail'           => 'Sends email. Check the recipient, and that a visitor cannot trigger it repeatedly.',
+		'wp_delete_post'    => 'Deletes a post. Check what it selects, and whether the trash is bypassed.',
+		'wp_delete_user'    => 'Deletes a user account. Check what it selects.',
+		'wp_insert_user'    => 'Creates a user account. Check the role it assigns.',
+		'wp_update_user'    => 'Updates a user, which includes their role. Check it cannot raise privileges.',
+		'switch_theme'      => 'Switches the active theme for the whole site.',
 		'activate_plugin'   => 'Activates a plugin.',
 		'deactivate_plugins' => 'Deactivates plugins.',
-		'do_action'         => 'Fires arbitrary hooks.',
-		// Functions that take a callback chosen at runtime — a string callback
-		// (e.g. array_map('system', ...)) bypasses the direct-call scan above.
-		// Flagged so the human reviewer inspects the callback argument.
-		'array_map'         => 'Runs a callback (verify the callback is not a dangerous function name).',
-		'array_filter'      => 'Runs a callback (verify the callback is not a dangerous function name).',
-		'array_walk'        => 'Runs a callback (verify the callback is not a dangerous function name).',
-		'array_walk_recursive' => 'Runs a callback (verify the callback is not a dangerous function name).',
-		'array_reduce'      => 'Runs a callback (verify the callback is not a dangerous function name).',
-		'usort'             => 'Runs a comparison callback (verify the callback).',
-		'uasort'            => 'Runs a comparison callback (verify the callback).',
-		'uksort'            => 'Runs a comparison callback (verify the callback).',
-		'ob_start'          => 'Can run an output callback at buffer flush (verify the callback).',
-		'preg_replace_callback' => 'Runs a callback per match (verify the callback).',
-		'preg_replace_callback_array' => 'Runs callbacks per match (verify the callbacks).',
-		'set_exception_handler' => 'Registers a callback that runs on uncaught exceptions.',
-		'iterator_apply'    => 'Runs a callback over an iterator (verify the callback).',
 	);
 
 	/**
-	 * Superglobals whose use is worth noting (request-derived input).
+	 * Functions that are ordinary in working code and are listed only so the
+	 * report is complete. These are notes, not concerns.
 	 *
-	 * @var string[]
+	 * @var array<string,string>
 	 */
+	private static $note_funcs = array(
+		'do_action'         => 'Fires a hook, so other code can run in response. Normal in WordPress.',
+		// A callback chosen at runtime could name a dangerous function, but an
+		// inline function is safe by inspection, which is the usual case.
+		'array_map'         => 'Runs a callback over an array. Fine with an inline function; check it is not a name taken from input.',
+		'array_filter'      => 'Runs a callback over an array. Fine with an inline function; check it is not a name taken from input.',
+		'array_walk'        => 'Runs a callback over an array. Fine with an inline function; check it is not a name taken from input.',
+		'array_walk_recursive' => 'Runs a callback over an array. Fine with an inline function; check it is not a name taken from input.',
+		'array_reduce'      => 'Runs a callback over an array. Fine with an inline function; check it is not a name taken from input.',
+		'usort'             => 'Sorts using a comparison callback. Fine with an inline function.',
+		'uasort'            => 'Sorts using a comparison callback. Fine with an inline function.',
+		'uksort'            => 'Sorts using a comparison callback. Fine with an inline function.',
+		'ob_start'          => 'Starts output buffering, which is how a snippet captures its own output.',
+		'preg_replace_callback' => 'Runs a callback per regex match. Fine with an inline function.',
+		'preg_replace_callback_array' => 'Runs callbacks per regex match. Fine with an inline function.',
+		'iterator_apply'    => 'Runs a callback over an iterator. Fine with an inline function.',
+	);
+
 	private static $warn_superglobals = array( '$_GET', '$_POST', '$_REQUEST', '$_FILES', '$_COOKIE', '$_SERVER', '$_ENV', '$GLOBALS' );
 
 	/**
@@ -188,7 +210,7 @@ class EMCP_Tools_PHP_Snippet_Validator {
 		// wrapper into raw HTML/inline output we can't reason about.
 		if ( false !== strpos( $clean, '?>' ) ) {
 			$result['safe'] = false;
-			$result['findings'][] = self::finding( 'critical', 'close_tag', __( 'A PHP closing tag ( ?> ) is not allowed in a snippet.', 'emcp-tools' ), 0 );
+			$result['findings'][] = self::finding( 'critical', 'close_tag', __( 'Remove the closing tag ( ?> ). A snippet is a block of PHP, so it never needs one, and it would let code escape into raw output. To print HTML, use echo or a heredoc.', 'emcp-tools' ), 0 );
 		}
 
 		// Wrap so top-level statements (return, etc.) are valid in a function
@@ -219,6 +241,101 @@ class EMCP_Tools_PHP_Snippet_Validator {
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Turns a validation report into something a person can act on.
+	 *
+	 * Every surface that shows a report should use this rather than counting
+	 * findings itself, so a snippet is not described as fine on one screen and
+	 * alarming on another. The wording leads with whether the snippet can be
+	 * activated, because that is the question the reader actually has, and
+	 * "3 warnings" with no verdict reads as "something is wrong" even when
+	 * nothing is.
+	 *
+	 * @param array $validation A report from validate().
+	 * @return array{blocked:bool,counts:array<string,int>,headline:string,detail:string}
+	 */
+	public static function summary( array $validation ): array {
+		$counts = array( 'critical' => 0, 'warning' => 0, 'notice' => 0 );
+		foreach ( (array) ( $validation['findings'] ?? array() ) as $finding ) {
+			$severity = (string) ( $finding['severity'] ?? '' );
+			if ( isset( $counts[ $severity ] ) ) {
+				++$counts[ $severity ];
+			}
+		}
+
+		$blocked = empty( $validation['valid'] ) || empty( $validation['safe'] );
+
+		if ( empty( $validation['valid'] ) ) {
+			return array(
+				'blocked'  => true,
+				'counts'   => $counts,
+				'headline' => __( 'Will not run', 'emcp-tools' ),
+				'detail'   => '' !== (string) ( $validation['parse_error'] ?? '' )
+					/* translators: %s: PHP parse error */
+					? sprintf( __( 'This is not valid PHP: %s', 'emcp-tools' ), (string) $validation['parse_error'] )
+					: __( 'This is not valid PHP.', 'emcp-tools' ),
+			);
+		}
+
+		if ( $counts['critical'] > 0 ) {
+			return array(
+				'blocked'  => true,
+				'counts'   => $counts,
+				'headline' => __( 'Cannot be activated', 'emcp-tools' ),
+				'detail'   => sprintf(
+					/* translators: %d: number of blocking findings */
+					_n(
+						'%d thing has to change before this can run. It is listed below.',
+						'%d things have to change before this can run. They are listed below.',
+						$counts['critical'],
+						'emcp-tools'
+					),
+					$counts['critical']
+				),
+			);
+		}
+
+		$parts = array();
+		if ( $counts['warning'] > 0 ) {
+			$parts[] = sprintf(
+				/* translators: %d: number of findings worth reviewing */
+				_n( '%d thing worth reading first', '%d things worth reading first', $counts['warning'], 'emcp-tools' ),
+				$counts['warning']
+			);
+		}
+		if ( $counts['notice'] > 0 ) {
+			$parts[] = sprintf(
+				/* translators: %d: number of informational notes */
+				_n( '%d note', '%d notes', $counts['notice'], 'emcp-tools' ),
+				$counts['notice']
+			);
+		}
+
+		if ( ! $parts ) {
+			$detail = __( 'Nothing flagged.', 'emcp-tools' );
+		} elseif ( 0 === $counts['warning'] ) {
+			$detail = sprintf(
+				/* translators: %d: number of informational notes */
+				_n(
+					'%d note, which is ordinary in working code.',
+					'%d notes, all ordinary in working code.',
+					$counts['notice'],
+					'emcp-tools'
+				),
+				$counts['notice']
+			);
+		} else {
+			$detail = ucfirst( implode( __( ', plus ', 'emcp-tools' ), $parts ) ) . '.';
+		}
+
+		return array(
+			'blocked'  => $blocked,
+			'counts'   => $counts,
+			'headline' => __( 'Safe to activate', 'emcp-tools' ),
+			'detail'   => $detail,
+		);
 	}
 
 	/**
@@ -312,7 +429,7 @@ class EMCP_Tools_PHP_Snippet_Validator {
 
 			// die / exit — abruptly terminates the request (can skip recovery logic).
 			if ( defined( 'T_EXIT' ) && T_EXIT === $id ) {
-				$result['findings'][] = self::finding( 'warning', 'exit', __( 'Terminates the request (die/exit).', 'emcp-tools' ), $line );
+				$result['findings'][] = self::finding( 'notice', 'exit', __( 'Stops the request here. Expected directly after a redirect.', 'emcp-tools' ), $line );
 				continue;
 			}
 
@@ -324,18 +441,18 @@ class EMCP_Tools_PHP_Snippet_Validator {
 
 			// @ error suppression.
 			if ( null === $id && '@' === $text ) {
-				$result['findings'][] = self::finding( 'warning', 'suppress', __( 'Suppresses errors with @ (can hide failures).', 'emcp-tools' ), $line );
+				$result['findings'][] = self::finding( 'warning', 'suppress', __( 'Hides errors with @. The failure still happens, you just will not see it. Handle it instead where you can.', 'emcp-tools' ), $line );
 				continue;
 			}
 
 			// Superglobals.
 			if ( T_VARIABLE === $id && in_array( $text, self::$warn_superglobals, true ) ) {
 				$result['findings'][] = self::finding(
-					'warning',
+					'notice',
 					'superglobal',
 					sprintf(
 						/* translators: %s: superglobal name */
-						__( 'Reads request/server input (%s).', 'emcp-tools' ),
+						__( 'Reads request input from %s. Normal, as long as the value is sanitized before use and the surrounding code checks capability and nonce.', 'emcp-tools' ),
 						$text
 					),
 					$line
@@ -365,19 +482,48 @@ class EMCP_Tools_PHP_Snippet_Validator {
 				$name = strtolower( $text );
 				if ( isset( self::$critical_funcs[ $name ] ) ) {
 					$result['findings'][] = self::finding( 'critical', 'function:' . $name, self::$critical_funcs[ $name ], $line );
-				} elseif ( isset( self::$warn_funcs[ $name ] ) ) {
-					$result['findings'][] = self::finding( 'warning', 'function:' . $name, self::$warn_funcs[ $name ], $line );
+				} elseif ( isset( self::$review_funcs[ $name ] ) ) {
+					$result['findings'][] = self::finding( 'warning', 'function:' . $name, self::$review_funcs[ $name ], $line );
+				} elseif ( isset( self::$note_funcs[ $name ] ) ) {
+					$result['findings'][] = self::finding( 'notice', 'function:' . $name, self::$note_funcs[ $name ], $line );
 				}
 				continue;
 			}
 
-			// Top-level function/class definitions inside a snippet (redeclaration risk).
+			// NAMED function/class definitions inside a snippet (redeclaration risk).
+			//
+			// Only a name can be redeclared. A closure, an arrow function, and an
+			// anonymous class all produce a value and declare nothing, so none of
+			// them carry the risk this rule describes. That distinction matters
+			// in practice: a snippet that runs on a hook is a closure by
+			// construction, so flagging closures put a warning on almost every
+			// well-written snippet and buried the named declarations that are
+			// actually worth a reviewer's attention.
 			if ( in_array( $id, array( T_FUNCTION, T_CLASS, T_TRAIT, T_INTERFACE ), true ) ) {
-				// Skip the wrapper's own function token (line 1, name __emcp_snippet_validate).
-				if ( $next && T_STRING === $next['id'] && '__emcp_snippet_validate' === $next['text'] ) {
+				$named = $next;
+				// `function &foo()` returns by reference; the name follows the &.
+				// Matched on the text because PHP 8.1 turned & into a typed token
+				// (T_AMPERSAND_*), so it is not always an untyped character token.
+				if ( $named && '&' === $named['text'] ) {
+					$named = $i + 2 < $count ? $sig[ $i + 2 ] : null;
+				}
+				if ( ! $named || T_STRING !== $named['id'] ) {
 					continue;
 				}
-				$result['findings'][] = self::finding( 'warning', 'definition', __( 'Defines a function/class (re-runs may redeclare and fatal).', 'emcp-tools' ), $line );
+				// The wrapper this validator puts around the snippet to parse it.
+				if ( '__emcp_snippet_validate' === $named['text'] ) {
+					continue;
+				}
+				$result['findings'][] = self::finding(
+					'warning',
+					'definition',
+					sprintf(
+						/* translators: %s: declared name */
+						__( 'Declares the name %s. A snippet body runs again every time its hook fires, and a second run cannot redeclare the same name, so this fatals on any hook that fires more than once per request. Use an inline function, or guard it with function_exists().', 'emcp-tools' ),
+						$named['text']
+					),
+					$line
+				);
 				continue;
 			}
 		}

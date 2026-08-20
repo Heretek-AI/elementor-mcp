@@ -144,11 +144,18 @@ $emcp_tools_sn_nonce = wp_create_nonce( 'emcp_tools_php_snippets' );
 						$emcp_tools_srec   = EMCP_Tools_PHP_Snippet_Store::get( $emcp_tools_sid );
 						$emcp_tools_scode  = is_array( $emcp_tools_srec ) ? (string) $emcp_tools_srec['code'] : '';
 						$emcp_tools_sval   = is_array( $emcp_tools_srec ) && isset( $emcp_tools_srec['validation'] ) ? $emcp_tools_srec['validation'] : array( 'findings' => array() );
-						$emcp_tools_swarn  = 0;
-						foreach ( ( $emcp_tools_sval['findings'] ?? array() ) as $emcp_tools_f ) {
-							if ( 'warning' === ( $emcp_tools_f['severity'] ?? '' ) ) {
-								$emcp_tools_swarn++;
-							}
+						$emcp_tools_ssum   = EMCP_Tools_PHP_Snippet_Validator::summary( (array) $emcp_tools_sval );
+						// Green when there is nothing to say, grey for notes that are
+						// normal in working code, amber only when something genuinely
+						// wants a read. A routine snippet should not look alarming.
+						if ( $emcp_tools_ssum['blocked'] ) {
+							$emcp_tools_scolor = '#b32d2e';
+						} elseif ( $emcp_tools_ssum['counts']['warning'] > 0 ) {
+							$emcp_tools_scolor = '#996800';
+						} elseif ( $emcp_tools_ssum['counts']['notice'] > 0 ) {
+							$emcp_tools_scolor = '#646970';
+						} else {
+							$emcp_tools_scolor = '#007017';
 						}
 						?>
 						<tr
@@ -169,17 +176,9 @@ $emcp_tools_sn_nonce = wp_create_nonce( 'emcp_tools_php_snippets' );
 									tabindex="0"
 									style="font-size:11px;"
 								><?php echo esc_html( $emcp_tools_s['shortcode'] ); ?></code>
-								<?php if ( $emcp_tools_swarn > 0 ) : ?>
-									<br /><span style="color:#996800;font-size:12px;">
-										<?php
-										printf(
-											/* translators: %d: number of warnings */
-											esc_html( _n( '%d validator warning, review the code', '%d validator warnings, review the code', $emcp_tools_swarn, 'emcp-tools' ) ),
-											(int) $emcp_tools_swarn
-										);
-										?>
-									</span>
-								<?php endif; ?>
+								<br /><span style="color:<?php echo esc_attr( $emcp_tools_scolor ); ?>;font-size:12px;">
+									<?php echo esc_html( $emcp_tools_ssum['detail'] ); ?>
+								</span>
 								<?php if ( ! empty( $emcp_tools_s['last_error'] ) ) : ?>
 									<br /><span style="color:#b32d2e;font-size:12px;">
 										<?php
@@ -246,15 +245,42 @@ $emcp_tools_sn_nonce = wp_create_nonce( 'emcp_tools_php_snippets' );
 				return fetch( ajaxUrl, { method: 'POST', credentials: 'same-origin', body: body } ).then( function ( r ) { return r.json(); } );
 			}
 
-			function renderFindings( box, validation ) {
+			var SEVERITY = {
+				critical: { color: '#b32d2e', label: <?php echo wp_json_encode( __( 'Must change', 'emcp-tools' ) ); ?> },
+				warning:  { color: '#996800', label: <?php echo wp_json_encode( __( 'Worth a read', 'emcp-tools' ) ); ?> },
+				notice:   { color: '#646970', label: <?php echo wp_json_encode( __( 'Note', 'emcp-tools' ) ); ?> }
+			};
+
+			// The verdict comes from the server so that this box, the snippet list,
+			// and the Themer PHP screen all describe a report the same way.
+			function renderFindings( box, validation, summary ) {
 				box.innerHTML = '';
-				if ( ! validation || ! validation.findings || ! validation.findings.length ) { return; }
+				if ( ! validation ) { return; }
+
+				if ( summary && summary.headline ) {
+					var head = document.createElement( 'p' );
+					head.style.margin = '8px 0 4px';
+					var strong = document.createElement( 'strong' );
+					strong.textContent = summary.headline;
+					strong.style.color = summary.blocked ? '#b32d2e' : '#007017';
+					head.appendChild( strong );
+					head.appendChild( document.createTextNode( ' \u2014 ' + ( summary.detail || '' ) ) );
+					box.appendChild( head );
+				}
+
+				if ( ! validation.findings || ! validation.findings.length ) { return; }
+
 				var ul = document.createElement( 'ul' );
-				ul.style.margin = '8px 0 0';
+				ul.style.margin = '4px 0 0';
 				validation.findings.forEach( function ( f ) {
+					var meta = SEVERITY[ f.severity ] || SEVERITY.notice;
 					var li = document.createElement( 'li' );
-					li.style.color = ( f.severity === 'critical' ) ? '#b32d2e' : '#996800';
-					li.textContent = '[' + f.severity + '] ' + ( f.line ? 'line ' + f.line + ': ' : '' ) + f.message;
+					li.style.margin = '3px 0';
+					var tag = document.createElement( 'strong' );
+					tag.style.color = meta.color;
+					tag.textContent = meta.label + ( f.line ? ' \u00b7 line ' + f.line : '' ) + ': ';
+					li.appendChild( tag );
+					li.appendChild( document.createTextNode( f.message ) );
 					ul.appendChild( li );
 				} );
 				box.appendChild( ul );
@@ -288,7 +314,7 @@ $emcp_tools_sn_nonce = wp_create_nonce( 'emcp_tools_php_snippets' );
 						if ( res && res.success ) { window.location.reload(); return; }
 						msg.style.color = '#b32d2e';
 						msg.textContent = ( res && res.data && res.data.message ) || 'Failed.';
-						if ( res && res.data && res.data.validation ) { renderFindings( findings, res.data.validation ); }
+						if ( res && res.data && res.data.validation ) { renderFindings( findings, res.data.validation, res.data.summary ); }
 					} ).catch( function () { btn.disabled = false; msg.textContent = 'Request failed.'; } );
 				} );
 			}

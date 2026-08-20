@@ -2726,6 +2726,9 @@ class EMCP_Tools_Admin {
 			$payload = array( 'message' => $res->get_error_message() );
 			if ( is_array( $data ) && isset( $data['validation'] ) ) {
 				$payload['validation'] = $data['validation'];
+				// Summarised here rather than in the browser, so the report reads
+				// the same wherever it is shown.
+				$payload['summary'] = EMCP_Tools_PHP_Snippet_Validator::summary( (array) $data['validation'] );
 			}
 			wp_send_json_error( $payload, 400 );
 		}
@@ -2754,6 +2757,9 @@ class EMCP_Tools_Admin {
 			$payload = array( 'message' => $res->get_error_message() );
 			if ( is_array( $data ) && isset( $data['validation'] ) ) {
 				$payload['validation'] = $data['validation'];
+				// Summarised here rather than in the browser, so the report reads
+				// the same wherever it is shown.
+				$payload['summary'] = EMCP_Tools_PHP_Snippet_Validator::summary( (array) $data['validation'] );
 			}
 			wp_send_json_error( $payload, 400 );
 		}

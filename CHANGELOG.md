@@ -2,6 +2,19 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.13.2]
+
+Fixes an atomic rich-text element being quietly flattened by an edit, and rewrites the PHP snippet validator's warnings so a routine snippet no longer looks alarming.
+
+### Fixed
+- **Editing the text of an atomic element containing an inline tag emptied its rich-text structure** (#121, reported by @kerk12). An atomic text value stores the same text twice: as markup, and as a node tree the editor's rich-text control reads from. Updating the text rebuilt the markup but always wrote an empty tree, so the two halves disagreed. The page kept rendering exactly as before and the tool reported success, so the only symptom was that the element opened empty in the editor, which is why this could go unnoticed across a whole site.
+  The two halves are now produced from a single parse of the markup, matching how Elementor's own editor builds them, so they cannot drift apart. Ids you have already set are kept, ids the parser has to invent are written into both halves, and nested formatting is preserved. Three separate paths could trigger the flattening and all three are closed. Elements already damaged are not repaired automatically: re-apply the text once and the structure is rebuilt.
+
+### Changed
+- **PHP snippet warnings say what to check, and routine code no longer looks like a problem.** Findings now come in three levels rather than two. Anything that blocks a snippet still blocks it. Things worth a reviewer's attention, such as writing a site option or sending email, are warnings. Things that are ordinary in working code, such as stopping the request after a redirect or reading request input, are notes.
+  This matters because almost every well-written snippet is built from functions that were being reported as warnings, so a good snippet arrived covered in them. A reviewer told that ten routine things are warnings learns to skim, and skimming is how the one that mattered gets waved through. Every message now says what the code does and what to check, and each snippet leads with a plain verdict such as "Safe to activate. 3 notes, all ordinary in working code."
+  The Sandbox and PHP Templates screens follow the verdict rather than colouring any finding as an error. The PHP Templates screen in particular used to show a red box whenever a template had any finding at all, including a single routine note.
+
 ## [3.13.1]
 
 Fixes a critical error on the front end when a dynamic value is used on a standard Elementor widget. If you are on 3.13.0 and using dynamic data, please update.

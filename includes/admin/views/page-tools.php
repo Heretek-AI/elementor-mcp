@@ -312,10 +312,28 @@ $emcp_tools_badge_labels = array(
 												<?php echo esc_html( $emcp_tools_badge_labels[ $emcp_tools_badge ] ?? $emcp_tools_badge ); ?>
 											</span>
 										<?php endforeach; ?>
+										<?php
+										// A disabled toggle reads the same whether the admin turned
+										// the tool off or it cannot be turned on at all. This badge
+										// is the difference, and it names what is missing.
+										$emcp_tools_req_badge = $emcp_tools_tool_unavailable
+											? EMCP_Tools_Admin::requirement_badge( $emcp_tools_tool )
+											: '';
+										?>
+										<?php if ( '' !== $emcp_tools_req_badge ) : ?>
+											<span class="elementor-mcp-badge elementor-mcp-badge--requires">
+												<?php echo esc_html( $emcp_tools_req_badge ); ?>
+											</span>
+										<?php endif; ?>
 									</span>
 									<span class="elementor-mcp-tool-desc"><?php echo esc_html( $emcp_tools_tool['description'] ); ?></span>
-									<?php if ( $emcp_tools_tool_unavailable && ! empty( $emcp_tools_tool['unavailable_note'] ) ) : ?>
-										<span class="elementor-mcp-tool-unavailable-note"><?php echo esc_html( $emcp_tools_tool['unavailable_note'] ); ?></span>
+									<?php
+									$emcp_tools_req_note = $emcp_tools_tool_unavailable
+										? EMCP_Tools_Admin::requirement_note( $emcp_tools_tool )
+										: '';
+									?>
+									<?php if ( '' !== $emcp_tools_req_note ) : ?>
+										<span class="elementor-mcp-tool-unavailable-note"><?php echo esc_html( $emcp_tools_req_note ); ?></span>
 									<?php endif; ?>
 									<?php if ( ! empty( $emcp_tools_tool['operations'] ) ) : ?>
 										<span class="elementor-mcp-tool-ops">

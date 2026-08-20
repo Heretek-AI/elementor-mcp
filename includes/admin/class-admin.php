@@ -3960,6 +3960,58 @@ class EMCP_Tools_Admin {
 	}
 
 	/**
+	 * The short status a card shows when a tool needs software that is missing.
+	 *
+	 * A greyed-out toggle looks identical whether the admin switched a tool off
+	 * or the tool cannot be switched on at all, and users read the second case as
+	 * "broken" or "not in my plan". Naming the missing dependency on the card
+	 * removes that ambiguity at a glance.
+	 *
+	 * @since 3.14.0
+	 * @param array $tool A tool entry from the catalog.
+	 * @return string Badge text, or '' when the tool is available.
+	 */
+	public static function requirement_badge( array $tool ): string {
+		$name = isset( $tool['requires']['name'] ) ? (string) $tool['requires']['name'] : '';
+		if ( '' !== $name ) {
+			/* translators: %s: the name of a required plugin or theme */
+			return sprintf( __( 'Needs %s', 'emcp-tools' ), $name );
+		}
+		// Pro-locked tools already say so in their own badge, so a second one
+		// would be noise.
+		if ( in_array( 'pro', (array) ( $tool['badges'] ?? array() ), true ) ) {
+			return '';
+		}
+		return __( 'Unavailable', 'emcp-tools' );
+	}
+
+	/**
+	 * The sentence explaining what to do about a missing dependency.
+	 *
+	 * Built from the recorded name rather than written out per tool, so the two
+	 * phrasings are translated once instead of twenty-seven times.
+	 *
+	 * @since 3.14.0
+	 * @param array $tool A tool entry from the catalog.
+	 * @return string
+	 */
+	public static function requirement_note( array $tool ): string {
+		if ( ! empty( $tool['unavailable_note'] ) ) {
+			return (string) $tool['unavailable_note'];
+		}
+		$name = isset( $tool['requires']['name'] ) ? (string) $tool['requires']['name'] : '';
+		if ( '' === $name ) {
+			return '';
+		}
+		if ( 'theme' === ( $tool['requires']['kind'] ?? 'plugin' ) ) {
+			/* translators: %s: theme name */
+			return sprintf( __( 'This tool works with the %s theme, which is not the active theme on this site.', 'emcp-tools' ), $name );
+		}
+		/* translators: %s: plugin name */
+		return sprintf( __( 'This tool reads %s, which is not installed and active on this site.', 'emcp-tools' ), $name );
+	}
+
+	/**
 	 * True when Essential Addons (Lite or Pro) is active.
 	 *
 	 * @since 3.6.0
@@ -4713,7 +4765,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'list-products', 'get-order', 'list-orders', 'list-customers', 'list-coupons', 'report-sales', 'get-settings', 'list-webhooks', 'system-status', '… ~58 read operations' ),
 						'available'        => self::woo_available(),
-						'unavailable_note' => __( 'Install & activate WooCommerce to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'WooCommerce', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/woo-write' => array(
 						'label'            => __( 'WooCommerce Write', 'emcp-tools' ),
@@ -4721,7 +4773,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'destructive' ),
 						'operations'       => array( 'create-product', 'update-order', 'create-refund', 'create-customer', 'delete-order', 'update-setting', '… ~59 write operations' ),
 						'available'        => self::woo_available(),
-						'unavailable_note' => __( 'Install & activate WooCommerce to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'WooCommerce', 'kind' => 'plugin' ),
 					),
 				),
 			),
@@ -4764,7 +4816,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'list-widgets', 'get-widget-schema' ),
 						'available'        => self::essential_addons_available(),
-						'unavailable_note' => __( 'Install & activate Essential Addons for Elementor to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Essential Addons for Elementor', 'kind' => 'plugin' ),
 					),
 				),
 			),
@@ -4781,7 +4833,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'list-widgets', 'get-widget-schema' ),
 						'available'        => self::premium_addons_available(),
-						'unavailable_note' => __( 'Install & activate Premium Addons for Elementor to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Premium Addons for Elementor', 'kind' => 'plugin' ),
 					),
 				),
 			),
@@ -4802,7 +4854,7 @@ class EMCP_Tools_Admin {
 							? array( 'list-widgets', 'get-widget-schema', 'list-templates', 'get-template' )
 							: array( 'list-widgets', 'get-widget-schema' ),
 						'available'        => self::uae_available(),
-						'unavailable_note' => __( 'Install & activate Ultimate Addons for Elementor to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Ultimate Addons for Elementor', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/uae-write' => array(
 						'label'            => __( 'Ultimate Addons for Elementor Write', 'emcp-tools' ),
@@ -4810,6 +4862,10 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'destructive' ),
 						'operations'       => array( 'create-template', 'update-template', 'set-display-conditions', 'delete-template' ),
 						'available'        => self::uae_templates_available(),
+						// Recorded even though the note below is written by hand:
+						// the badge needs the name, and without it this card was
+						// the one unavailable tool on the screen with no badge.
+						'requires'         => array( 'name' => 'Ultimate Addons for Elementor', 'kind' => 'plugin' ),
 						'unavailable_note' => self::uae_pro_available()
 							? __( 'UAE templates come from the free Ultimate Addons for Elementor plugin. UAE Pro on its own supplies widgets, which the Read tool already covers.', 'emcp-tools' )
 							: __( 'Install & activate Ultimate Addons for Elementor to enable this tool.', 'emcp-tools' ),
@@ -4828,7 +4884,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'list-forms', 'get-form', 'list-notifications', 'get-settings' ),
 						'available'        => self::cf7_available(),
-						'unavailable_note' => __( 'Install & activate Contact Form 7 to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Contact Form 7', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/cf7-write' => array(
 						'label'            => __( 'Contact Form 7 Write', 'emcp-tools' ),
@@ -4836,7 +4892,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array(),
 						'operations'       => array( 'update-notification', 'update-messages', 'update-form-settings' ),
 						'available'        => self::cf7_available(),
-						'unavailable_note' => __( 'Install & activate Contact Form 7 to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Contact Form 7', 'kind' => 'plugin' ),
 					),
 				),
 			),
@@ -4853,7 +4909,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'list-forms', 'get-form', 'list-notifications', 'list-entries', 'get-entry', 'get-settings' ),
 						'available'        => self::wpforms_available(),
-						'unavailable_note' => __( 'Install & activate WPForms to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'WPForms', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/wpforms-write' => array(
 						'label'            => __( 'WPForms Write', 'emcp-tools' ),
@@ -4861,7 +4917,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'destructive' ),
 						'operations'       => array( 'update-notification', 'update-entry-status', 'delete-entry' ),
 						'available'        => self::wpforms_available(),
-						'unavailable_note' => __( 'Install & activate WPForms to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'WPForms', 'kind' => 'plugin' ),
 					),
 				),
 			),
@@ -4878,7 +4934,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'list-forms', 'get-form', 'list-notifications', 'list-entries', 'get-entry', 'get-settings' ),
 						'available'        => self::gravityforms_available(),
-						'unavailable_note' => __( 'Install & activate Gravity Forms to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Gravity Forms', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/gravityforms-write' => array(
 						'label'            => __( 'Gravity Forms Write', 'emcp-tools' ),
@@ -4886,7 +4942,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'destructive' ),
 						'operations'       => array( 'update-entry-status', 'delete-entry' ),
 						'available'        => self::gravityforms_available(),
-						'unavailable_note' => __( 'Install & activate Gravity Forms to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Gravity Forms', 'kind' => 'plugin' ),
 					),
 				),
 			),
@@ -4903,7 +4959,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'list-forms', 'get-form', 'list-entries', 'get-entry' ),
 						'available'        => self::fluentforms_available(),
-						'unavailable_note' => __( 'Install & activate Fluent Forms to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Fluent Forms', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/fluentforms-write' => array(
 						'label'            => __( 'Fluent Forms Write', 'emcp-tools' ),
@@ -4911,7 +4967,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'destructive' ),
 						'operations'       => array( 'update-entry-status', 'delete-entry' ),
 						'available'        => self::fluentforms_available(),
-						'unavailable_note' => __( 'Install & activate Fluent Forms to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Fluent Forms', 'kind' => 'plugin' ),
 					),
 				),
 			),
@@ -4928,7 +4984,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'list-forms', 'get-form', 'list-entries', 'get-entry' ),
 						'available'        => self::ninjaforms_available(),
-						'unavailable_note' => __( 'Install & activate Ninja Forms to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Ninja Forms', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/ninjaforms-write' => array(
 						'label'            => __( 'Ninja Forms Write', 'emcp-tools' ),
@@ -4936,7 +4992,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'destructive' ),
 						'operations'       => array( 'delete-entry' ),
 						'available'        => self::ninjaforms_available(),
-						'unavailable_note' => __( 'Install & activate Ninja Forms to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Ninja Forms', 'kind' => 'plugin' ),
 					),
 				),
 			),
@@ -4953,7 +5009,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'list-forms', 'get-form', 'list-notifications', 'list-entries', 'get-entry' ),
 						'available'        => self::formidable_available(),
-						'unavailable_note' => __( 'Install & activate Formidable Forms to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Formidable Forms', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/formidable-write' => array(
 						'label'            => __( 'Formidable Forms Write', 'emcp-tools' ),
@@ -4961,7 +5017,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'destructive' ),
 						'operations'       => array( 'delete-entry' ),
 						'available'        => self::formidable_available(),
-						'unavailable_note' => __( 'Install & activate Formidable Forms to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Formidable Forms', 'kind' => 'plugin' ),
 					),
 				),
 			),
@@ -4978,7 +5034,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'list-forms', 'get-form', 'list-entries', 'get-entry' ),
 						'available'        => self::metform_available(),
-						'unavailable_note' => __( 'Install & activate MetForm to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'MetForm', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/metform-write' => array(
 						'label'            => __( 'MetForm Write', 'emcp-tools' ),
@@ -4986,7 +5042,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'destructive' ),
 						'operations'       => array( 'delete-entry' ),
 						'available'        => self::metform_available(),
-						'unavailable_note' => __( 'Install & activate MetForm to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'MetForm', 'kind' => 'plugin' ),
 					),
 				),
 			),
@@ -5003,7 +5059,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'list-forms', 'get-form', 'list-entries', 'get-entry' ),
 						'available'        => self::sureforms_available(),
-						'unavailable_note' => __( 'Install & activate SureForms to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'SureForms', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/sureforms-write' => array(
 						'label'            => __( 'SureForms Write', 'emcp-tools' ),
@@ -5011,7 +5067,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'destructive' ),
 						'operations'       => array( 'update-entry-status', 'delete-entry' ),
 						'available'        => self::sureforms_available(),
-						'unavailable_note' => __( 'Install & activate SureForms to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'SureForms', 'kind' => 'plugin' ),
 					),
 				),
 			),
@@ -5028,7 +5084,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'list-forms', 'get-form', 'list-entries', 'get-entry' ),
 						'available'        => self::forminator_available(),
-						'unavailable_note' => __( 'Install & activate Forminator to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Forminator', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/forminator-write' => array(
 						'label'            => __( 'Forminator Write', 'emcp-tools' ),
@@ -5036,7 +5092,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'destructive' ),
 						'operations'       => array( 'delete-entry' ),
 						'available'        => self::forminator_available(),
-						'unavailable_note' => __( 'Install & activate Forminator to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Forminator', 'kind' => 'plugin' ),
 					),
 				),
 			),
@@ -5052,7 +5108,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'get-post-seo', 'get-term-seo', 'get-settings' ),
 						'available'        => self::slimseo_available(),
-						'unavailable_note' => __( 'Install & activate Slim SEO to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Slim SEO', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/slimseo-write' => array(
 						'label'            => __( 'Slim SEO Write', 'emcp-tools' ),
@@ -5060,7 +5116,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array(),
 						'operations'       => array( 'update-post-seo', 'update-term-seo' ),
 						'available'        => self::slimseo_available(),
-						'unavailable_note' => __( 'Install & activate Slim SEO to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Slim SEO', 'kind' => 'plugin' ),
 					),
 				),
 			),
@@ -5077,7 +5133,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'get-post-seo', 'get-term-seo', 'get-settings' ),
 						'available'        => self::yoast_available(),
-						'unavailable_note' => __( 'Install & activate Yoast SEO to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Yoast SEO', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/yoast-write' => array(
 						'label'            => __( 'Yoast SEO Write', 'emcp-tools' ),
@@ -5085,7 +5141,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array(),
 						'operations'       => array( 'update-post-seo', 'update-term-seo' ),
 						'available'        => self::yoast_available(),
-						'unavailable_note' => __( 'Install & activate Yoast SEO to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Yoast SEO', 'kind' => 'plugin' ),
 					),
 				),
 			),
@@ -5102,7 +5158,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'get-post-seo', 'get-term-seo', 'get-schema', 'get-settings' ),
 						'available'        => self::rankmath_available(),
-						'unavailable_note' => __( 'Install & activate Rank Math to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Rank Math', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/rankmath-write' => array(
 						'label'            => __( 'Rank Math Write', 'emcp-tools' ),
@@ -5110,7 +5166,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array(),
 						'operations'       => array( 'update-post-seo', 'update-term-seo' ),
 						'available'        => self::rankmath_available(),
-						'unavailable_note' => __( 'Install & activate Rank Math to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Rank Math', 'kind' => 'plugin' ),
 					),
 				),
 			),
@@ -5127,7 +5183,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'get-post-seo', 'get-schema', 'get-settings' ),
 						'available'        => self::aioseo_available(),
-						'unavailable_note' => __( 'Install & activate All in One SEO to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'All in One SEO', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/aioseo-write' => array(
 						'label'            => __( 'All in One SEO Write', 'emcp-tools' ),
@@ -5135,7 +5191,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array(),
 						'operations'       => array( 'update-post-seo' ),
 						'available'        => self::aioseo_available(),
-						'unavailable_note' => __( 'Install & activate All in One SEO to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'All in One SEO', 'kind' => 'plugin' ),
 					),
 				),
 			),
@@ -5152,7 +5208,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'get-post-seo', 'get-term-seo', 'get-settings', 'get-schema' ),
 						'available'        => self::seopress_available(),
-						'unavailable_note' => __( 'Install & activate SEOPress to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'SEOPress', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/seopress-write' => array(
 						'label'            => __( 'SEOPress Write', 'emcp-tools' ),
@@ -5160,7 +5216,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array(),
 						'operations'       => array( 'update-post-seo', 'update-term-seo' ),
 						'available'        => self::seopress_available(),
-						'unavailable_note' => __( 'Install & activate SEOPress to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'SEOPress', 'kind' => 'plugin' ),
 					),
 				),
 			),
@@ -5177,7 +5233,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'get-post-seo', 'get-term-seo' ),
 						'available'        => self::seoframework_available(),
-						'unavailable_note' => __( 'Install & activate The SEO Framework to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'The SEO Framework', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/seoframework-write' => array(
 						'label'            => __( 'The SEO Framework Write', 'emcp-tools' ),
@@ -5185,7 +5241,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array(),
 						'operations'       => array( 'update-post-seo', 'update-term-seo' ),
 						'available'        => self::seoframework_available(),
-						'unavailable_note' => __( 'Install & activate The SEO Framework to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'The SEO Framework', 'kind' => 'plugin' ),
 					),
 				),
 			),
@@ -5202,7 +5258,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'get-post-seo', 'get-term-seo', 'get-settings' ),
 						'available'        => self::surerank_available(),
-						'unavailable_note' => __( 'Install & activate SureRank to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'SureRank', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/surerank-write' => array(
 						'label'            => __( 'SureRank Write', 'emcp-tools' ),
@@ -5210,7 +5266,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array(),
 						'operations'       => array( 'update-post-seo', 'update-term-seo' ),
 						'available'        => self::surerank_available(),
-						'unavailable_note' => __( 'Install & activate SureRank to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'SureRank', 'kind' => 'plugin' ),
 					),
 				),
 			),
@@ -5245,7 +5301,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'get-settings' ),
 						'available'        => self::astra_available(),
-						'unavailable_note' => __( 'Activate the Astra theme to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Astra', 'kind' => 'theme' ),
 					),
 					'emcp-tools/astra-write'   => array(
 						'label'            => __( 'Astra Write', 'emcp-tools' ),
@@ -5253,7 +5309,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array(),
 						'operations'       => array( 'update-settings' ),
 						'available'        => self::astra_available(),
-						'unavailable_note' => __( 'Activate the Astra theme to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Astra', 'kind' => 'theme' ),
 					),
 					'emcp-tools/spectra-read'  => array(
 						'label'            => __( 'Spectra Read', 'emcp-tools' ),
@@ -5261,7 +5317,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'list-blocks', 'get-block-schema' ),
 						'available'        => self::spectra_available(),
-						'unavailable_note' => __( 'Install & activate the Spectra plugin to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Spectra', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/spectra-write' => array(
 						'label'            => __( 'Spectra Write', 'emcp-tools' ),
@@ -5269,7 +5325,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array(),
 						'operations'       => array( 'add-block' ),
 						'available'        => self::spectra_available(),
-						'unavailable_note' => __( 'Install & activate the Spectra plugin to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Spectra', 'kind' => 'plugin' ),
 					),
 				),
 			),
@@ -5284,7 +5340,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'get-settings' ),
 						'available'        => self::kadence_available(),
-						'unavailable_note' => __( 'Activate the Kadence theme to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Kadence', 'kind' => 'theme' ),
 					),
 					'emcp-tools/kadence-write'        => array(
 						'label'            => __( 'Kadence Write', 'emcp-tools' ),
@@ -5292,7 +5348,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array(),
 						'operations'       => array( 'update-settings' ),
 						'available'        => self::kadence_available(),
-						'unavailable_note' => __( 'Activate the Kadence theme to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Kadence', 'kind' => 'theme' ),
 					),
 					'emcp-tools/kadence-blocks-read'  => array(
 						'label'            => __( 'Kadence Blocks Read', 'emcp-tools' ),
@@ -5300,7 +5356,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only' ),
 						'operations'       => array( 'list-blocks', 'get-block-schema' ),
 						'available'        => self::kadence_blocks_available(),
-						'unavailable_note' => __( 'Install & activate the Kadence Blocks plugin to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Kadence Blocks', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/kadence-blocks-write' => array(
 						'label'            => __( 'Kadence Blocks Write', 'emcp-tools' ),
@@ -5308,7 +5364,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array(),
 						'operations'       => array( 'add-block' ),
 						'available'        => self::kadence_blocks_available(),
-						'unavailable_note' => __( 'Install & activate the Kadence Blocks plugin to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Kadence Blocks', 'kind' => 'plugin' ),
 					),
 				),
 			),
@@ -5323,7 +5379,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only', 'pro' ),
 						'operations'       => array( 'get-settings' ),
 						'available'        => self::generatepress_available(),
-						'unavailable_note' => __( 'Activate the GeneratePress theme to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'GeneratePress', 'kind' => 'theme' ),
 					),
 					'emcp-tools/generatepress-write'  => array(
 						'label'            => __( 'GeneratePress Write', 'emcp-tools' ),
@@ -5331,7 +5387,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'pro' ),
 						'operations'       => array( 'update-settings' ),
 						'available'        => self::generatepress_available(),
-						'unavailable_note' => __( 'Activate the GeneratePress theme to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'GeneratePress', 'kind' => 'theme' ),
 					),
 					'emcp-tools/generateblocks-read'  => array(
 						'label'            => __( 'GenerateBlocks Read', 'emcp-tools' ),
@@ -5339,7 +5395,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only', 'pro' ),
 						'operations'       => array( 'list-blocks', 'get-block-schema' ),
 						'available'        => self::generateblocks_available(),
-						'unavailable_note' => __( 'Install & activate the GenerateBlocks plugin to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'GenerateBlocks', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/generateblocks-write' => array(
 						'label'            => __( 'GenerateBlocks Write', 'emcp-tools' ),
@@ -5347,7 +5403,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'pro' ),
 						'operations'       => array( 'add-block' ),
 						'available'        => self::generateblocks_available(),
-						'unavailable_note' => __( 'Install & activate the GenerateBlocks plugin to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'GenerateBlocks', 'kind' => 'plugin' ),
 					),
 				),
 			),
@@ -5362,7 +5418,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only', 'pro' ),
 						'operations'       => array( 'list-blocks', 'get-block-schema' ),
 						'available'        => self::blocksy_blocks_available(),
-						'unavailable_note' => __( 'Install & activate Blocksy Companion to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Blocksy Companion', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/blocksy-blocks-write'     => array(
 						'label'            => __( 'Blocksy Blocks Write', 'emcp-tools' ),
@@ -5370,7 +5426,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'pro' ),
 						'operations'       => array( 'add-block' ),
 						'available'        => self::blocksy_blocks_available(),
-						'unavailable_note' => __( 'Install & activate Blocksy Companion to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Blocksy Companion', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/blocksy-extensions-read'  => array(
 						'label'            => __( 'Blocksy Extensions Read', 'emcp-tools' ),
@@ -5378,7 +5434,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'read-only', 'pro' ),
 						'operations'       => array( 'list-extensions' ),
 						'available'        => self::blocksy_extensions_available(),
-						'unavailable_note' => __( 'Install & activate Blocksy Companion to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Blocksy Companion', 'kind' => 'plugin' ),
 					),
 					'emcp-tools/blocksy-extensions-write' => array(
 						'label'            => __( 'Blocksy Extensions Write', 'emcp-tools' ),
@@ -5386,7 +5442,7 @@ class EMCP_Tools_Admin {
 						'badges'           => array( 'pro' ),
 						'operations'       => array( 'activate-extension', 'deactivate-extension' ),
 						'available'        => self::blocksy_extensions_available(),
-						'unavailable_note' => __( 'Install & activate Blocksy Companion to enable this tool.', 'emcp-tools' ),
+						'requires'         => array( 'name' => 'Blocksy Companion', 'kind' => 'plugin' ),
 					),
 				),
 			),

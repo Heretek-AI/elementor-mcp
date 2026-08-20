@@ -893,6 +893,20 @@
 	letter-spacing: 0;
 }
 
+/* "Needs X" — the tool cannot be switched on because software it depends on is
+   missing. A disabled toggle looks the same as one the admin turned off, and
+   users read the second case as broken or not-in-my-plan, so the card names the
+   dependency instead. Deliberately not red: nothing is wrong, something is
+   simply absent. Sentence case, like the Elementor Pro badge, so it reads as a
+   dependency note rather than a plan tier. */
+.elementor-mcp-badge--requires {
+	background: #f3f4f6;
+	color: #4b5563;
+	border: 1px solid #d1d5db;
+	text-transform: none;
+	letter-spacing: 0;
+}
+
 .elementor-mcp-badge--free {
 	background: var(--mcp-success-light);
 	color: var(--mcp-success);

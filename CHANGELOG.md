@@ -2,6 +2,14 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [Unreleased] - 3.14.0
+
+### Changed
+- **A tool that cannot be switched on now says why, instead of just looking switched off.** On the Tools screen a greyed-out toggle looked the same whether you had turned the tool off or it depended on software that is not installed, and the second case reads as "broken" or "not included in my plan". Every such card now carries a badge naming what is missing, for example "Needs Essential Addons for Elementor", with a sentence below it saying whether the dependency is a plugin that is not active or a theme that is not the active one. Reported from a live site where the Elementor Addons cards were the ones causing the confusion; the change covers every tool with a dependency, not only those three.
+
+### Fixed
+- **Three of the bundled agent skills were rejected when uploaded to Claude Desktop.** Their descriptions wrote a placeholder as `emcp-tools-<plugin>-read`, which the upload validator reads as an XML tag, and the emcp-plugins description had grown past the 1024-character limit. The placeholder now uses braces and the description has been shortened, so all nineteen packages upload as shipped. Reported with the exact character counts, which made it quick to confirm.
+
 ## [3.13.2]
 
 Fixes an atomic rich-text element being quietly flattened by an edit, and rewrites the PHP snippet validator's warnings so a routine snippet no longer looks alarming.

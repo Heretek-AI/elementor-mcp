@@ -3161,8 +3161,16 @@ class EMCP_Tools_Admin {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- options.php verifies the settings nonce before redirecting.
 			if ( isset( $_GET['settings-updated'] ) && 'true' === sanitize_text_field( wp_unslash( $_GET['settings-updated'] ) ) ) :
 				?>
-				<?php // emcp-saved-notice: admin.js lifts just this one into a toast. ?>
-				<div class="notice notice-success is-dismissible emcp-saved-notice">
+				<?php
+				// `inline` is load-bearing, not cosmetic. On jQuery ready core runs
+				//   $( 'div.notice' ).not( '.inline, .below-h2' ).insertAfter( $headerEnd )
+				// which relocates every other notice to just under the page h1. Without
+				// it core moves this one back out of the toast, leaving an empty toast
+				// and the text at the top. Opting out beats trying to win the race.
+				// It also degrades well: if the JS never runs, the notice renders in
+				// place instead of vanishing.
+				?>
+				<div class="notice notice-success is-dismissible inline emcp-saved-notice">
 					<p><strong><?php esc_html_e( 'Settings saved.', 'emcp-tools' ); ?></strong></p>
 				</div>
 				<?php

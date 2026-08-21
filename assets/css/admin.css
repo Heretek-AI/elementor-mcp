@@ -4611,3 +4611,101 @@ body[data-emcp-auth="app-password"] [data-authfor="oauth"] { display: none; }
 
 /* Pending-count badge on the Memory app-nav tab (project-memory proposals awaiting review). */
 .emcp-appnav-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px; border-radius: 9px; background: #d63638; color: #fff; font-size: 11px; font-weight: 700; line-height: 1; }
+
+/* ---- the settings-saved toast -----------------------------------------------
+   WordPress stacks this above the page, shifting the whole screen down just as
+   you look at what you changed. Only this one confirmation is moved bottom-right;
+   every other notice stays where it is, because some carry buttons or explain
+   page state and a corner toast is the wrong place for those. */
+.emcp-toasts {
+	position: fixed;
+	right: 24px;
+	bottom: 24px;
+	z-index: 100001; /* above the admin bar (99999) and WP's own overlays */
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	width: min(400px, calc(100vw - 48px));
+	pointer-events: none; /* the gap between toasts must not eat clicks */
+}
+
+.emcp-toast {
+	position: relative;
+	pointer-events: auto;
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 4px 4px 4px 0;
+	background: #fff;
+	border: 1px solid var(--mcp-rule, #dcdcde);
+	border-left-width: 4px;
+	border-radius: 8px;
+	box-shadow: 0 8px 28px -6px rgba(10, 10, 20, 0.22);
+	animation: emcpToastIn 0.22s ease-out both;
+}
+
+.emcp-toast--success { border-left-color: #00a32a; }
+
+/* The notice keeps its own markup so links and buttons still work; only the
+   chrome WordPress gave it for the stacked layout is neutralised. */
+.emcp-toast__notice {
+	flex: 1 1 auto;
+	min-width: 0;
+	margin: 0 !important;
+	padding: 10px 0 10px 12px !important;
+	border: 0 !important;
+	background: transparent !important;
+	box-shadow: none !important;
+}
+
+.emcp-toast__notice p {
+	margin: 0 0 4px;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+.emcp-toast__notice p:last-child { margin-bottom: 0; }
+
+/* WordPress's own dismiss button would sit under ours. */
+.emcp-toast__notice .notice-dismiss { display: none !important; }
+
+.emcp-toast__close {
+	flex: 0 0 auto;
+	margin: 6px 6px 0 0;
+	padding: 0;
+	width: 22px;
+	height: 22px;
+	line-height: 20px;
+	font-size: 17px;
+	color: var(--mcp-ink-3, #646970);
+	background: transparent;
+	border: 0;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.emcp-toast__close:hover { color: var(--mcp-ink, #1d2327); background: rgba(10, 10, 20, 0.06); }
+.emcp-toast__close:focus-visible { outline: 2px solid #2271b1; outline-offset: 1px; }
+
+.emcp-toast.is-leaving {
+	animation: emcpToastOut 0.24s ease-in both;
+}
+
+@keyframes emcpToastIn {
+	from { opacity: 0; transform: translateY(10px) scale(0.98); }
+	to   { opacity: 1; transform: none; }
+}
+
+@keyframes emcpToastOut {
+	from { opacity: 1; transform: none; }
+	to   { opacity: 0; transform: translateY(6px) scale(0.98); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.emcp-toast,
+	.emcp-toast.is-leaving { animation: none; }
+}
+
+@media screen and (max-width: 782px) {
+	.emcp-toasts { right: 12px; bottom: 12px; width: calc(100vw - 24px); }
+}

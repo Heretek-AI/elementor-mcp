@@ -1238,7 +1238,7 @@ class EMCP_Tools_Admin {
 	 *
 	 * @since 1.8.0
 	 */
-	const DEFAULTS_VERSION = 34;
+	const DEFAULTS_VERSION = 35;
 
 	/**
 	 * SEO/A11y Pro MCP tool slugs that ship disabled-by-default (v2 defaults).
@@ -1871,6 +1871,13 @@ class EMCP_Tools_Admin {
 		// it ships disabled-by-default. The list + discard reads stay enabled.
 		if ( $applied < 34 ) {
 			$add[] = 'emcp-tools/sync-content-item';
+		}
+
+		// v35 — BeTheme write disabled-by-default, matching the other theme write
+		// dispatchers. It changes global theme settings and can replace a page's
+		// whole BeBuilder content, so an admin opts in on the Tools tab.
+		if ( $applied < 35 ) {
+			$add[] = 'emcp-tools/betheme-write';
 		}
 
 		$merged = array_values( array_unique( array_merge( $existing, $add ) ) );
@@ -3154,7 +3161,8 @@ class EMCP_Tools_Admin {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- options.php verifies the settings nonce before redirecting.
 			if ( isset( $_GET['settings-updated'] ) && 'true' === sanitize_text_field( wp_unslash( $_GET['settings-updated'] ) ) ) :
 				?>
-				<div class="notice notice-success is-dismissible">
+				<?php // emcp-saved-notice: admin.js lifts just this one into a toast. ?>
+				<div class="notice notice-success is-dismissible emcp-saved-notice">
 					<p><strong><?php esc_html_e( 'Settings saved.', 'emcp-tools' ); ?></strong></p>
 				</div>
 				<?php

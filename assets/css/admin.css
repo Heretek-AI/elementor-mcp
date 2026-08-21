@@ -4614,9 +4614,10 @@ body[data-emcp-auth="app-password"] [data-authfor="oauth"] { display: none; }
 
 /* ---- the settings-saved toast -----------------------------------------------
    WordPress stacks this above the page, shifting the whole screen down just as
-   you look at what you changed. Only this one confirmation is moved bottom-right;
+   you look at what you changed. Only this one confirmation sits bottom-right;
    every other notice stays where it is, because some carry buttons or explain
-   page state and a corner toast is the wrong place for those. */
+   page state and a corner toast is the wrong place for those. PHP renders the
+   whole toast, so these rules place it on the very first paint. */
 .emcp-toasts {
 	position: fixed;
 	right: 24px;

@@ -3162,16 +3162,25 @@ class EMCP_Tools_Admin {
 			if ( isset( $_GET['settings-updated'] ) && 'true' === sanitize_text_field( wp_unslash( $_GET['settings-updated'] ) ) ) :
 				?>
 				<?php
+				// Rendered as the finished toast rather than as a notice the script
+				// then moves. Moving it meant the browser painted it at the top of
+				// the page first and jumped it to the corner a frame later, and it
+				// put the confirmation at the mercy of the script running at all.
+				// This way the first paint is already bottom-right, and admin.js
+				// only adds the dismissing.
+				//
 				// `inline` is load-bearing, not cosmetic. On jQuery ready core runs
 				//   $( 'div.notice' ).not( '.inline, .below-h2' ).insertAfter( $headerEnd )
-				// which relocates every other notice to just under the page h1. Without
-				// it core moves this one back out of the toast, leaving an empty toast
-				// and the text at the top. Opting out beats trying to win the race.
-				// It also degrades well: if the JS never runs, the notice renders in
-				// place instead of vanishing.
+				// which relocates every other notice to just under the page h1, and
+				// would pull this one straight back out of the toast.
 				?>
-				<div class="notice notice-success is-dismissible inline emcp-saved-notice">
-					<p><strong><?php esc_html_e( 'Settings saved.', 'emcp-tools' ); ?></strong></p>
+				<div class="emcp-toasts" aria-live="polite">
+					<div class="emcp-toast emcp-toast--success" role="status">
+						<div class="notice notice-success inline emcp-saved-notice emcp-toast__notice">
+							<p><strong><?php esc_html_e( 'Settings saved.', 'emcp-tools' ); ?></strong></p>
+						</div>
+						<button type="button" class="emcp-toast__close" aria-label="<?php esc_attr_e( 'Dismiss', 'emcp-tools' ); ?>">&times;</button>
+					</div>
 				</div>
 				<?php
 			endif;

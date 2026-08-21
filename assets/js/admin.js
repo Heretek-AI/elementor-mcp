@@ -1747,52 +1747,35 @@
 	}
 
 	/**
-	 * Show the settings-saved confirmation as a toast, bottom right.
+	 * Wire the settings-saved toast that PHP already rendered, bottom right.
 	 *
-	 * WordPress puts it in a stack above the page, which shifts the whole screen
+	 * WordPress stacks notices above the page, which shifts the whole screen
 	 * down at the exact moment you have finished with the top of it and are
-	 * looking at what you just changed. Bottom right keeps it near where the eye
-	 * already is and stops the layout jumping.
+	 * looking at what you just changed. Bottom right keeps the confirmation
+	 * near where the eye already is and stops the layout jumping.
 	 *
-	 * Only this one notice moves. Every other notice on these screens is left
-	 * exactly where it is: some of them carry buttons or explain page state, and
-	 * a corner toast is the wrong place for something you have to act on.
+	 * The markup arrives in its final position, so all this adds is the
+	 * dismissing: a close button, an auto-hide, and a pause while it is being
+	 * read. If this never runs the toast simply stays until the next page load,
+	 * which is the right way round for a confirmation.
+	 *
+	 * Only this one notice is a toast. Every other notice on these screens is
+	 * left where it is: some carry buttons or explain page state, and a corner
+	 * that fades out is the wrong place for something you have to act on.
 	 */
 	function initSavedToast() {
-		var notice = document.querySelector( '.emcp-saved-notice' );
-		if ( ! notice ) {
+		var stack = document.querySelector( '.emcp-toasts' );
+		var toast = stack && stack.querySelector( '.emcp-toast' );
+		if ( ! toast ) {
 			return;
 		}
-
-		var stack = document.createElement( 'div' );
-		stack.className = 'emcp-toasts';
-		// Polite: a confirmation should not interrupt a screen reader mid-sentence.
-		stack.setAttribute( 'aria-live', 'polite' );
-
-		var toast = document.createElement( 'div' );
-		toast.className = 'emcp-toast emcp-toast--success';
-		toast.setAttribute( 'role', 'status' );
-
-		// Move the original node, so its text and markup stay as rendered.
-		notice.classList.add( 'emcp-toast__notice' );
-		toast.appendChild( notice );
-
-		var close = document.createElement( 'button' );
-		close.type = 'button';
-		close.className = 'emcp-toast__close';
-		close.setAttribute( 'aria-label', 'Dismiss' );
-		close.innerHTML = '&times;';
-		toast.appendChild( close );
-
-		stack.appendChild( toast );
-		document.body.appendChild( stack );
 
 		var timer = null;
 
 		function dismiss() {
 			window.clearTimeout( timer );
 			toast.classList.add( 'is-leaving' );
-			// Remove on a timer rather than on transitionend: a background tab
+			// Remove on a timer rather than on animationend: a background tab
 			// never fires the event, and the node would sit there forever.
 			window.setTimeout( function () {
 				if ( stack.parentNode ) {
@@ -1801,7 +1784,10 @@
 			}, 260 );
 		}
 
-		close.addEventListener( 'click', dismiss );
+		var close = toast.querySelector( '.emcp-toast__close' );
+		if ( close ) {
+			close.addEventListener( 'click', dismiss );
+		}
 		timer = window.setTimeout( dismiss, 5000 );
 
 		// Reading it should not race the timer.

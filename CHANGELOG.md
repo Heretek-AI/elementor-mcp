@@ -2,9 +2,17 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
-## [Unreleased] - 3.14.0
+## [3.14.0]
+
+Adds BeTheme and BeBuilder support, tells you why a tool cannot be switched on instead of just showing it greyed out, and settles a malware-scanner false positive reported from a live site.
+
+### Added
+- **BeTheme and BeBuilder support (Pro).** BeTheme is one of the most-sold WordPress themes ever, and it brings its own page builder, so an agent connected to a BeTheme site could previously see the site but not build on it. Two tools now cover both halves: `betheme-read` and `betheme-write`, eight operations between them. Theme Options are read and written through a curated 34-key allowlist covering colours, typography, layout, header and footer, so an agent can restyle a site without being handed all 830 settings. BeBuilder pages are read as a section, wrap and item tree, written back whole, or extended a section at a time, and `list-item-types` plus `get-item-schema` report every builder item the installed theme registers, 135 on the version this was tested against, with the fields each one accepts.
+  Both tools register only when BeTheme is the active theme. `betheme-write` ships disabled-by-default, as the other theme write tools do, since it changes global theme settings and can replace a page's whole builder content. A new `emcp-betheme` agent skill carries the two traps that cost the most time when this was built: item settings live under `attr`, not `fields`, and a wrap or item without a `size` renders as nothing at all.
+- **A notice when EMCP Themer and BeTheme would both try to render a page.** BeTheme has its own template system, and EMCP Themer takes over the whole document when it has a body template that matches. Both are legitimate choices, so nothing is switched off automatically: the notice appears only when a real overlap exists, says which one is winning, and points to the setting to change if you wanted the other. Same approach as the existing Elementor Pro and UAE notices.
 
 ### Changed
+- **The settings-saved confirmation is now a toast in the bottom right.** WordPress puts notices in a stack above the page, which shifts the whole screen down at the moment you have finished with the top of it and are looking at what you just changed. It slides in at the corner instead, closes on its own after a few seconds, and waits while you hover it. Only that one confirmation moved; every other notice stays where it is, because some carry buttons or explain page state and a corner that fades is the wrong place for something you have to act on.
 - **A tool that cannot be switched on now says why, instead of just looking switched off.** On the Tools screen a greyed-out toggle looked the same whether you had turned the tool off or it depended on software that is not installed, and the second case reads as "broken" or "not included in my plan". Every such card now carries a badge naming what is missing, for example "Needs Essential Addons for Elementor", with a sentence below it saying whether the dependency is a plugin that is not active or a theme that is not the active one. Reported from a live site where the Elementor Addons cards were the ones causing the confusion; the change covers every tool with a dependency, not only those three.
 
 ### Fixed

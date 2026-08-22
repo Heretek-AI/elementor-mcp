@@ -363,23 +363,41 @@ $emcp_videos = array(
 	</section>
 
 		<aside class="emcp-dash-side">
-			<!-- EMCP Cloud -->
-			<div class="emcp-dash-promo emcp-dash-promo--cloud">
-				<span class="emcp-dash-promo-badge"><?php esc_html_e( 'EMCP Cloud', 'emcp-tools' ); ?></span>
-				<span class="emcp-dash-promo-icon dashicons dashicons-cloud" aria-hidden="true"></span>
-				<h3 class="emcp-dash-promo-title"><?php esc_html_e( 'Your artifacts, everywhere', 'emcp-tools' ); ?></h3>
-				<p class="emcp-dash-promo-desc"><?php esc_html_e( 'Back up your blocks, widgets and snippets, sync them across sites, and publish to the marketplace.', 'emcp-tools' ); ?></p>
-				<ul class="emcp-dash-promo-list">
-					<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Back up & restore anywhere', 'emcp-tools' ); ?></li>
-					<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Sync across all your sites', 'emcp-tools' ); ?></li>
-					<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Publish & sell on the marketplace', 'emcp-tools' ); ?></li>
-				</ul>
-				<a class="emcp-dash-promo-cta" href="<?php echo esc_url( admin_url( 'admin.php?page=emcp-tools-connection' ) ); ?>">
-					<?php esc_html_e( 'Explore EMCP Cloud', 'emcp-tools' ); ?><span class="dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
-				</a>
-			</div>
-			<!-- EMCP Pro -->
+			<!--
+			EMCP Cloud. The artwork carries the whole message, badge, headline,
+			benefits and call to action, so it replaces the card that used to be
+			built out of markup here. The link wraps the image and the alt text
+			says what the banner says, for anyone who cannot see it.
+			-->
+			<a class="emcp-dash-cloud" href="<?php echo esc_url( admin_url( 'admin.php?page=emcp-tools-connection' ) ); ?>">
+				<img
+					src="<?php echo esc_url( EMCP_TOOLS_URL . 'assets/img/emcp-cloud-banner.webp' ); ?>"
+					width="1519"
+					height="1035"
+					loading="lazy"
+					decoding="async"
+					alt="<?php esc_attr_e( 'EMCP Cloud: your artifacts, everywhere. Back up your blocks, widgets and snippets, sync them across sites, and publish to the marketplace. Explore EMCP Cloud.', 'emcp-tools' ); ?>"
+				/>
+			</a>
+			<!--
+			EMCP Pro. Dark, to sit with the Cloud banner above it rather than
+			against it. The decoration is inline SVG rather than an image so it
+			stays crisp at any column width and the copy stays translatable.
+			-->
 			<div class="emcp-dash-promo emcp-dash-promo--pro">
+				<svg class="emcp-dash-promo-deco" viewBox="0 0 220 160" fill="none" aria-hidden="true" focusable="false">
+					<circle cx="176" cy="30" r="58" stroke="currentColor" stroke-width="1" opacity=".35" />
+					<circle cx="176" cy="30" r="40" stroke="currentColor" stroke-width="1" opacity=".25" />
+					<circle cx="176" cy="30" r="22" stroke="currentColor" stroke-width="1" opacity=".18" />
+					<g opacity=".3">
+						<circle cx="152" cy="96" r="1.5" fill="currentColor" />
+						<circle cx="172" cy="96" r="1.5" fill="currentColor" />
+						<circle cx="192" cy="96" r="1.5" fill="currentColor" />
+						<circle cx="152" cy="112" r="1.5" fill="currentColor" />
+						<circle cx="172" cy="112" r="1.5" fill="currentColor" />
+						<circle cx="192" cy="112" r="1.5" fill="currentColor" />
+					</g>
+				</svg>
 				<span class="emcp-dash-promo-badge"><?php esc_html_e( 'EMCP Pro', 'emcp-tools' ); ?></span>
 				<?php if ( $emcp_is_free ) : ?>
 					<span class="emcp-dash-promo-icon dashicons dashicons-star-filled" aria-hidden="true"></span>
@@ -397,7 +415,6 @@ $emcp_videos = array(
 			</div>
 		</aside>
 	</div><!-- .emcp-dash-row--toolkit -->
-
 	<!-- Video guides + help, side by side (70/30) -->
 	<div class="emcp-dash-row">
 

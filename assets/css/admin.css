@@ -4561,9 +4561,39 @@ body[data-emcp-auth="app-password"] [data-authfor="oauth"] { display: none; }
 .emcp-dash-section--toolkit { flex: 75 1 0; min-width: 0; }
 /* Right column: two stacked promo banners (Cloud + Pro). */
 .emcp-dash-side { flex: 25 1 0; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
-.emcp-dash-promo { flex: 1 1 0; display: flex; flex-direction: column; gap: 8px; border-radius: var(--mcp-radius); padding: 20px; color: #fff; }
+/* Sizes to its content. Growing to fill the column left a tall empty band
+   between the copy and the button, now that the Cloud card next to it is a
+   fixed-ratio image rather than a second stretchy card. */
+.emcp-dash-promo { flex: 0 0 auto; display: flex; flex-direction: column; gap: 8px; border-radius: var(--mcp-radius); padding: 20px; color: #fff; }
 .emcp-dash-promo--cloud { background: var(--mcp-primary); }
-.emcp-dash-promo--pro { background: var(--mcp-pro); }
+/* EMCP Pro. Dark indigo rather than the flat violet it used to be, so it reads
+   as a pair with the Cloud banner stacked above it instead of fighting it. The
+   deeper base also lets the indigo accent actually register as an accent. */
+.emcp-dash-promo--pro {
+	position: relative;
+	overflow: hidden;
+	background: linear-gradient(160deg, #17153a 0%, #100e2b 55%, #0b0a1f 100%);
+	border: 1px solid rgba(129, 140, 248, .22);
+}
+
+/* Decoration only: it must never sit over the text or eat a click. */
+.emcp-dash-promo-deco {
+	position: absolute;
+	inset: 0 0 auto auto;
+	width: 220px;
+	height: 160px;
+	color: #818cf8;
+	pointer-events: none;
+}
+
+.emcp-dash-promo--pro > :not(.emcp-dash-promo-deco) { position: relative; }
+.emcp-dash-promo--pro .emcp-dash-promo-badge { background: rgba(129, 140, 248, .18); border: 1px solid rgba(129, 140, 248, .35); color: #c7d2fe; }
+.emcp-dash-promo--pro .emcp-dash-promo-icon { color: #a5b4fc; }
+.emcp-dash-promo--pro .emcp-dash-promo-desc { color: rgba(226, 232, 240, .78); }
+.emcp-dash-promo--pro .emcp-dash-promo-cta { background: var(--mcp-primary); color: #fff; box-shadow: 0 6px 18px -6px rgba(99, 102, 241, .8); }
+.emcp-dash-promo--pro .emcp-dash-promo-cta:hover { background: #4f46e5; }
+.emcp-dash-promo--pro .emcp-dash-promo-note { background: rgba(129, 140, 248, .14); border-color: rgba(129, 140, 248, .38); color: #c7d2fe; }
+.emcp-dash-promo--pro .emcp-dash-promo-note .dashicons { color: #a5b4fc; }
 .emcp-dash-promo-badge { align-self: flex-start; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; background: rgba(255,255,255,.2); padding: 3px 9px; border-radius: 999px; }
 .emcp-dash-promo-icon { font-size: 26px; width: 26px; height: 26px; color: rgba(255,255,255,.92); margin-top: 2px; }
 .emcp-dash-promo-title { color: #fff; font-family: 'Geist', sans-serif; font-size: 17px; font-weight: 600; margin: 2px 0 0; letter-spacing: -0.01em; }
@@ -4572,12 +4602,25 @@ body[data-emcp-auth="app-password"] [data-authfor="oauth"] { display: none; }
 .emcp-dash-promo-list li { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: rgba(255,255,255,.92); }
 .emcp-dash-promo-list li .dashicons { flex: none; font-size: 15px; width: 15px; height: 15px; color: #fff; }
 .emcp-dash-promo-cta { margin-top: auto; display: inline-flex; align-items: center; justify-content: center; gap: 4px; background: #fff; color: var(--mcp-primary); font-weight: 600; font-size: 13px; padding: 9px 14px; border-radius: 8px; text-decoration: none; transition: background .15s; }
-.emcp-dash-promo--pro .emcp-dash-promo-cta { color: var(--mcp-pro); }
 .emcp-dash-promo-cta:hover { background: rgba(255,255,255,.92); }
 .emcp-dash-promo-cta .dashicons { font-size: 15px; width: 15px; height: 15px; }
 .emcp-dash-promo-note { margin-top: auto; align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.4); color: #fff; font-size: 12.5px; font-weight: 600; padding: 7px 12px; border-radius: 8px; }
 .emcp-dash-promo-note .dashicons { font-size: 16px; width: 16px; height: 16px; }
 @media screen and (max-width: 1200px) { .emcp-dash-row--toolkit { flex-direction: column; } }
+
+/* EMCP Cloud banner. One image doing the work the promo card used to do in
+   markup, sitting where that card sat: first in the sidebar beside the toolkit.
+   It takes its natural height so the Pro card below it still fills the rest of
+   the column, the way the two cards shared it before. */
+.emcp-dash-cloud { display: block; flex: 0 0 auto; border-radius: var(--mcp-radius); overflow: hidden; line-height: 0; transition: transform .15s ease, box-shadow .15s ease; }
+.emcp-dash-cloud img { display: block; width: 100%; height: auto; }
+.emcp-dash-cloud:hover { transform: translateY(-2px); box-shadow: 0 12px 30px -10px rgba(10, 10, 20, .45); }
+.emcp-dash-cloud:focus-visible { outline: 2px solid var(--mcp-primary); outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+	.emcp-dash-cloud { transition: none; }
+	.emcp-dash-cloud:hover { transform: none; }
+}
 
 /* -------------------------------------------------------------------------
  * Prominent disclosure cards on the sandbox screens.

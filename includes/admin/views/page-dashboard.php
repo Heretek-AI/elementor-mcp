@@ -364,21 +364,64 @@ $emcp_videos = array(
 
 		<aside class="emcp-dash-side">
 			<!--
-			EMCP Cloud. The artwork carries the whole message, badge, headline,
-			benefits and call to action, so it replaces the card that used to be
-			built out of markup here. The link wraps the image and the alt text
-			says what the banner says, for anyone who cannot see it.
+			EMCP Cloud. Built in markup rather than dropped in as artwork, so the
+			copy is translatable, the type stays sharp at any column width, and
+			the whole card reflows instead of shrinking to five-pixel text. The
+			cloud and its three nodes are inline SVG for the same reason.
 			-->
-			<a class="emcp-dash-cloud" href="<?php echo esc_url( admin_url( 'admin.php?page=emcp-tools-connection' ) ); ?>">
-				<img
-					src="<?php echo esc_url( EMCP_TOOLS_URL . 'assets/img/emcp-cloud-banner.webp' ); ?>"
-					width="1519"
-					height="1035"
-					loading="lazy"
-					decoding="async"
-					alt="<?php esc_attr_e( 'EMCP Cloud: your artifacts, everywhere. Back up your blocks, widgets and snippets, sync them across sites, and publish to the marketplace. Explore EMCP Cloud.', 'emcp-tools' ); ?>"
-				/>
-			</a>
+			<div class="emcp-dash-promo emcp-dash-promo--cloud">
+				<?php
+				// Cloud and stacked layers only. The full artwork also drops three
+				// connected nodes below this, which is right at banner size and wrong
+				// here: in a 380px column they landed on the description and the first
+				// benefit row. Cropped to the part that still reads at 116px.
+				?>
+				<svg class="emcp-dash-promo-deco emcp-dash-promo-deco--cloud" viewBox="56 40 106 80" fill="none" aria-hidden="true" focusable="false">
+					<path d="M62 84a30 30 0 0 1 29-30 34 34 0 0 1 64 8 26 26 0 0 1-8 51H88a26 26 0 0 1-26-29Z" stroke="currentColor" stroke-width="2" opacity=".5" />
+					<path d="M110 78l24 13-24 13-24-13 24-13Z" fill="currentColor" opacity=".45" />
+					<path d="M86 100l24 13 24-13" stroke="currentColor" stroke-width="2" opacity=".3" stroke-linecap="round" stroke-linejoin="round" />
+				</svg>
+
+				<span class="emcp-dash-promo-badge emcp-dash-promo-badge--icon">
+					<span class="dashicons dashicons-cloud" aria-hidden="true"></span><?php esc_html_e( 'EMCP Cloud', 'emcp-tools' ); ?>
+				</span>
+
+				<h3 class="emcp-dash-promo-title emcp-dash-promo-title--stacked">
+					<?php esc_html_e( 'Your artifacts,', 'emcp-tools' ); ?>
+					<span><?php esc_html_e( 'everywhere', 'emcp-tools' ); ?></span>
+				</h3>
+
+				<p class="emcp-dash-promo-desc"><?php esc_html_e( 'Back up your blocks, widgets and snippets, sync them across sites, and publish to the marketplace.', 'emcp-tools' ); ?></p>
+
+				<ul class="emcp-dash-promo-feats">
+					<li>
+						<span class="emcp-dash-promo-feat-icon"><span class="dashicons dashicons-shield" aria-hidden="true"></span></span>
+						<span class="emcp-dash-promo-feat-copy">
+							<strong><?php esc_html_e( 'Back up &amp; restore anywhere', 'emcp-tools' ); ?></strong>
+							<span><?php esc_html_e( 'Secure, reliable backups you can count on.', 'emcp-tools' ); ?></span>
+						</span>
+					</li>
+					<li>
+						<span class="emcp-dash-promo-feat-icon"><span class="dashicons dashicons-update-alt" aria-hidden="true"></span></span>
+						<span class="emcp-dash-promo-feat-copy">
+							<strong><?php esc_html_e( 'Sync across all your sites', 'emcp-tools' ); ?></strong>
+							<span><?php esc_html_e( 'Keep everything in perfect sync.', 'emcp-tools' ); ?></span>
+						</span>
+					</li>
+					<li>
+						<span class="emcp-dash-promo-feat-icon"><span class="dashicons dashicons-cart" aria-hidden="true"></span></span>
+						<span class="emcp-dash-promo-feat-copy">
+							<strong><?php esc_html_e( 'Publish &amp; sell on the marketplace', 'emcp-tools' ); ?></strong>
+							<span><?php esc_html_e( 'Share your creations and grow.', 'emcp-tools' ); ?></span>
+						</span>
+					</li>
+				</ul>
+
+				<a class="emcp-dash-promo-cta emcp-dash-promo-cta--block" href="<?php echo esc_url( admin_url( 'admin.php?page=emcp-tools-connection' ) ); ?>">
+					<?php esc_html_e( 'Explore EMCP Cloud', 'emcp-tools' ); ?><span class="dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
+				</a>
+			</div>
+
 			<!--
 			EMCP Pro. Dark, to sit with the Cloud banner above it rather than
 			against it. The decoration is inline SVG rather than an image so it

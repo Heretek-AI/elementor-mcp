@@ -99,8 +99,13 @@ class EMCP_Tools_PHP_Snippet_Loader {
 			}
 
 			// Path must stay inside the sandbox (defends a poisoned manifest).
-			$path = $sandbox . $rel;
-			if ( 0 !== strpos( wp_normalize_path( $path ), wp_normalize_path( $sandbox ) ) || ! is_file( $path ) ) {
+			//
+			// realpath(), not wp_normalize_path(): normalize only swaps separators
+			// and collapses repeats, it does not resolve "..", so
+			// "<sandbox>/../../../evil.php" still had the sandbox as its literal
+			// prefix and passed the check this line exists to make.
+			$path = self::inside_sandbox( $sandbox, $rel );
+			if ( '' === $path ) {
 				continue;
 			}
 
@@ -242,4 +247,26 @@ class EMCP_Tools_PHP_Snippet_Loader {
 			);
 		}
 	}
+
+	/**
+	 * Resolve a manifest-relative path, or '' if it is not a file inside the sandbox.
+	 *
+	 * @since 3.14.1
+	 * @param string $sandbox Sandbox directory, trailing-slashed.
+	 * @param string $rel     Relative path from the manifest.
+	 * @return string Canonical absolute path, or '' when it escapes or is missing.
+	 */
+	private static function inside_sandbox( string $sandbox, string $rel ): string {
+		$real = realpath( $sandbox . $rel );
+		$root = realpath( $sandbox );
+		if ( false === $real || false === $root || ! is_file( $real ) ) {
+			return '';
+		}
+
+		$real_n = wp_normalize_path( $real );
+		$root_n = rtrim( wp_normalize_path( $root ), '/' ) . '/';
+
+		return 0 === strpos( $real_n, $root_n ) ? $real : '';
+	}
+
 }

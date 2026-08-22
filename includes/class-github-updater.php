@@ -334,7 +334,15 @@ class EMCP_Tools_GitHub_Updater {
 		$package = '';
 		foreach ( (array) ( $data['assets'] ?? array() ) as $asset ) {
 			if ( ! empty( $asset['name'] ) && preg_match( self::ASSET_PATTERN, $asset['name'] ) ) {
-				$package = (string) ( $asset['browser_download_url'] ?? '' );
+				// The URL is handed to WordPress's upgrader, which downloads and
+				// installs it as a plugin. It comes from api.github.com over TLS,
+				// so this is not a hole so much as an unstated assumption: make it
+				// stated, and refuse anything that is not this repo's own release
+				// asset. Costs one comparison and pins the trust boundary.
+				$url = (string) ( $asset['browser_download_url'] ?? '' );
+				if ( self::is_release_asset_url( $url ) ) {
+					$package = $url;
+				}
 				break;
 			}
 		}
@@ -448,4 +456,32 @@ class EMCP_Tools_GitHub_Updater {
 
 		return $body;
 	}
+
+	/**
+	 * Is this URL one of THIS repository's release assets?
+	 *
+	 * GitHub serves release downloads from github.com and redirects to its own
+	 * object storage, so both hosts are accepted; anything else is not a release
+	 * of ours and is refused.
+	 *
+	 * @since 3.14.1
+	 * @param string $url Candidate download URL.
+	 * @return bool
+	 */
+	public static function is_release_asset_url( string $url ): bool {
+		$parts = wp_parse_url( $url );
+		if ( ! is_array( $parts ) || 'https' !== strtolower( (string) ( $parts['scheme'] ?? '' ) ) ) {
+			return false;
+		}
+
+		$host = strtolower( (string) ( $parts['host'] ?? '' ) );
+		$path = (string) ( $parts['path'] ?? '' );
+
+		if ( 'github.com' === $host ) {
+			return 0 === strpos( $path, '/' . self::REPO . '/releases/' );
+		}
+
+		return 'objects.githubusercontent.com' === $host || 'release-assets.githubusercontent.com' === $host;
+	}
+
 }

@@ -78,20 +78,61 @@ class EMCP_Tools_Filesystem_Guard {
 	}
 
 	/**
+	 * Secret-bearing filenames read-file / search-files must never return.
+	 *
+	 * `.htaccess` is deliberately absent: it is not a secret, and it stays
+	 * readable.
+	 *
+	 * @var string[]
+	 */
+	const READ_PROTECTED = array(
+		'wp-config.php',        // DB credentials and auth salts.
+		'wp-config-local.php',  // Bedrock and several hosting stacks.
+		'.env',                 // Bedrock, Docker, most containerized setups.
+		'.htpasswd',
+		'auth.json',            // Composer HTTP-basic tokens.
+		'.netrc',
+		'id_rsa',
+		'id_ed25519',
+	);
+
+	/**
 	 * Whether a path is READ-protected — its contents hold site secrets and must
-	 * not be returned by read-file / search-files. `wp-config.php` carries the DB
-	 * credentials and auth salts; `.htaccess` is not a secret so it stays
-	 * readable. Filterable so an admin can add `.env`, key files, etc.
+	 * not be returned by read-file / search-files.
+	 *
+	 * Matching is on the basename, plus two prefix rules that catch the copies a
+	 * real site accumulates. `wp-config.php.bak`, `.save`, `.old` and editor
+	 * swap files are as sensitive as the original and turn up constantly on
+	 * migrated or previously-compromised installs, and anything inside a `.git`
+	 * directory can carry a `https://user:token@…` remote.
+	 *
+	 * Filterable so an admin can add site-specific files.
 	 *
 	 * @param string $abs
 	 * @return bool
 	 */
 	public static function is_read_protected( string $abs ): bool {
 		$base      = strtolower( basename( $abs ) );
-		$protected = array( 'wp-config.php' );
+		$protected = self::READ_PROTECTED;
 		/** Filter the read-protected basenames. */
 		$protected = (array) apply_filters( 'emcp_tools_fs_read_protected_paths', $protected, $abs );
-		return in_array( $base, array_map( 'strtolower', $protected ), true );
+
+		if ( in_array( $base, array_map( 'strtolower', $protected ), true ) ) {
+			return true;
+		}
+
+		// wp-config.php.bak / .save / .old / .swp, and wp-config-*.php variants.
+		if ( 0 === strpos( $base, 'wp-config.' ) || 0 === strpos( $base, 'wp-config-' ) ) {
+			return true;
+		}
+
+		// Anything under a .git directory: config carries remotes with tokens.
+		$norm = strtolower( str_replace( '\\', '/', $abs ) );
+		if ( false !== strpos( $norm, '/.git/' ) ) {
+			return true;
+		}
+
+		return false;
 	}
 
 	/**

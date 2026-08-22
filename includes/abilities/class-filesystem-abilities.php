@@ -168,13 +168,23 @@ class EMCP_Tools_Filesystem_Abilities {
 	}
 
 	private function entry( string $abs ): array {
-		return array(
+		$entry = array(
 			'name'  => basename( $abs ),
 			'path'  => EMCP_Tools_Filesystem_Guard::to_relative( $abs ),
 			'type'  => is_dir( $abs ) ? 'dir' : 'file',
 			'size'  => is_file( $abs ) ? (int) filesize( $abs ) : 0,
 			'mtime' => (int) filemtime( $abs ),
 		);
+
+		// A symlink reports its TARGET's size and mtime, and that target can sit
+		// outside the install. Listing is metadata only, so this is a label
+		// rather than a block: say what the entry is instead of presenting it as
+		// an ordinary file. read-file and search-files resolve before reading.
+		if ( is_link( $abs ) ) {
+			$entry['symlink'] = true;
+		}
+
+		return $entry;
 	}
 
 	// ---- search-files --------------------------------------------------
@@ -241,11 +251,20 @@ class EMCP_Tools_Filesystem_Abilities {
 			if ( $f->getSize() > EMCP_Tools_Filesystem_Guard::MAX_READ_BYTES ) {
 				continue;
 			}
-			// Never surface secrets (wp-config.php) via a content search.
-			if ( EMCP_Tools_Filesystem_Guard::is_read_protected( $f->getPathname() ) ) {
+			// Canonicalize before deciding anything. getPathname() is the path as
+			// walked, so for a symlink it is the LINK: its basename defeats the
+			// secret check (a link named notes.txt pointing at wp-config.php), and
+			// reading it follows the link straight out of ABSPATH. resolve_path()
+			// realpath()s and re-confines, which closes both.
+			$real = EMCP_Tools_Filesystem_Guard::resolve_path( $f->getPathname() );
+			if ( is_wp_error( $real ) ) {
 				continue;
 			}
-			$content = (string) file_get_contents( $f->getPathname() );
+			// Never surface secrets (wp-config.php and friends) via a content search.
+			if ( EMCP_Tools_Filesystem_Guard::is_read_protected( $real ) ) {
+				continue;
+			}
+			$content = (string) file_get_contents( $real );
 			if ( ! EMCP_Tools_Filesystem_Guard::is_utf8( $content ) ) {
 				continue;
 			}

@@ -85,7 +85,16 @@ export function loadSites(env) {
 function normalizeSite(cfg) {
   const url = String(cfg.url).replace(/\/+$/, '');
   const parsed = new URL(url);
-  const isLocalDev = /\.(test|local|localhost|dev|invalid)$/.test(parsed.hostname)
+  // Certificate checking is turned off for these, so the list may only contain
+  // names that CANNOT resolve on the public internet: .test, .local, .localhost
+  // and .invalid are reserved by RFC 2606 / 6761. `.dev` used to be here and is
+  // not reserved at all, it is a delegated gTLD anyone can register and is HSTS
+  // preloaded precisely because it is expected to be publicly reachable. Any
+  // site on a real .dev domain was having its Application Password sent with
+  // verification disabled. Opt in with EMCP_INSECURE_TLS=1 if you need it.
+  const insecureOptIn = String(process.env.EMCP_INSECURE_TLS || '') === '1';
+  const isLocalDev = insecureOptIn
+    || /\.(test|local|localhost|invalid)$/.test(parsed.hostname)
     || parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
   return {
     url,

@@ -111,7 +111,13 @@ class EMCP_Tools_Themer_PHP_Renderer {
 		$sandbox = EMCP_Tools_PHP_Snippet_Store::sandbox_dir() . '/';
 		$path    = $sandbox . $rel;
 		// Path must stay inside the sandbox (defends a poisoned manifest).
-		if ( 0 !== strpos( wp_normalize_path( $path ), wp_normalize_path( $sandbox ) ) || ! is_file( $path ) ) {
+		// realpath(), not wp_normalize_path(): normalize does not resolve "..",
+		// so a poisoned manifest entry could keep the sandbox as its literal
+		// prefix while pointing anywhere. Same fix as the snippet loader.
+		$real = realpath( $path );
+		$root = realpath( $sandbox );
+		if ( false === $real || false === $root || ! is_file( $real )
+			|| 0 !== strpos( wp_normalize_path( $real ), rtrim( wp_normalize_path( $root ), '/' ) . '/' ) ) {
 			return '';
 		}
 		// Tamper guard: contents must match the recorded hash.

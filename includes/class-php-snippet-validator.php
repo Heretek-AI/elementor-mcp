@@ -476,7 +476,33 @@ class EMCP_Tools_PHP_Snippet_Validator {
 				$is_member = ( T_OBJECT_OPERATOR === $prev_id ) || ( T_DOUBLE_COLON === $prev_id )
 					|| ( defined( 'T_NULLSAFE_OBJECT_OPERATOR' ) && T_NULLSAFE_OBJECT_OPERATOR === $prev_id );
 				$is_def    = ( T_FUNCTION === $prev_id ) || ( T_NEW === $prev_id );
-				if ( $is_member || $is_def ) {
+
+				// A method call whose NAME is on the critical list. Skipping every
+				// member call meant the list could be walked around without any
+				// dynamic-dispatch trick, for instance
+				// (new SplFileObject($path,'w'))->fwrite($payload): fwrite is on the
+				// list, it just never got looked up. Reported as a warning rather
+				// than critical, because the name alone does not say what object it
+				// belongs to and a false block on someone's $wpdb->query() is worse
+				// than a line a reviewer has to read.
+				if ( $is_member ) {
+					$member = strtolower( $text );
+					if ( isset( self::$critical_funcs[ $member ] ) ) {
+						$result['findings'][] = self::finding(
+							'warning',
+							'method:' . $member,
+							sprintf(
+								/* translators: %s: method name. */
+								__( 'Calls ->%s() on an object. The same name as a function this validator blocks outright, so check what the object is and what the call does before activating.', 'emcp-tools' ),
+								$text
+							),
+							$line
+						);
+					}
+					continue;
+				}
+
+				if ( $is_def ) {
 					continue;
 				}
 				$name = strtolower( $text );

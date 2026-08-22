@@ -28,7 +28,7 @@ class EMCP_Tools_Url_Guard {
 	 * @param string $url The URL to validate.
 	 * @return bool True if the URL is a public http(s) address.
 	 */
-	public static function is_safe_remote_url( string $url ): bool {
+	public static function is_safe_remote_url( string $url, ?callable $resolver = null ): bool {
 		$parsed = wp_parse_url( $url );
 		if ( empty( $parsed['scheme'] ) || empty( $parsed['host'] ) ) {
 			return false;
@@ -46,29 +46,76 @@ class EMCP_Tools_Url_Guard {
 			return false;
 		}
 
-		// Resolve the host and reject any private/reserved/link-local IP that
-		// core misses. filter_var()'s NO_PRIV_RANGE | NO_RES_RANGE flags cover
-		// RFC1918, loopback, 0.0.0.0/8, 169.254.0.0/16, and the IPv6
-		// equivalents (::1, fe80::/10, fc00::/7).
-		$host = strtolower( trim( $parsed['host'], '[]' ) );
-		$ip   = filter_var( $host, FILTER_VALIDATE_IP ) ? $host : gethostbyname( $host );
-
-		// gethostbyname() returns the host unchanged when resolution fails.
-		if ( $ip && filter_var( $ip, FILTER_VALIDATE_IP ) ) {
-			if ( ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
-				return false;
-			}
-		}
-
-		return true;
+		// Reject any private/reserved/link-local address core misses. This used
+		// to be a single gethostbyname() plus filter_var() flags, which reads
+		// only the FIRST A record and never an AAAA one, so a host publishing
+		// one public and one internal address slipped through. host_is_blocked()
+		// checks every record against the same CIDR list validate() uses.
+		return ! self::host_is_blocked( (string) $parsed['host'], $resolver );
 	}
 
 	/**
-	 * Downloads a remote URL to a temp file with SSRF protection.
+	 * Does this host resolve to an address we refuse to talk to?
 	 *
-	 * Validates the initial URL and forces WP_Http to re-validate every
-	 * redirect hop against private/reserved hosts ( download_url() does not
-	 * set reject_unsafe_urls on its own ).
+	 * The address half of validate(), without its scheme, port and credential
+	 * rules, so a caller with a looser accept set can still get the full CIDR
+	 * check. Sideloading a media URL is that caller: it allows port 8080, which
+	 * validate() does not.
+	 *
+	 * Fails closed. A host that resolves to nothing cannot be shown to be
+	 * public, so it is refused rather than passed through.
+	 *
+	 * @since 3.14.1
+	 * @param string        $host     Hostname or IP literal, brackets optional.
+	 * @param callable|null $resolver Optional `fn(string $host): string[]`.
+	 * @return bool
+	 */
+	public static function host_is_blocked( string $host, ?callable $resolver = null ): bool {
+		$host = self::normalize_host( $host );
+		if ( '' === $host ) {
+			return true;
+		}
+
+		// An IP literal needs no DNS.
+		if ( false !== filter_var( $host, FILTER_VALIDATE_IP ) ) {
+			return self::ip_is_blocked( $host );
+		}
+
+		$resolver = $resolver ?? array( __CLASS__, 'resolve_host' );
+		$ips      = (array) call_user_func( $resolver, $host );
+		if ( empty( $ips ) ) {
+			return true;
+		}
+
+		foreach ( $ips as $ip ) {
+			if ( self::ip_is_blocked( (string) $ip ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/** Redirect hops a download may follow before giving up. */
+	const MAX_DOWNLOAD_REDIRECTS = 3;
+
+	/**
+	 * Download a remote URL to a temp file, checking every redirect hop.
+	 *
+	 * Redirects are followed by hand rather than by WP_Http, because handing
+	 * WP_Http `reject_unsafe_urls` only gets the hops core's
+	 * wp_http_validate_url() blesses, and that does NOT reject the link-local
+	 * 169.254.0.0/16 range the cloud-metadata endpoint lives in. So a URL that
+	 * passed the strong check could redirect to 169.254.169.254 and have the
+	 * response written into the Media Library. Now the strong check runs on the
+	 * first URL and on every hop, and `reject_unsafe_urls` stays on underneath
+	 * as a second opinion.
+	 *
+	 * Residual risk, stated plainly: the host is validated by name and then
+	 * connected to by name, so a record that changes between the two answers
+	 * (DNS rebinding) is not covered here. Closing that needs the connection
+	 * pinned to the address we checked, which the AI Chat fetcher does with
+	 * validate_pinned() and CURLOPT_RESOLVE.
 	 *
 	 * @since 1.9.1
 	 *
@@ -80,29 +127,109 @@ class EMCP_Tools_Url_Guard {
 		if ( ! self::is_safe_remote_url( $url ) ) {
 			return new \WP_Error(
 				'unsafe_url',
-				__( 'The URL is not allowed (must be a public http or https address).', 'emcp-tools' )
+				__( 'The URL is not allowed. It must be a public http or https address that resolves.', 'emcp-tools' )
 			);
 		}
 
-		if ( ! function_exists( 'download_url' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/file.php';
+		$tmp = wp_tempnam( $url );
+		if ( ! $tmp ) {
+			return new \WP_Error( 'download_failed', __( 'Could not create a temporary file for the download.', 'emcp-tools' ) );
 		}
 
-		$harden = static function ( $args ) {
-			// reject_unsafe_urls makes WP_Http re-validate every redirect hop
-			// against private/reserved ranges; capping redirection limits the
-			// window for redirect-based SSRF.
-			$args['reject_unsafe_urls'] = true;
-			$args['redirection']        = min( 2, (int) ( $args['redirection'] ?? 5 ) );
-			return $args;
-		};
-		add_filter( 'http_request_args', $harden );
+		$current = $url;
+		$hops    = 0;
 
-		$tmp_file = download_url( $url, $timeout );
+		while ( true ) {
+			$response = wp_remote_get(
+				$current,
+				array(
+					'timeout'            => $timeout,
+					'redirection'        => 0,    // Followed below, so each hop is re-checked.
+					'reject_unsafe_urls' => true, // Second opinion, weaker than ours.
+					'stream'             => true,
+					'filename'           => $tmp,
+				)
+			);
 
-		remove_filter( 'http_request_args', $harden );
+			if ( is_wp_error( $response ) ) {
+				self::discard( $tmp );
+				return $response;
+			}
 
-		return $tmp_file;
+			$status = (int) wp_remote_retrieve_response_code( $response );
+
+			if ( $status >= 300 && $status < 400 ) {
+				++$hops;
+				if ( $hops > self::MAX_DOWNLOAD_REDIRECTS ) {
+					self::discard( $tmp );
+					return new \WP_Error( 'too_many_redirects', __( 'The URL redirected too many times.', 'emcp-tools' ) );
+				}
+
+				$next = self::redirect_target( (string) wp_remote_retrieve_header( $response, 'location' ), $current );
+				if ( '' === $next || ! self::is_safe_remote_url( $next ) ) {
+					self::discard( $tmp );
+					return new \WP_Error(
+						'unsafe_url',
+						__( 'The URL redirected somewhere that is not allowed (redirects must stay on public http or https addresses).', 'emcp-tools' )
+					);
+				}
+
+				$current = $next;
+				continue;
+			}
+
+			if ( $status < 200 || $status >= 300 ) {
+				self::discard( $tmp );
+				return new \WP_Error(
+					'download_failed',
+					sprintf(
+						/* translators: %d: HTTP status code. */
+						__( 'The server returned HTTP %d.', 'emcp-tools' ),
+						$status
+					)
+				);
+			}
+
+			return $tmp;
+		}
+	}
+
+	/**
+	 * Absolute URL for a Location header, or '' when it cannot be resolved.
+	 *
+	 * A relative Location needs core's resolver; without it we refuse rather
+	 * than guess, since guessing wrong here means fetching the wrong host.
+	 *
+	 * @since 3.14.1
+	 * @param string $location Raw Location header.
+	 * @param string $base     URL the redirect came from.
+	 * @return string
+	 */
+	private static function redirect_target( string $location, string $base ): string {
+		$location = trim( $location );
+		if ( '' === $location ) {
+			return '';
+		}
+		$parts = wp_parse_url( $location );
+		if ( is_array( $parts ) && ! empty( $parts['scheme'] ) && ! empty( $parts['host'] ) ) {
+			return $location;
+		}
+
+		return class_exists( 'WP_Http' ) ? (string) \WP_Http::make_absolute_url( $location, $base ) : '';
+	}
+
+	/**
+	 * Delete a partial download. Streaming writes the body as it arrives, so a
+	 * refused hop can already have bytes on disk.
+	 *
+	 * @since 3.14.1
+	 * @param string $tmp Temp file path.
+	 * @return void
+	 */
+	private static function discard( string $tmp ): void {
+		if ( $tmp && file_exists( $tmp ) ) {
+			@unlink( $tmp ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		}
 	}
 
 	/* ---------------------------------------------------------------------

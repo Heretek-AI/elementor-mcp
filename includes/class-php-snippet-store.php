@@ -512,6 +512,40 @@ class EMCP_Tools_PHP_Snippet_Store {
 		return $out;
 	}
 
+	/**
+	 * One page of snippets, plus the totals needed to draw a pager.
+	 *
+	 * list_snippets() stays as it is for the MCP tools, which want the whole
+	 * list in a single call. The admin table renders each row's full source,
+	 * so it takes a page at a time instead.
+	 *
+	 * @since 3.15.0
+	 *
+	 * @param string $status   'active', 'draft', or 'any'.
+	 * @param int    $page     1-based page number.
+	 * @param int    $per_page Rows per page.
+	 * @return array{items:array[],total:int,page:int,pages:int,per_page:int}
+	 */
+	public static function list_snippets_page( string $status = 'any', int $page = 1, int $per_page = EMCP_Tools_Sandbox_List_Query::PER_PAGE ): array {
+		$result = EMCP_Tools_Sandbox_List_Query::page( self::POST_TYPE, $status, $page, $per_page );
+
+		$items = array();
+		foreach ( $result['ids'] as $emcp_id ) {
+			$summary = self::summary( $emcp_id );
+			if ( ! is_wp_error( $summary ) ) {
+				$items[] = $summary;
+			}
+		}
+
+		return array(
+			'items'    => $items,
+			'total'    => $result['total'],
+			'page'     => $result['page'],
+			'pages'    => $result['pages'],
+			'per_page' => $result['per_page'],
+		);
+	}
+
 	// -------------------------------------------------------------------------
 	// Manifest
 	// -------------------------------------------------------------------------

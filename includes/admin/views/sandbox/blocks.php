@@ -68,7 +68,24 @@ $emcp_tools_bb_import_error = isset( $_GET['import_error'] ) ? sanitize_text_fie
 
 		<?php else : ?>
 
-			<?php $emcp_tools_bb_list = EMCP_Tools_Block_Store::instance()->list_blocks( 'any' ); ?>
+			<?php
+			// A page at a time. Every row below carries that block's block.json and
+			// render.php, so an unpaged table grows with the site, not the screen.
+			$emcp_tools_bb_pg   = EMCP_Tools_Block_Store::instance()->list_blocks_page( 'any', EMCP_Tools_Admin_Pager::current() );
+			$emcp_tools_bb_list = $emcp_tools_bb_pg['items'];
+
+			// `paged`, not `page`: wp-admin already uses that one for the menu slug.
+			$emcp_tools_bb_href = static function ( $emcp_n ) {
+				$args = array(
+					'page' => 'emcp-tools-widgets',
+					'view' => 'blocks',
+				);
+				if ( $emcp_n > 1 ) {
+					$args['paged'] = (int) $emcp_n;
+				}
+				return add_query_arg( $args, admin_url( 'admin.php' ) );
+			};
+			?>
 
 			<div class="notice notice-warning inline" style="margin: 12px 0;">
 				<p>
@@ -100,6 +117,9 @@ $emcp_tools_bb_import_error = isset( $_GET['import_error'] ) ? sanitize_text_fie
 
 			<?php else : ?>
 
+				<p class="description emcp-pager-count">
+					<?php echo EMCP_Tools_Admin_Pager::summary( $emcp_tools_bb_pg['page'], $emcp_tools_bb_pg['per_page'], count( $emcp_tools_bb_list ), $emcp_tools_bb_pg['total'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped by summary(). ?>
+				</p>
 				<table class="widefat striped elementor-mcp-blocks-table" data-nonce="<?php echo esc_attr( wp_create_nonce( 'emcp_tools_blocks' ) ); ?>" style="margin-top: 16px;">
 					<thead>
 						<tr>
@@ -166,6 +186,11 @@ $emcp_tools_bb_import_error = isset( $_GET['import_error'] ) ? sanitize_text_fie
 						<?php endforeach; ?>
 					</tbody>
 				</table>
+
+				<?php
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped by render().
+				echo EMCP_Tools_Admin_Pager::render( $emcp_tools_bb_pg['page'], $emcp_tools_bb_pg['pages'], $emcp_tools_bb_href );
+				?>
 
 				<script>
 				( function () {

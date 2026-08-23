@@ -207,6 +207,9 @@ class EMCP_Tools_Bootstrap {
 		// Central sandbox storage location (wp-content/emcp-sandbox). Every store
 		// resolves paths through this, so it must load before them.
 		require_once EMCP_TOOLS_DIR . 'includes/sandbox/class-sandbox-paths.php';
+		// Paged listing shared by all three artifact stores. Loaded alongside
+		// them, not with the admin, because the stores name it in a default.
+		require_once EMCP_TOOLS_DIR . 'includes/sandbox/class-sandbox-list-query.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-widget-store.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-widget-loader.php';
 		// Sandbox Bundle — portable cloud-ready format for blocks/widgets/snippets.
@@ -501,6 +504,7 @@ class EMCP_Tools_Bootstrap {
 	 * @since 2.1.0
 	 */
 	private static function load_admin(): void {
+		require_once EMCP_TOOLS_DIR . 'includes/admin/class-admin-pager.php';
 		require_once EMCP_TOOLS_DIR . 'includes/admin/class-admin.php';
 		require_once EMCP_TOOLS_DIR . 'includes/admin/class-mcpb-builder.php';
 

@@ -41,8 +41,35 @@ $emcp_tools_sn_import_error = isset( $_GET['import_error'] ) ? sanitize_text_fie
 <?php
 // ===== PHP Snippets (free, capability-gated) =====
 $emcp_tools_sn_can   = class_exists( 'EMCP_Tools_PHP_Snippet_Store' ) && EMCP_Tools_PHP_Snippet_Store::can_edit();
-$emcp_tools_sn_list  = class_exists( 'EMCP_Tools_PHP_Snippet_Store' ) ? EMCP_Tools_PHP_Snippet_Store::list_snippets( 'any' ) : array();
 $emcp_tools_sn_nonce = wp_create_nonce( 'emcp_tools_php_snippets' );
+
+// A page at a time. Every row below carries that snippet's whole source, so an
+// unpaged table grows with the site rather than with the screen.
+$emcp_tools_sn_pg = class_exists( 'EMCP_Tools_PHP_Snippet_Store' )
+	? EMCP_Tools_PHP_Snippet_Store::list_snippets_page( 'any', EMCP_Tools_Admin_Pager::current() )
+	: array(
+		'items'    => array(),
+		'total'    => 0,
+		'page'     => 1,
+		'pages'    => 1,
+		'per_page' => EMCP_Tools_Sandbox_List_Query::PER_PAGE,
+	);
+$emcp_tools_sn_list = $emcp_tools_sn_pg['items'];
+
+/**
+ * Links a page number back to this view, keeping the Sandbox route intact.
+ * `paged`, not `page`: wp-admin already uses that one for the menu slug.
+ */
+$emcp_tools_sn_href = static function ( $emcp_n ) {
+	$args = array(
+		'page' => 'emcp-tools-widgets',
+		'view' => 'snippets',
+	);
+	if ( $emcp_n > 1 ) {
+		$args['paged'] = (int) $emcp_n;
+	}
+	return add_query_arg( $args, admin_url( 'admin.php' ) );
+};
 ?>
 <div class="elementor-mcp-pro-prompts elementor-mcp-php-snippets" data-nonce="<?php echo esc_attr( $emcp_tools_sn_nonce ); ?>" style="margin-top: 28px;">
 	<div class="elementor-mcp-pro-prompts-header">
@@ -127,6 +154,9 @@ $emcp_tools_sn_nonce = wp_create_nonce( 'emcp_tools_php_snippets' );
 		<?php if ( empty( $emcp_tools_sn_list ) ) : ?>
 			<p class="description"><?php esc_html_e( 'No snippets yet. Add one above, or ask your AI agent to draft one with the create-php-snippet tool.', 'emcp-tools' ); ?></p>
 		<?php else : ?>
+			<p class="description emcp-pager-count">
+				<?php echo EMCP_Tools_Admin_Pager::summary( $emcp_tools_sn_pg['page'], $emcp_tools_sn_pg['per_page'], count( $emcp_tools_sn_list ), $emcp_tools_sn_pg['total'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped by summary(). ?>
+			</p>
 			<table class="widefat striped elementor-mcp-snippets-table" style="margin-top: 8px;">
 				<thead>
 					<tr>
@@ -230,6 +260,11 @@ $emcp_tools_sn_nonce = wp_create_nonce( 'emcp_tools_php_snippets' );
 					<?php endforeach; ?>
 				</tbody>
 			</table>
+
+			<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped by render().
+			echo EMCP_Tools_Admin_Pager::render( $emcp_tools_sn_pg['page'], $emcp_tools_sn_pg['pages'], $emcp_tools_sn_href );
+			?>
 		<?php endif; ?>
 
 		<script>

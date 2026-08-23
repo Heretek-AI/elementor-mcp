@@ -70,7 +70,24 @@ $emcp_tools_wb_import_error = isset( $_GET['import_error'] ) ? sanitize_text_fie
 
 		<?php else : ?>
 
-			<?php $emcp_tools_wb_list = EMCP_Tools_Widget_Store::list_widgets( 'any' ); ?>
+			<?php
+			// A page at a time. Every row below carries that widget's compiled PHP,
+			// so an unpaged table grows with the site rather than with the screen.
+			$emcp_tools_wb_pg   = EMCP_Tools_Widget_Store::list_widgets_page( 'any', EMCP_Tools_Admin_Pager::current() );
+			$emcp_tools_wb_list = $emcp_tools_wb_pg['items'];
+
+			// `paged`, not `page`: wp-admin already uses that one for the menu slug.
+			$emcp_tools_wb_href = static function ( $emcp_n ) {
+				$args = array(
+					'page' => 'emcp-tools-widgets',
+					'view' => 'widgets',
+				);
+				if ( $emcp_n > 1 ) {
+					$args['paged'] = (int) $emcp_n;
+				}
+				return add_query_arg( $args, admin_url( 'admin.php' ) );
+			};
+			?>
 
 			<div class="notice notice-warning inline" style="margin: 12px 0;">
 				<p>
@@ -102,6 +119,9 @@ $emcp_tools_wb_import_error = isset( $_GET['import_error'] ) ? sanitize_text_fie
 
 			<?php else : ?>
 
+				<p class="description emcp-pager-count">
+					<?php echo EMCP_Tools_Admin_Pager::summary( $emcp_tools_wb_pg['page'], $emcp_tools_wb_pg['per_page'], count( $emcp_tools_wb_list ), $emcp_tools_wb_pg['total'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped by summary(). ?>
+				</p>
 				<table class="widefat striped elementor-mcp-widgets-table" data-nonce="<?php echo esc_attr( wp_create_nonce( 'emcp_tools_widgets' ) ); ?>" style="margin-top: 16px;">
 					<thead>
 						<tr>
@@ -167,6 +187,11 @@ $emcp_tools_wb_import_error = isset( $_GET['import_error'] ) ? sanitize_text_fie
 						<?php endforeach; ?>
 					</tbody>
 				</table>
+
+				<?php
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped by render().
+				echo EMCP_Tools_Admin_Pager::render( $emcp_tools_wb_pg['page'], $emcp_tools_wb_pg['pages'], $emcp_tools_wb_href );
+				?>
 
 				<script>
 				( function () {

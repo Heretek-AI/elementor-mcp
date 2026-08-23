@@ -431,6 +431,126 @@ class EMCP_Tools_OAuth_Store {
 	}
 
 	/**
+	 * Every registration, live token or not, for the admin Connected apps table.
+	 *
+	 * list_authorized_clients() INNER JOINs live tokens, so it answers "who is
+	 * connected". This answers "what has registered", which is the question you
+	 * have when a connection is failing: a client that registered and never
+	 * finished signing in, or one whose tokens have lapsed, is invisible to the
+	 * other list and is exactly the row someone needs to see.
+	 *
+	 * Connected rows sort first, then newest, so the useful ones stay on page 1
+	 * however many dead registrations sit behind them. client_id breaks the
+	 * remaining ties: registrations made in the same second sort equal, and an
+	 * order that is not total can hand the same row to two pages and hide
+	 * another, which is a thing MySQL is allowed to do under LIMIT/OFFSET.
+	 *
+	 * @since 3.15.0
+	 *
+	 * @param int $limit  Rows to return.
+	 * @param int $offset Rows to skip.
+	 * @return array<int,array{client_id:string,client_name:string,redirect_uris:string[],created_at:int,authorized_at:int,user_id:int,active_tokens:int}>
+	 */
+	public static function list_clients( int $limit = 20, int $offset = 0 ): array {
+		global $wpdb;
+		$clients = self::clients_table();
+		$tokens  = self::tokens_table();
+
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT c.client_id, c.client_name, c.redirect_uris, c.created_at, c.authorized_at,
+					COUNT( t.id ) AS active_tokens,
+					MAX( t.user_id ) AS user_id
+				FROM {$clients} c
+				LEFT JOIN {$tokens} t
+					ON t.client_id = c.client_id AND t.expires_at > %d
+				GROUP BY c.client_id, c.client_name, c.redirect_uris, c.created_at, c.authorized_at
+				ORDER BY active_tokens DESC, c.created_at DESC, c.client_id DESC
+				LIMIT %d OFFSET %d",
+				time(),
+				max( 1, $limit ),
+				max( 0, $offset )
+			),
+			ARRAY_A
+		);
+		if ( ! is_array( $rows ) ) {
+			return array();
+		}
+
+		return array_map(
+			static function ( $r ) {
+				$uris = json_decode( (string) ( $r['redirect_uris'] ?? '' ), true );
+				return array(
+					'client_id'     => (string) $r['client_id'],
+					'client_name'   => (string) $r['client_name'],
+					'redirect_uris' => is_array( $uris ) ? $uris : array(),
+					'created_at'    => (int) $r['created_at'],
+					'authorized_at' => (int) $r['authorized_at'],
+					'user_id'       => (int) $r['user_id'],
+					'active_tokens' => (int) $r['active_tokens'],
+				);
+			},
+			$rows
+		);
+	}
+
+	/**
+	 * How many registrations exist, for the pager.
+	 *
+	 * @since 3.15.0
+	 * @return int
+	 */
+	public static function count_clients(): int {
+		global $wpdb;
+		return (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . self::clients_table() );
+	}
+
+	/**
+	 * What state a row from list_clients() is in.
+	 *
+	 * Three cases, and telling them apart is the whole reason the table exists:
+	 * a client holding a live token is connected; one that authorized in the
+	 * past but holds none has simply signed out and can sign back in; one that
+	 * never authorized at all is a registration the app made and abandoned,
+	 * which is what a failing connection leaves behind.
+	 *
+	 * @since 3.15.0
+	 *
+	 * @param array $row Row from list_clients().
+	 * @return string 'connected'|'signed_out'|'registered'
+	 */
+	public static function client_state( array $row ): string {
+		if ( (int) ( $row['active_tokens'] ?? 0 ) > 0 ) {
+			return 'connected';
+		}
+		return (int) ( $row['authorized_at'] ?? 0 ) > 0 ? 'signed_out' : 'registered';
+	}
+
+	/**
+	 * Delete a registration outright, tokens included.
+	 *
+	 * revoke_client() deletes tokens and leaves the registration, which is right
+	 * for "sign this app out": the client_id keeps working and the app can sign
+	 * in again. This is the other thing, for a registration that can never be
+	 * used again, and it has to take the tokens with it. Bearer validation reads
+	 * the token table alone, so a token outliving its client row would keep
+	 * authenticating against a client that no longer exists.
+	 *
+	 * @since 3.15.0
+	 *
+	 * @param string $client_id Client id.
+	 * @return bool Whether a registration row was removed.
+	 */
+	public static function delete_client( string $client_id ): bool {
+		if ( '' === $client_id ) {
+			return false;
+		}
+		global $wpdb;
+		self::revoke_client( $client_id );
+		return (bool) $wpdb->delete( self::clients_table(), array( 'client_id' => $client_id ), array( '%s' ) );
+	}
+
+	/**
 	 * Housekeeping: delete expired tokens, then delete orphan client rows (no
 	 * tokens and older than the grace window). Runs on the daily cron and
 	 * opportunistically; idempotent.

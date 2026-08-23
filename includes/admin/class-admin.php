@@ -307,6 +307,7 @@ class EMCP_Tools_Admin {
 		add_action( 'admin_post_' . self::ACTION_DELETE_CHANGE, array( $this, 'handle_delete_change' ) );
 		add_action( 'admin_post_' . self::ACTION_CLEAR_CHANGES, array( $this, 'handle_clear_changes' ) );
 		add_action( 'admin_post_' . self::ACTION_REVOKE_OAUTH, array( $this, 'handle_revoke_oauth_client' ) );
+		add_action( 'admin_post_' . self::ACTION_DELETE_OAUTH_CLIENT, array( $this, 'handle_delete_oauth_client' ) );
 		add_action( 'admin_post_' . self::ACTION_EXPORT_ARTIFACT, array( $this, 'handle_export_artifact' ) );
 		add_action( 'admin_post_' . self::ACTION_IMPORT_ARTIFACT, array( $this, 'handle_import_artifact' ) );
 		add_action( 'admin_post_emcp_tools_settings_push', array( $this, 'handle_settings_push' ) );
@@ -347,6 +348,18 @@ class EMCP_Tools_Admin {
 	 * @var string
 	 */
 	const ACTION_REVOKE_OAUTH = 'emcp_tools_revoke_oauth_client';
+
+	/**
+	 * Delete an OAuth client registration outright (tokens included).
+	 *
+	 * Distinct from ACTION_REVOKE_OAUTH, which signs an app out but keeps the
+	 * registration so it can sign back in. This one is for a registration that
+	 * can never be used again, typically because the app now asks for a
+	 * different callback than the one it registered.
+	 *
+	 * @since 3.15.0
+	 */
+	const ACTION_DELETE_OAUTH_CLIENT = 'emcp_tools_delete_oauth_client';
 
 	/**
 	 * Nonce-protected URL that rolls back one change-ledger entry.
@@ -1167,7 +1180,43 @@ class EMCP_Tools_Admin {
 			EMCP_Tools_OAuth_Store::revoke_client( $client_id );
 		}
 
-		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-connection&oauth_revoked=1#emcp-conn-main' ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-connection&oauth_revoked=1#emcp-conn-manage-apps' ) );
+		exit;
+	}
+
+	/**
+	 * Delete an OAuth client registration and every token issued to it.
+	 *
+	 * The recovery path for a registration an app can no longer use: it asks to
+	 * come back at a different callback than the one it registered, so every
+	 * authorization attempt is refused and nothing on the client side clears it.
+	 * Removing the row here means the next connection attempt registers afresh.
+	 *
+	 * @since 3.15.0
+	 */
+	public function handle_delete_oauth_client(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to do that.', 'emcp-tools' ), '', array( 'response' => 403 ) );
+		}
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified just below against the per-client action.
+		$client_id = isset( $_GET['client'] ) ? sanitize_text_field( wp_unslash( $_GET['client'] ) ) : '';
+		check_admin_referer( self::ACTION_DELETE_OAUTH_CLIENT . '_' . $client_id );
+
+		if ( '' !== $client_id && class_exists( 'EMCP_Tools_Gateway_Credential' ) ) {
+			// Same ordering as the revoke path: the teardown wants to see the
+			// token count before the tokens go.
+			EMCP_Tools_Gateway_Credential::handle_client_revoked( $client_id );
+		}
+
+		$removed = ( '' !== $client_id && class_exists( 'EMCP_Tools_OAuth_Store' ) )
+			? EMCP_Tools_OAuth_Store::delete_client( $client_id )
+			: false;
+
+		wp_safe_redirect(
+			admin_url(
+				'admin.php?page=' . self::PAGE_SLUG . '-connection&oauth_removed=' . ( $removed ? '1' : '0' ) . '#emcp-conn-manage-apps'
+			)
+		);
 		exit;
 	}
 

@@ -312,54 +312,163 @@ $emcp_tools_server_enabled = class_exists( 'EMCP_Tools_Plugin' )
 			<?php endif; ?>
 		</div>
 
-		<?php // ===== Connected apps (authorized OAuth clients) ===== ?>
+		<?php // ===== Connected apps (every OAuth client registration) ===== ?>
 		<?php
-		$emcp_oauth_clients = ( $emcp_oauth_ok && class_exists( 'EMCP_Tools_OAuth_Store' ) ) ? EMCP_Tools_OAuth_Store::list_authorized_clients() : array();
-		// Rendered whenever OAuth is available, even with nothing connected yet.
-		// The "Manage connected apps" link above targets this element, so hiding
-		// it on an empty list made that link silently do nothing, which is exactly
-		// when someone is most likely to click it: while a connection is failing.
+		// Registrations, not just live connections. A client that registered and
+		// never finished signing in is precisely the row someone needs when a
+		// connection keeps failing, and the old list (live tokens only) could
+		// never show it.
+		$emcp_oauth_store   = $emcp_oauth_ok && class_exists( 'EMCP_Tools_OAuth_Store' );
+		$emcp_oauth_per     = 20;
+		$emcp_oauth_total   = $emcp_oauth_store ? EMCP_Tools_OAuth_Store::count_clients() : 0;
+		$emcp_oauth_page    = class_exists( 'EMCP_Tools_Admin_Pager' ) ? EMCP_Tools_Admin_Pager::current( 'oauth_page' ) : 1;
+		$emcp_oauth_pages   = max( 1, (int) ceil( $emcp_oauth_total / $emcp_oauth_per ) );
+		$emcp_oauth_page    = min( $emcp_oauth_page, $emcp_oauth_pages );
+		$emcp_oauth_clients = $emcp_oauth_store
+			? EMCP_Tools_OAuth_Store::list_clients( $emcp_oauth_per, ( $emcp_oauth_page - 1 ) * $emcp_oauth_per )
+			: array();
+
+		$emcp_oauth_href = static function ( $emcp_n ) {
+			$args = array(
+				'page' => EMCP_Tools_Admin::PAGE_SLUG . '-connection',
+			);
+			if ( $emcp_n > 1 ) {
+				$args['oauth_page'] = (int) $emcp_n;
+			}
+			return add_query_arg( $args, admin_url( 'admin.php' ) ) . '#emcp-conn-manage-apps';
+		};
+
+		$emcp_oauth_states = array(
+			'connected'  => array( __( 'Connected', 'emcp-tools' ), '#007017' ),
+			'signed_out' => array( __( 'Signed out', 'emcp-tools' ), '#996800' ),
+			'registered' => array( __( 'Never signed in', 'emcp-tools' ), '#646970' ),
+		);
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only notice after a redirect.
+		$emcp_oauth_removed = isset( $_GET['oauth_removed'] ) ? sanitize_key( wp_unslash( $_GET['oauth_removed'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only notice after a redirect.
+		$emcp_oauth_did_revoke = isset( $_GET['oauth_revoked'] );
+
 		if ( $emcp_oauth_ok ) :
 			?>
 			<div class="elementor-mcp-section" id="emcp-conn-manage-apps" data-authfor="oauth">
 				<h2><?php esc_html_e( 'Connected apps', 'emcp-tools' ); ?></h2>
+
+			<?php if ( $emcp_oauth_did_revoke ) : ?>
+				<div class="notice notice-success inline"><p><?php esc_html_e( 'App signed out. Its registration is kept, so it can sign in again.', 'emcp-tools' ); ?></p></div>
+			<?php elseif ( '1' === $emcp_oauth_removed ) : ?>
+				<div class="notice notice-success inline"><p><?php esc_html_e( 'Registration removed. The next time that app connects it will register again.', 'emcp-tools' ); ?></p></div>
+			<?php elseif ( '0' === $emcp_oauth_removed ) : ?>
+				<div class="notice notice-error inline"><p><?php esc_html_e( 'That registration was already gone.', 'emcp-tools' ); ?></p></div>
+			<?php endif; ?>
+
 			<?php if ( empty( $emcp_oauth_clients ) ) : ?>
 				<p class="description" style="max-width:760px;">
-					<?php esc_html_e( 'No apps are connected yet. An app appears here once it has completed sign-in and holds a valid token. An app that has registered but not finished signing in is not listed.', 'emcp-tools' ); ?>
+					<?php esc_html_e( 'Nothing has registered yet. Apps appear here as soon as they register, before they finish signing in.', 'emcp-tools' ); ?>
 				</p>
 			<?php else : ?>
-				<table class="widefat striped" style="max-width:760px;">
+				<p class="description" style="max-width:760px;">
+					<?php esc_html_e( 'Every app that has registered with this site. Sign one out to end its session but let it back in, or remove its registration when it can no longer use it, for example when it asks to return to a different address than the one it registered.', 'emcp-tools' ); ?>
+				</p>
+				<?php if ( class_exists( 'EMCP_Tools_Admin_Pager' ) ) : ?>
+					<p class="description emcp-pager-count">
+						<?php echo EMCP_Tools_Admin_Pager::summary( $emcp_oauth_page, $emcp_oauth_per, count( $emcp_oauth_clients ), $emcp_oauth_total ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped by summary(). ?>
+					</p>
+				<?php endif; ?>
+				<table class="widefat striped emcp-oauth-clients" style="max-width:900px;">
 					<thead>
 						<tr>
 							<th><?php esc_html_e( 'Client', 'emcp-tools' ); ?></th>
+							<th><?php esc_html_e( 'Status', 'emcp-tools' ); ?></th>
 							<th><?php esc_html_e( 'Connected as', 'emcp-tools' ); ?></th>
-							<th><?php esc_html_e( 'Active tokens', 'emcp-tools' ); ?></th>
+							<th><?php esc_html_e( 'Registered', 'emcp-tools' ); ?></th>
 							<th></th>
 						</tr>
 					</thead>
 					<tbody>
 					<?php
 					foreach ( $emcp_oauth_clients as $emcp_oc ) :
-						$emcp_oc_user = get_userdata( $emcp_oc['user_id'] );
-						$emcp_revoke  = wp_nonce_url(
+						$emcp_oc_state = EMCP_Tools_OAuth_Store::client_state( $emcp_oc );
+						$emcp_oc_label = $emcp_oauth_states[ $emcp_oc_state ] ?? $emcp_oauth_states['registered'];
+						$emcp_oc_user  = $emcp_oc['user_id'] ? get_userdata( $emcp_oc['user_id'] ) : null;
+						$emcp_revoke   = wp_nonce_url(
 							admin_url( 'admin-post.php?action=' . EMCP_Tools_Admin::ACTION_REVOKE_OAUTH . '&client=' . rawurlencode( $emcp_oc['client_id'] ) ),
 							EMCP_Tools_Admin::ACTION_REVOKE_OAUTH . '_' . $emcp_oc['client_id']
+						);
+						$emcp_remove = wp_nonce_url(
+							admin_url( 'admin-post.php?action=' . EMCP_Tools_Admin::ACTION_DELETE_OAUTH_CLIENT . '&client=' . rawurlencode( $emcp_oc['client_id'] ) ),
+							EMCP_Tools_Admin::ACTION_DELETE_OAUTH_CLIENT . '_' . $emcp_oc['client_id']
 						);
 						?>
 						<tr>
 							<td>
-								<?php echo esc_html( $emcp_oc['client_name'] ); ?>
+								<strong><?php echo esc_html( $emcp_oc['client_name'] ); ?></strong>
 								<?php if ( class_exists( 'EMCP_Tools_Gateway_Credential' ) && EMCP_Tools_Gateway_Credential::CLIENT_NAME === $emcp_oc['client_name'] ) : ?>
 									<span class="description" style="display:block;"><?php esc_html_e( 'Used to manage this site from EMCP Cloud across your other sites.', 'emcp-tools' ); ?></span>
 								<?php endif; ?>
+								<?php
+								// The callback is the whole point of this table: when an
+								// authorization is refused, the address on the error page
+								// is compared against this one.
+								foreach ( $emcp_oc['redirect_uris'] as $emcp_oc_uri ) :
+									?>
+									<code class="emcp-oauth-clients__uri"><?php echo esc_html( $emcp_oc_uri ); ?></code>
+								<?php endforeach; ?>
 							</td>
-							<td><?php echo esc_html( $emcp_oc_user ? $emcp_oc_user->user_login : '#' . (int) $emcp_oc['user_id'] ); ?></td>
-							<td><?php echo (int) $emcp_oc['active_tokens']; ?></td>
-							<td><a href="<?php echo esc_url( $emcp_revoke ); ?>" class="button button-small"><?php esc_html_e( 'Revoke', 'emcp-tools' ); ?></a></td>
+							<td>
+								<span style="color:<?php echo esc_attr( $emcp_oc_label[1] ); ?>;">
+									<?php echo esc_html( $emcp_oc_label[0] ); ?>
+								</span>
+								<?php if ( 'connected' === $emcp_oc_state ) : ?>
+									<span class="description" style="display:block;">
+										<?php
+										printf(
+											/* translators: %d: number of active tokens. */
+											esc_html( _n( '%d active token', '%d active tokens', $emcp_oc['active_tokens'], 'emcp-tools' ) ),
+											(int) $emcp_oc['active_tokens']
+										);
+										?>
+									</span>
+								<?php endif; ?>
+							</td>
+							<td><?php echo $emcp_oc_user ? esc_html( $emcp_oc_user->user_login ) : '<span class="description">&mdash;</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- both branches escaped. ?></td>
+							<td>
+								<?php
+								echo $emcp_oc['created_at']
+									? esc_html( date_i18n( (string) get_option( 'date_format' ), $emcp_oc['created_at'] ) )
+									: '&mdash;';
+								?>
+							</td>
+							<td class="emcp-oauth-clients__actions">
+								<?php if ( 'connected' === $emcp_oc_state ) : ?>
+									<a href="<?php echo esc_url( $emcp_revoke ); ?>" class="button button-small"><?php esc_html_e( 'Sign out', 'emcp-tools' ); ?></a>
+								<?php endif; ?>
+								<a
+									href="<?php echo esc_url( $emcp_remove ); ?>"
+									class="button button-small emcp-oauth-clients__remove"
+									data-emcp-confirm="<?php esc_attr_e( 'Remove this registration? The app will have to register again the next time it connects.', 'emcp-tools' ); ?>"
+								><?php esc_html_e( 'Remove', 'emcp-tools' ); ?></a>
+							</td>
 						</tr>
 					<?php endforeach; ?>
 					</tbody>
 				</table>
+				<?php
+				if ( class_exists( 'EMCP_Tools_Admin_Pager' ) ) {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped by render().
+					echo EMCP_Tools_Admin_Pager::render( $emcp_oauth_page, $emcp_oauth_pages, $emcp_oauth_href );
+				}
+				?>
+				<script>
+				( function () {
+					document.querySelectorAll( '.emcp-oauth-clients__remove' ).forEach( function ( link ) {
+						link.addEventListener( 'click', function ( e ) {
+							/* global confirm */
+							if ( ! confirm( link.getAttribute( 'data-emcp-confirm' ) ) ) { e.preventDefault(); }
+						} );
+					} );
+				} )();
+				</script>
 			<?php endif; ?>
 			</div>
 		<?php endif; ?>

@@ -4826,3 +4826,31 @@ body[data-emcp-auth="app-password"] [data-authfor="oauth"] { display: none; }
 	font-size: 12px;
 	color: #787c82;
 }
+
+/* -------------------------------------------------------------------------
+ * OAuth client registrations (Connection tab > Connected apps)
+ *
+ * The callback address is the field people come to this table to compare
+ * against a refused authorization, so it gets its own line under the name
+ * rather than a title attribute.
+ * ---------------------------------------------------------------------- */
+
+.emcp-oauth-clients__uri {
+	display: block;
+	max-width: 440px;
+	margin-top: 4px;
+	padding: 2px 6px;
+	font-size: 11px;
+	color: #50575e;
+	background: #f6f7f7;
+	border-radius: 4px;
+	word-break: break-all;
+}
+
+.emcp-oauth-clients__actions {
+	white-space: nowrap;
+}
+
+.emcp-oauth-clients__actions .button {
+	margin-right: 4px;
+}

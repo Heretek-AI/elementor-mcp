@@ -87,6 +87,16 @@ class EMCP_Tools_Cloud_Connect {
 				array(
 					'site_uuid' => EMCP_Tools_Cloud::site_uuid(),
 					'name'      => (string) get_bloginfo( 'name' ),
+					// The base URL the Cloud should call back into, subdirectory
+					// included. Cloud used to take the ORIGIN of the redirect_uri,
+					// which is scheme + host + port by definition, so an install
+					// under /blog/ was registered as the bare domain and every
+					// gateway request went to a URL that was not the site. Sent
+					// here because this is the only side that knows about an
+					// admin's Server URL override.
+					'base'      => class_exists( 'EMCP_Tools_Site_Context' )
+						? EMCP_Tools_Site_Context::public_base_url()
+						: rtrim( (string) home_url(), '/' ),
 					'csrf'      => $csrf,
 				)
 			)

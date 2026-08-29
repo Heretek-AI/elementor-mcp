@@ -2,7 +2,7 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
-## [Unreleased] - 3.14.1
+## [3.14.1]
 
 Acts on an independent security review of the repository. No issue found was exploitable by an anonymous visitor: every one needs either an administrator account or a URL an administrator already asked the plugin to fetch. They are fixed anyway, because the gap between "needs an admin" and "safe" is where real incidents live.
 

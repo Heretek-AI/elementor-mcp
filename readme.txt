@@ -3,7 +3,7 @@ Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 3.14.0
+Stable tag: 3.14.1
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -176,6 +176,16 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.14.1 =
+Adds Elementor Global Variables and responsive typography, hardens Global Class writes and friendly CSS sizes, and acts on an independent security review.
+* Added: six Elementor Global Variables tools for listing, creating, updating, soft-deleting, restoring, and batching design tokens (#124). Writes ship disabled by default and use Elementor's storage watermark to reject stale changes.
+* Added: tablet and mobile values for global font size, line height, letter spacing, and word spacing (#129).
+* Fixed: Global Class friendly sizes preserve percentages, relative units, and CSS functions instead of coercing them to pixels or zero (#126).
+* Fixed: Global Class writes validate the complete property map against Elementor's live style schema before saving, so unsupported names and malformed values return an error without changing the class (#125).
+* Fixed: Premium Prompts use ETags, validate versioned bundles and their SHA-256 digest, and recover cleanly when a cached bundle and its ETag drift apart.
+* Fixed: clipboard fallback reports success and records usage only after the browser actually copies the prompt.
+* Security: URL fetches validate every redirect and every resolved address; filesystem reads resolve symlinks and protect common secret files; public `.dev` domains keep TLS verification; sandbox paths resolve traversal; GitHub update packages are pinned to this repository; and PHP snippet review now surfaces method calls.
 
 = 3.14.0 =
 Adds BeTheme and BeBuilder support, tells you why a tool cannot be switched on, and settles a malware-scanner false positive reported from a live site.

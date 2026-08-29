@@ -152,18 +152,15 @@ class EMCP_Tools_Atomic_Styles {
 		}
 
 		if ( isset( $params['gap'] ) ) {
-			$unit = $params['gap_unit'] ?? 'px';
-			$props['gap'] = EMCP_Tools_Atomic_Props::size( (float) $params['gap'], $unit );
+			$props['gap'] = self::normalize_size_prop( $params['gap'], $params['gap_unit'] ?? null, 'gap' );
 		}
 
 		if ( isset( $params['row_gap'] ) ) {
-			$unit = $params['row_gap_unit'] ?? 'px';
-			$props['row-gap'] = EMCP_Tools_Atomic_Props::size( (float) $params['row_gap'], $unit );
+			$props['row-gap'] = self::normalize_size_prop( $params['row_gap'], $params['row_gap_unit'] ?? null, 'row_gap' );
 		}
 
 		if ( isset( $params['column_gap'] ) ) {
-			$unit = $params['column_gap_unit'] ?? 'px';
-			$props['column-gap'] = EMCP_Tools_Atomic_Props::size( (float) $params['column_gap'], $unit );
+			$props['column-gap'] = self::normalize_size_prop( $params['column_gap'], $params['column_gap_unit'] ?? null, 'column_gap' );
 		}
 
 		return $props;
@@ -187,10 +184,10 @@ class EMCP_Tools_Atomic_Styles {
 
 		foreach ( $size_mappings as $input_key => $css_prop ) {
 			if ( isset( $params[ $input_key ] ) ) {
-				$unit = $params[ $input_key . '_unit' ] ?? 'px';
-				$props[ $css_prop ] = EMCP_Tools_Atomic_Props::size(
-					(float) $params[ $input_key ],
-					$unit
+				$props[ $css_prop ] = self::normalize_size_prop(
+					$params[ $input_key ],
+					$params[ $input_key . '_unit' ] ?? null,
+					$input_key
 				);
 			}
 		}
@@ -259,8 +256,11 @@ class EMCP_Tools_Atomic_Styles {
 	 */
 	private static function build_dimensions( array $params, string $shorthand, array $side_map ): ?array {
 		if ( isset( $params[ $shorthand ] ) ) {
-			$unit = $params[ $shorthand . '_unit' ] ?? 'px';
-			$val  = EMCP_Tools_Atomic_Props::size( (float) $params[ $shorthand ], $unit );
+			$val = self::normalize_size_prop(
+				$params[ $shorthand ],
+				$params[ $shorthand . '_unit' ] ?? null,
+				$shorthand
+			);
 
 			return EMCP_Tools_Atomic_Props::dimensions(
 				array(
@@ -275,12 +275,126 @@ class EMCP_Tools_Atomic_Styles {
 		$sides = array();
 		foreach ( $side_map as $dim_side => $input_key ) {
 			if ( isset( $params[ $input_key ] ) ) {
-				$unit               = $params[ $input_key . '_unit' ] ?? 'px';
-				$sides[ $dim_side ] = EMCP_Tools_Atomic_Props::size( (float) $params[ $input_key ], $unit );
+				$sides[ $dim_side ] = self::normalize_size_prop(
+					$params[ $input_key ],
+					$params[ $input_key . '_unit' ] ?? null,
+					$input_key
+				);
 			}
 		}
 
 		return empty( $sides ) ? null : EMCP_Tools_Atomic_Props::dimensions( $sides );
+	}
+
+	/**
+	 * Convert an AI-friendly size into Elementor's typed size envelope.
+	 *
+	 * Bare numbers keep the caller-supplied unit (px by default). A string with
+	 * its own unit, such as `100%` or `2rem`, is split into the numeric value and
+	 * unit. Safe CSS expressions are stored verbatim using Elementor's `custom`
+	 * unit, whose transformer deliberately returns the string unchanged.
+	 *
+	 * Invalid or conflicting values throw instead of being cast to 0, which was
+	 * the silent corruption reported in issue #126.
+	 *
+	 * @since 3.14.1
+	 *
+	 * @param mixed       $value     Numeric value, unit-bearing string, or safe CSS expression.
+	 * @param string|null $unit      Explicit companion unit, or null to infer/default.
+	 * @param string      $input_key Friendly input key, used in validation errors.
+	 * @return array Elementor typed size prop.
+	 * @throws \InvalidArgumentException When the value cannot be represented safely.
+	 */
+	private static function normalize_size_prop( $value, ?string $unit, string $input_key ): array {
+		$explicit_unit = null !== $unit && '' !== trim( $unit );
+		$unit          = $explicit_unit ? trim( $unit ) : 'px';
+
+		if ( ! preg_match( '/^(?:[a-z][a-z0-9-]*|%)$/i', $unit ) ) {
+			throw new \InvalidArgumentException(
+				sprintf( 'Invalid unit for "%s": %s', $input_key, $unit )
+			);
+		}
+
+		if ( is_int( $value ) || is_float( $value ) || ( is_string( $value ) && is_numeric( trim( $value ) ) ) ) {
+			return EMCP_Tools_Atomic_Props::size( (float) $value, $unit );
+		}
+
+		if ( ! is_string( $value ) ) {
+			throw new \InvalidArgumentException(
+				sprintf( 'Invalid size value for "%s".', $input_key )
+			);
+		}
+
+		$value = trim( $value );
+		if ( '' === $value ) {
+			throw new \InvalidArgumentException(
+				sprintf( 'Size value for "%s" cannot be empty.', $input_key )
+			);
+		}
+
+		if ( preg_match( '/^(-?(?:\d+(?:\.\d+)?|\.\d+))([a-z][a-z0-9-]*|%)$/i', $value, $matches ) ) {
+			$embedded_unit = $matches[2];
+			if ( $explicit_unit && 'custom' !== strtolower( $unit ) && 0 !== strcasecmp( $unit, $embedded_unit ) ) {
+				throw new \InvalidArgumentException(
+					sprintf( 'Conflicting units for "%s": value uses %s but %s_unit is %s.', $input_key, $embedded_unit, $input_key, $unit )
+				);
+			}
+
+			if ( $explicit_unit && 'custom' === strtolower( $unit ) ) {
+				return EMCP_Tools_Atomic_Props::size( $value, 'custom' );
+			}
+
+			return EMCP_Tools_Atomic_Props::size( (float) $matches[1], $embedded_unit );
+		}
+
+		if ( self::is_safe_custom_size( $value ) ) {
+			if ( $explicit_unit && 'custom' !== strtolower( $unit ) ) {
+				throw new \InvalidArgumentException(
+					sprintf( 'CSS expression for "%s" requires %s_unit to be "custom" or omitted.', $input_key, $input_key )
+				);
+			}
+
+			return EMCP_Tools_Atomic_Props::size( $value, 'custom' );
+		}
+
+		throw new \InvalidArgumentException(
+			sprintf( 'Invalid size value for "%s": %s', $input_key, $value )
+		);
+	}
+
+	/**
+	 * Whether a custom size string is safe to hand to Elementor verbatim.
+	 *
+	 * @param string $value Candidate CSS value.
+	 * @return bool
+	 */
+	private static function is_safe_custom_size( string $value ): bool {
+		if ( preg_match( '/[;{}@]|\/\*|\*\/|url\s*\(/i', $value ) ) {
+			return false;
+		}
+
+		if ( in_array( strtolower( $value ), array( 'auto', 'min-content', 'max-content', 'fit-content', 'inherit', 'initial', 'unset', 'revert' ), true ) ) {
+			return true;
+		}
+
+		if ( ! preg_match( '/^(?:var|calc|clamp|min|max|env)\(.+\)$/is', $value ) ) {
+			return false;
+		}
+
+		$depth = 0;
+		$length = strlen( $value );
+		for ( $i = 0; $i < $length; ++$i ) {
+			if ( '(' === $value[ $i ] ) {
+				++$depth;
+			} elseif ( ')' === $value[ $i ] ) {
+				--$depth;
+				if ( $depth < 0 ) {
+					return false;
+				}
+			}
+		}
+
+		return 0 === $depth;
 	}
 
 	/**

@@ -170,13 +170,14 @@ $emcp_tools_v1_url       = $emcp_tools_v1_available ? EMCP_Tools_Pro_Prompts::v1
 							(int) count( $emcp_tools_pro_bundle['categories'] )
 						);
 						?>
-						<?php if ( ! empty( $emcp_tools_pro_bundle['fetched_at'] ) ) : ?>
+						<?php $emcp_tools_prompts_synced_at = (int) ( $emcp_tools_pro_bundle['synced_at'] ?? $emcp_tools_pro_bundle['fetched_at'] ?? 0 ); ?>
+						<?php if ( $emcp_tools_prompts_synced_at > 0 ) : ?>
 							<span class="elementor-mcp-pro-prompts-meta">
 								<?php
 								printf(
 									/* translators: %s: human-readable time since last sync */
 									esc_html__( 'Last synced %s ago.', 'emcp-tools' ),
-									esc_html( human_time_diff( (int) $emcp_tools_pro_bundle['fetched_at'], time() ) )
+									esc_html( human_time_diff( $emcp_tools_prompts_synced_at, time() ) )
 								);
 								?>
 							</span>

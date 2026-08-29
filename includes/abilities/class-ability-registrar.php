@@ -540,6 +540,13 @@ class EMCP_Tools_Ability_Registrar {
 				$this->ability_names = array_merge( $this->ability_names, $global_classes_write->get_ability_names() );
 			}
 
+			// Elementor Global Variables / design tokens — self-gates on 4.2+.
+			if ( class_exists( 'EMCP_Tools_Global_Variables_Abilities' ) ) {
+				$global_variables = new EMCP_Tools_Global_Variables_Abilities();
+				$global_variables->register();
+				$this->ability_names = array_merge( $this->ability_names, $global_variables->get_ability_names() );
+			}
+
 			// Brand kit / system-kit (Pro; self-guards on license).
 			if ( class_exists( 'EMCP_Tools_System_Kit_Abilities' ) ) {
 				$brand_kits = new EMCP_Tools_System_Kit_Abilities();

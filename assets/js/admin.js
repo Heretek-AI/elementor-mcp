@@ -489,20 +489,41 @@
 	 */
 	function copyToClipboard( text ) {
 		if ( navigator.clipboard && navigator.clipboard.writeText ) {
-			return navigator.clipboard.writeText( text );
+			return navigator.clipboard.writeText( text ).catch( function () {
+				return copyToClipboardFallback( text );
+			} );
 		}
 
-		// Fallback for HTTP (non-secure) contexts.
-		return new Promise( function ( resolve ) {
-			var textarea = document.createElement( 'textarea' );
-			textarea.value = text;
-			textarea.style.position = 'fixed';
-			textarea.style.opacity = '0';
-			document.body.appendChild( textarea );
-			textarea.select();
-			document.execCommand( 'copy' );
-			document.body.removeChild( textarea );
-			resolve();
+		return copyToClipboardFallback( text );
+	}
+
+	/**
+	 * Legacy clipboard fallback that rejects when the browser reports failure.
+	 *
+	 * @param {string} text The text to copy.
+	 * @returns {Promise} Resolves only when the copy command succeeds.
+	 */
+	function copyToClipboardFallback( text ) {
+		return new Promise( function ( resolve, reject ) {
+			var textarea;
+			try {
+				textarea = document.createElement( 'textarea' );
+				textarea.value = text;
+				textarea.style.position = 'fixed';
+				textarea.style.opacity = '0';
+				document.body.appendChild( textarea );
+				textarea.select();
+				if ( ! document.execCommand( 'copy' ) ) {
+					throw new Error( 'Clipboard copy command failed.' );
+				}
+				resolve();
+			} catch ( error ) {
+				reject( error );
+			} finally {
+				if ( textarea && textarea.parentNode ) {
+					textarea.parentNode.removeChild( textarea );
+				}
+			}
 		} );
 	}
 
@@ -526,16 +547,21 @@
 
 			var copiedText = ( typeof emcpToolsAdmin !== 'undefined' && emcpToolsAdmin.copied ) ? emcpToolsAdmin.copied : 'Copied!';
 
+			var original = btn.textContent;
+			var card = btn.closest( '.elementor-mcp-pro-prompt-card' );
 			copyToClipboard( source.value ).then( function () {
-				var original = btn.textContent;
 				btn.textContent = copiedText;
+				// Count a premium prompt copy only after the browser confirms success.
+				trackProPromptCopy( card );
+				setTimeout( function () {
+					btn.textContent = original;
+				}, 2000 );
+			} ).catch( function () {
+				btn.textContent = ( typeof emcpToolsAdmin !== 'undefined' && emcpToolsAdmin.copyFailed ) ? emcpToolsAdmin.copyFailed : 'Copy failed';
 				setTimeout( function () {
 					btn.textContent = original;
 				}, 2000 );
 			} );
-
-			// Best-effort usage ping for premium (website-fetched) prompts only.
-			trackProPromptCopy( btn.closest( '.elementor-mcp-pro-prompt-card' ) );
 		} );
 	}
 

@@ -1287,7 +1287,7 @@ class EMCP_Tools_Admin {
 	 *
 	 * @since 1.8.0
 	 */
-	const DEFAULTS_VERSION = 35;
+	const DEFAULTS_VERSION = 36;
 
 	/**
 	 * SEO/A11y Pro MCP tool slugs that ship disabled-by-default (v2 defaults).
@@ -1929,6 +1929,16 @@ class EMCP_Tools_Admin {
 			$add[] = 'emcp-tools/betheme-write';
 		}
 
+		// v36 — Elementor Global Variables mutate the site-wide design-token
+		// system, so writes ship disabled-by-default. Listing stays enabled.
+		if ( $applied < 36 ) {
+			$add[] = 'emcp-tools/create-variable';
+			$add[] = 'emcp-tools/update-variable';
+			$add[] = 'emcp-tools/delete-variable';
+			$add[] = 'emcp-tools/restore-variable';
+			$add[] = 'emcp-tools/batch-variables';
+		}
+
 		$merged = array_values( array_unique( array_merge( $existing, $add ) ) );
 		update_option( self::OPTION_DISABLED_TOOLS, $merged );
 		update_option( self::OPTION_DEFAULTS_APPLIED, (string) self::DEFAULTS_VERSION );
@@ -2401,6 +2411,7 @@ class EMCP_Tools_Admin {
 			array(
 				'copied'      => __( 'Copied!', 'emcp-tools' ),
 				'copy'        => __( 'Copy', 'emcp-tools' ),
+				'copyFailed'  => __( 'Copy failed', 'emcp-tools' ),
 				'download'    => __( 'Download', 'emcp-tools' ),
 				'mcpEndpoint' => class_exists( 'EMCP_Tools_Site_Context' ) ? EMCP_Tools_Site_Context::mcp_endpoint() : rest_url( 'mcp/emcp-tools-server' ),
 				'oauthEnabled' => class_exists( 'EMCP_Tools_OAuth_Server' ) && EMCP_Tools_OAuth_Server::is_enabled(),
@@ -5867,6 +5878,36 @@ class EMCP_Tools_Admin {
 						'label'       => __( 'Reorder Global Classes', 'emcp-tools' ),
 						'description' => __( 'Set the Class Manager order (= CSS source order / specificity) of the v4 Global Classes.', 'emcp-tools' ),
 						'badges'      => array(),
+					),
+					'emcp-tools/list-variables'           => array(
+						'label'       => __( 'List Global Variables', 'emcp-tools' ),
+						'description' => __( 'List Elementor design tokens with stable ids, values, types, and watermark.', 'emcp-tools' ),
+						'badges'      => array( 'read-only' ),
+					),
+					'emcp-tools/create-variable'          => array(
+						'label'       => __( 'Create Global Variable', 'emcp-tools' ),
+						'description' => __( 'Create an Elementor Global Variable design token.', 'emcp-tools' ),
+						'badges'      => array(),
+					),
+					'emcp-tools/update-variable'          => array(
+						'label'       => __( 'Update Global Variable', 'emcp-tools' ),
+						'description' => __( 'Update a Global Variable label, value, type, or order.', 'emcp-tools' ),
+						'badges'      => array(),
+					),
+					'emcp-tools/delete-variable'          => array(
+						'label'       => __( 'Delete Global Variable', 'emcp-tools' ),
+						'description' => __( 'Soft-delete a Global Variable; requires confirm:true.', 'emcp-tools' ),
+						'badges'      => array( 'destructive' ),
+					),
+					'emcp-tools/restore-variable'         => array(
+						'label'       => __( 'Restore Global Variable', 'emcp-tools' ),
+						'description' => __( 'Restore a soft-deleted Global Variable.', 'emcp-tools' ),
+						'badges'      => array(),
+					),
+					'emcp-tools/batch-variables'           => array(
+						'label'       => __( 'Batch Global Variables', 'emcp-tools' ),
+						'description' => __( 'Atomically create, update, delete, or restore multiple design tokens.', 'emcp-tools' ),
+						'badges'      => array( 'destructive' ),
 					),
 					'emcp-tools/add-flexbox'              => array(
 						'label'       => __( 'Add Flexbox', 'emcp-tools' ),

@@ -200,6 +200,11 @@ class EMCP_Tools_Global_Classes_Write_Abilities {
 		}
 		list( $items, $order ) = $state;
 
+		$props = $this->build_variant_props( $input );
+		if ( is_wp_error( $props ) ) {
+			return $props;
+		}
+
 		$id = $this->mint_id( $items );
 		$items[ $id ] = array(
 			'id'       => $id,
@@ -208,7 +213,7 @@ class EMCP_Tools_Global_Classes_Write_Abilities {
 			'variants' => array(
 				array(
 					'meta'  => $this->variant_meta( $input ),
-					'props' => $this->build_variant_props( $input ),
+					'props' => $props,
 				),
 			),
 		);
@@ -251,6 +256,9 @@ class EMCP_Tools_Global_Classes_Write_Abilities {
 		if ( $has_styles ) {
 			$meta     = $this->variant_meta( $input );
 			$new_props = $this->build_variant_props( $input );
+			if ( is_wp_error( $new_props ) ) {
+				return $new_props;
+			}
 			$variants = isset( $item['variants'] ) ? (array) $item['variants'] : array();
 			$idx      = $this->find_variant_index( $variants, $meta );
 			$replace  = ! empty( $input['replace_variant'] );
@@ -485,22 +493,115 @@ class EMCP_Tools_Global_Classes_Write_Abilities {
 	 * Build a variant's props from friendly `styles` + raw `props`.
 	 *
 	 * @param array $input Tool input.
-	 * @return array CSS prop => $$type map.
+	 * @return array|\WP_Error CSS prop => $$type map, or an input error.
 	 */
-	private function build_variant_props( array $input ): array {
+	private function build_variant_props( array $input ) {
 		$styles = ( isset( $input['styles'] ) && is_array( $input['styles'] ) ) ? $input['styles'] : array();
 		$props  = array();
-		if ( ! empty( $styles ) && class_exists( 'EMCP_Tools_Atomic_Styles' ) ) {
-			$props = array_merge(
-				EMCP_Tools_Atomic_Styles::build_common_props( $styles ),
-				EMCP_Tools_Atomic_Styles::build_flex_props( $styles )
-			);
+		try {
+			if ( ! empty( $styles ) && class_exists( 'EMCP_Tools_Atomic_Styles' ) ) {
+				$props = array_merge(
+					EMCP_Tools_Atomic_Styles::build_common_props( $styles ),
+					EMCP_Tools_Atomic_Styles::build_flex_props( $styles )
+				);
+			}
+		} catch ( \InvalidArgumentException $e ) {
+			return new \WP_Error( 'invalid_style_value', $e->getMessage(), array( 'status' => 400 ) );
 		}
 		if ( isset( $input['props'] ) && is_array( $input['props'] ) ) {
 			// Raw escape hatch wins over built styles for the same key.
 			$props = array_merge( $props, $input['props'] );
 		}
+
+		$validated = $this->validate_variant_props( $props );
+		if ( is_wp_error( $validated ) ) {
+			return $validated;
+		}
+
 		return $props;
+	}
+
+	/**
+	 * Validate the final merged props against Elementor's live style schema.
+	 *
+	 * Elementor's repository accepts arbitrary keys and malformed envelopes, then
+	 * silently drops them while generating CSS. Validate before the repository is
+	 * mutated so callers can distinguish a successful write from a discarded one.
+	 * `Style_Schema::get()` is deliberately used instead of the unfiltered schema:
+	 * Variables and dynamic tags extend it through Elementor filters.
+	 *
+	 * Older Elementor releases without the public atomic style schema retain the
+	 * previous behavior; this class only registers where Global Classes exist.
+	 *
+	 * @since 3.14.1
+	 *
+	 * @param array $props CSS prop => $$type map.
+	 * @return true|\WP_Error
+	 */
+	private function validate_variant_props( array $props ) {
+		if ( empty( $props ) ) {
+			return true;
+		}
+
+		$schema_class = '\\Elementor\\Modules\\AtomicWidgets\\Styles\\Style_Schema';
+		if ( ! class_exists( $schema_class ) || ! method_exists( $schema_class, 'get' ) ) {
+			return true;
+		}
+
+		try {
+			$schema = $schema_class::get();
+		} catch ( \Throwable $e ) {
+			return new \WP_Error(
+				'style_validation_failed',
+				sprintf( __( 'Could not load Elementor\'s style schema: %s', 'emcp-tools' ), $e->getMessage() ),
+				array( 'status' => 500 )
+			);
+		}
+
+		if ( ! is_array( $schema ) ) {
+			return new \WP_Error( 'style_validation_failed', __( 'Elementor returned an invalid style schema.', 'emcp-tools' ), array( 'status' => 500 ) );
+		}
+
+		$unknown = array();
+		$invalid = array();
+		foreach ( $props as $property => $value ) {
+			if ( ! array_key_exists( $property, $schema ) ) {
+				$unknown[] = (string) $property;
+				continue;
+			}
+
+			$prop_type = $schema[ $property ];
+			try {
+				$is_valid = is_object( $prop_type ) && method_exists( $prop_type, 'validate' ) && $prop_type->validate( $value );
+			} catch ( \Throwable $e ) {
+				$is_valid = false;
+			}
+			if ( ! $is_valid ) {
+				$invalid[] = (string) $property;
+			}
+		}
+
+		if ( empty( $unknown ) && empty( $invalid ) ) {
+			return true;
+		}
+
+		$parts = array();
+		if ( ! empty( $unknown ) ) {
+			$parts[] = sprintf( __( 'Unsupported properties: %s.', 'emcp-tools' ), implode( ', ', $unknown ) );
+		}
+		if ( ! empty( $invalid ) ) {
+			$parts[] = sprintf( __( 'Invalid property values: %s.', 'emcp-tools' ), implode( ', ', $invalid ) );
+		}
+
+		return new \WP_Error(
+			'invalid_global_class_props',
+			implode( ' ', $parts ) . ' ' . __( 'Use Elementor style-property names and the required $$type-wrapped compound shapes.', 'emcp-tools' ),
+			array(
+				'status'             => 400,
+				'unknown_properties' => $unknown,
+				'invalid_properties' => $invalid,
+			)
+		);
 	}
 
 	/**

@@ -413,6 +413,7 @@ class EMCP_Tools_Bootstrap {
 		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-atomic-layout-abilities.php';
 		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-global-classes-abilities.php';
 		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-global-classes-write-abilities.php';
+		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-global-variables-abilities.php';
 		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-themer-php-abilities.php';
 		require_once EMCP_TOOLS_DIR . 'includes/abilities/class-themer-abilities.php';
 

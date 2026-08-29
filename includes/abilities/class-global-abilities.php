@@ -226,6 +226,10 @@ class EMCP_Tools_Global_Abilities {
 	// -------------------------------------------------------------------------
 
 	private function register_update_global_typography(): void {
+		$responsive_size_schema = array(
+			'type' => 'object',
+		);
+
 		emcp_tools_register_ability(
 			'emcp-tools/update-global-typography',
 			array(
@@ -256,20 +260,56 @@ class EMCP_Tools_Global_Abilities {
 										'description' => __( 'Font family name.', 'emcp-tools' ),
 									),
 									'typography_font_size'     => array(
-										'type'        => 'object',
+										...$responsive_size_schema,
 										'description' => __( 'Font size with size and unit.', 'emcp-tools' ),
+									),
+									'typography_font_size_tablet' => array(
+										...$responsive_size_schema,
+										'description' => __( 'Tablet font size with size and unit.', 'emcp-tools' ),
+									),
+									'typography_font_size_mobile' => array(
+										...$responsive_size_schema,
+										'description' => __( 'Mobile font size with size and unit.', 'emcp-tools' ),
 									),
 									'typography_font_weight'   => array(
 										'type'        => 'string',
 										'description' => __( 'Font weight (100-900, normal, bold).', 'emcp-tools' ),
 									),
 									'typography_line_height'   => array(
-										'type'        => 'object',
+										...$responsive_size_schema,
 										'description' => __( 'Line height with size and unit.', 'emcp-tools' ),
 									),
+									'typography_line_height_tablet' => array(
+										...$responsive_size_schema,
+										'description' => __( 'Tablet line height with size and unit.', 'emcp-tools' ),
+									),
+									'typography_line_height_mobile' => array(
+										...$responsive_size_schema,
+										'description' => __( 'Mobile line height with size and unit.', 'emcp-tools' ),
+									),
 									'typography_letter_spacing' => array(
-										'type'        => 'object',
+										...$responsive_size_schema,
 										'description' => __( 'Letter spacing with size and unit.', 'emcp-tools' ),
+									),
+									'typography_letter_spacing_tablet' => array(
+										...$responsive_size_schema,
+										'description' => __( 'Tablet letter spacing with size and unit.', 'emcp-tools' ),
+									),
+									'typography_letter_spacing_mobile' => array(
+										...$responsive_size_schema,
+										'description' => __( 'Mobile letter spacing with size and unit.', 'emcp-tools' ),
+									),
+									'typography_word_spacing' => array(
+										...$responsive_size_schema,
+										'description' => __( 'Word spacing with size and unit.', 'emcp-tools' ),
+									),
+									'typography_word_spacing_tablet' => array(
+										...$responsive_size_schema,
+										'description' => __( 'Tablet word spacing with size and unit.', 'emcp-tools' ),
+									),
+									'typography_word_spacing_mobile' => array(
+										...$responsive_size_schema,
+										'description' => __( 'Mobile word spacing with size and unit.', 'emcp-tools' ),
 									),
 								),
 								'required' => array( '_id', 'title' ),
@@ -330,10 +370,12 @@ class EMCP_Tools_Global_Abilities {
 		$allowed_keys = array(
 			'_id', 'title', 'typography_typography',
 			'typography_font_family', 'typography_font_size',
+			'typography_font_size_tablet', 'typography_font_size_mobile',
 			'typography_font_weight', 'typography_text_transform',
 			'typography_font_style', 'typography_text_decoration',
-			'typography_line_height', 'typography_letter_spacing',
-			'typography_word_spacing',
+			'typography_line_height', 'typography_line_height_tablet', 'typography_line_height_mobile',
+			'typography_letter_spacing', 'typography_letter_spacing_tablet', 'typography_letter_spacing_mobile',
+			'typography_word_spacing', 'typography_word_spacing_tablet', 'typography_word_spacing_mobile',
 		);
 
 		foreach ( $typography as $typo ) {

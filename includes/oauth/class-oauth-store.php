@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class EMCP_Tools_OAuth_Store {
 
-	const DB_VERSION        = 3; // v3: clients.authorized_at (never auto-purge an authorized client).
+	const DB_VERSION        = 4; // v4: bind OAuth tokens to their MCP resource/audience.
 	const DB_VERSION_OPTION = 'emcp_tools_oauth_db_version';
 	// A freshly-registered client legitimately has no tokens until the user
 	// finishes authorizing, so orphan-client pruning only touches rows older
@@ -71,6 +71,9 @@ class EMCP_Tools_OAuth_Store {
 		if ( $installed < 3 ) {
 			self::backfill_authorized_clients();
 		}
+		if ( $installed < 4 ) {
+			self::backfill_token_resources();
+		}
 		update_option( self::DB_VERSION_OPTION, self::DB_VERSION, false );
 	}
 
@@ -112,6 +115,7 @@ class EMCP_Tools_OAuth_Store {
 					client_id VARCHAR(64) NOT NULL,
 					user_id BIGINT UNSIGNED NOT NULL,
 					scopes VARCHAR(191) NOT NULL DEFAULT '',
+					resource TEXT NOT NULL,
 					expires_at BIGINT NOT NULL,
 					refresh_of BIGINT UNSIGNED NULL DEFAULT NULL,
 					created_at BIGINT NOT NULL,
@@ -263,22 +267,25 @@ class EMCP_Tools_OAuth_Store {
 	 * @param string   $scopes     Space-separated scopes.
 	 * @param int      $ttl        Lifetime in seconds.
 	 * @param int|null $refresh_of Token id this access token is bound to (rotation).
+	 * @param string   $resource   MCP resource/audience.
 	 * @return array{token:string,id:int} Raw token + row id.
 	 */
-	public static function issue_token( string $type, string $client_id, int $user_id, string $scopes, int $ttl, ?int $refresh_of = null ): array {
+	public static function issue_token( string $type, string $client_id, int $user_id, string $scopes, int $ttl, ?int $refresh_of = null, string $resource = '' ): array {
 		global $wpdb;
 		$token   = EMCP_Tools_OAuth_Util::generate_token();
+		$resource = '' !== $resource ? $resource : EMCP_Tools_OAuth_Metadata::resource();
 		$data    = array(
 			'token_hash' => EMCP_Tools_OAuth_Util::hash_token( $token ),
 			'token_type' => $type,
 			'client_id'  => $client_id,
 			'user_id'    => $user_id,
 			'scopes'     => $scopes,
+			'resource'   => $resource,
 			'expires_at' => time() + $ttl,
 			'refresh_of' => $refresh_of,
 			'created_at' => time(),
 		);
-		$formats = array( '%s', '%s', '%s', '%d', '%s', '%d', '%d', '%d' );
+		$formats = array( '%s', '%s', '%s', '%d', '%s', '%s', '%d', '%d', '%d' );
 
 		$ok = $wpdb->insert( self::tokens_table(), $data, $formats );
 		if ( false === $ok ) {
@@ -613,6 +620,22 @@ class EMCP_Tools_OAuth_Store {
 				   AND EXISTS ( SELECT 1 FROM {$tokens} t WHERE t.client_id = c.client_id )",
 				time()
 			) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		);
+	}
+
+	/**
+	 * Upgrade backfill (DB v4): this authorization server has historically
+	 * exposed one MCP resource, so every existing token can be safely bound to
+	 * that canonical audience without disconnecting established clients.
+	 */
+	public static function backfill_token_resources(): void {
+		global $wpdb;
+		$wpdb->query(
+			$wpdb->prepare(
+				'UPDATE ' . self::tokens_table() . ' SET resource = %s WHERE resource = %s OR resource IS NULL',
+				EMCP_Tools_OAuth_Metadata::resource(),
+				''
+			)
 		);
 	}
 

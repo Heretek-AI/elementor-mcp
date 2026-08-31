@@ -126,19 +126,24 @@ class EMCP_Tools_MCP_Host_Guard {
 			return $result;
 		}
 
-		$req_host  = (string) ( $request->get_header( 'host' ) ? $request->get_header( 'host' ) : ( isset( $_SERVER['HTTP_HOST'] ) ? wp_unslash( $_SERVER['HTTP_HOST'] ) : '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
-		$home_host = (string) wp_parse_url( home_url(), PHP_URL_HOST );
+		$req_host = (string) ( $request->get_header( 'host' ) ? $request->get_header( 'host' ) : ( isset( $_SERVER['HTTP_HOST'] ) ? wp_unslash( $_SERVER['HTTP_HOST'] ) : '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$expected = class_exists( 'EMCP_Tools_Site_Context' )
+			? EMCP_Tools_Site_Context::public_host()
+			: (string) wp_parse_url( home_url(), PHP_URL_HOST );
 
-		if ( self::host_matches( $req_host, $home_host ) ) {
+		if ( self::host_matches( $req_host, $expected ) ) {
 			return $result;
 		}
+		$endpoint = class_exists( 'EMCP_Tools_Site_Context' )
+			? EMCP_Tools_Site_Context::mcp_endpoint()
+			: home_url( '/wp-json/mcp/emcp-tools-server' );
 
 		return new WP_Error(
 			'emcp_host_mismatch',
 			sprintf(
 				/* translators: %s: the correct MCP endpoint URL. */
 				__( 'Site URL mismatch: this connector is pointed at an old domain. The MCP endpoint now lives at %s — reconnect using that URL.', 'emcp-tools' ),
-				esc_url_raw( home_url( '/wp-json/mcp/emcp-tools-server' ) )
+				esc_url_raw( $endpoint )
 			),
 			array( 'status' => 421 ) // 421 Misdirected Request.
 		);

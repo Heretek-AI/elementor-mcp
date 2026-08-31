@@ -6,12 +6,16 @@ $vendorDir = dirname(__DIR__);
 $baseDir   = dirname($vendorDir);
 
 return array(
+	'enshrined\\svgSanitize\\' => array(
+		'version' => '0.22.0.0',
+		'path'    => array( $vendorDir . '/enshrined/svg-sanitize/src' )
+	),
 	'WP\\McpSchema\\' => array(
-		'version' => '0.1.2.0',
+		'version' => '0.1.3.0',
 		'path'    => array( $vendorDir . '/wordpress/php-mcp-schema/src' )
 	),
 	'WP\\MCP\\' => array(
-		'version' => '0.5.0.0',
+		'version' => '0.6.1.0',
 		'path'    => array( $vendorDir . '/wordpress/mcp-adapter/includes' )
 	),
 	'Automattic\\Jetpack\\Autoloader\\' => array(

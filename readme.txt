@@ -2,8 +2,8 @@
 Contributors: mianshahzadraza
 Tags: elementor, mcp, ai, page-builder, automation
 Requires at least: 6.9
-Tested up to: 7.0
-Stable tag: 3.14.1
+Tested up to: 7.1
+Stable tag: 3.14.2
 Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -53,7 +53,7 @@ As of v3.0.0 the 62 per-widget tools were folded into a catalog-backed model, so
 **Requires:**
 
 * WordPress 6.9 or later
-* WordPress Abilities API: included in WordPress core 6.9+ (and 7.0)
+* WordPress Abilities API: included in WordPress core 6.9+
 * WordPress MCP Adapter: bundled with the plugin (no separate install needed; an active standalone MCP Adapter plugin is used instead when present)
 
 **Recommended (optional):**
@@ -69,7 +69,7 @@ As of v3.0.0 the 62 per-widget tools were folded into a catalog-backed model, so
 == Installation ==
 
 1. Upload the `emcp-tools` folder to `/wp-content/plugins/`.
-2. Activate the plugin through the 'Plugins' menu in WordPress. The MCP Adapter is bundled. No separate install is required (WordPress 6.9+/7.0 already includes the Abilities API).
+2. Activate the plugin through the 'Plugins' menu in WordPress. The MCP Adapter is bundled. No separate install is required (WordPress 6.9+ already includes the Abilities API).
 3. Open the new **EMCP Tools** top-level menu, go to the **Connection** tab, and confirm **Activate Abilities API for EMCP** is enabled (on by default) to expose the MCP server.
 4. (Optional) Install and activate [Elementor](https://wordpress.org/plugins/elementor/) (version 3.20+) to enable the Elementor tool family (page design, widgets, layout, templates, brand kits, and more). All beyond-Elementor tools are fully functional without it.
 
@@ -176,6 +176,15 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.14.2 =
+Fixes intermittent MCP connection failures affecting OAuth and Application Password clients, especially on managed hosts and during concurrent startup.
+* Fixed: the MCP proxy serializes initialization, reuses the resulting session for immediately-following requests, and sends the negotiated protocol-version header.
+* Fixed: OAuth discovery, authorization, token exchange, and host validation now share the configured public Server URL and work correctly when WordPress is installed in a subdirectory. The challenge uses an EMCP-specific metadata URL, and diagnostics reject valid-looking metadata that belongs to another plugin (#130).
+* Fixed: OAuth authorization codes and tokens are bound to the intended MCP resource, with REST metadata fallbacks and a discovery diagnostic for hosts or CDNs that intercept standard .well-known routes.
+* Fixed: Application Password creation respects WordPress availability policy, and its connection test now performs a complete MCP initialize/initialized/tools-list handshake instead of testing only the WordPress user endpoint.
+* Updated: the bundled WordPress MCP Adapter to 0.6.1 and PHP MCP Schema to 0.1.3 for current protocol and session handling.
+* Compatibility: tested end-to-end on WordPress 7.1 and PHP 8.3, covering OAuth and Application Password handshakes through tools/list.
 
 = 3.14.1 =
 Adds Elementor Global Variables and responsive typography, hardens Global Class writes and friendly CSS sizes, and acts on an independent security review.

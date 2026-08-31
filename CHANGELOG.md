@@ -2,6 +2,19 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.14.2]
+
+### Fixed
+- **MCP connection startup is resilient to concurrent client requests.** The bundled WordPress MCP Adapter is updated to 0.6.1 for bounded session-mutation retries, and the local proxy now deduplicates an in-flight initialize request, waits before forwarding an immediately-following `tools/list`, and sends the negotiated `Mcp-Protocol-Version` header.
+- **The public Server URL override is authoritative across MCP and OAuth.** Host-mismatch checks, HTTPS availability, discovery, authorization, and token endpoints now use the same reachable public base, including subdirectory installs.
+- **OAuth discovery failures are diagnosable behind CDNs, managed hosts, and competing OAuth plugins.** Protected-resource and authorization-server metadata have public REST aliases, the bearer challenge points at EMCP's protected-resource alias with the `mcp` scope instead of the shared bare well-known path, and the Connection screen compares both status and metadata identity so a valid document belonging to another plugin is reported instead of receiving a false green result (#130).
+- **OAuth tokens are bound to the MCP resource they were issued for.** Authorization and token requests validate the RFC 8707 `resource`, access and refresh tokens persist that audience, bearer authentication checks it, and existing tokens are migrated to the plugin's single canonical MCP resource.
+- **Application Password setup no longer gives a false green result.** Creation respects WordPress's global and per-user availability policy, and the Connection screen now tests `initialize`, `notifications/initialized`, and `tools/list` against the real public MCP endpoint instead of checking only `/wp/v2/users/me`.
+
+### Compatibility
+
+- Tested the complete OAuth and Application Password connection flows on WordPress 7.1 and PHP 8.3, including `initialize`, `notifications/initialized`, and `tools/list`.
+
 ## [3.14.1]
 
 Acts on an independent security review of the repository. No issue found was exploitable by an anonymous visitor: every one needs either an administrator account or a URL an administrator already asked the plugin to fetch. They are fixed anyway, because the gap between "needs an admin" and "safe" is where real incidents live.

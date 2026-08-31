@@ -109,14 +109,16 @@ class EMCP_Tools_OAuth_Token {
 		$client_id    = (string) ( $p['client_id'] ?? '' );
 		$redirect_uri = (string) ( $p['redirect_uri'] ?? '' );
 		$verifier     = (string) ( $p['code_verifier'] ?? '' );
+		$resource     = (string) ( $p['resource'] ?? '' );
 
 		$payload = ( '' === $code ) ? null : EMCP_Tools_OAuth_Store::consume_code( $code );
-		$check   = self::validate_code_exchange( $payload, $client_id, $redirect_uri, $verifier );
+		$check   = self::validate_code_exchange( $payload, $client_id, $redirect_uri, $verifier, $resource );
 		if ( is_wp_error( $check ) ) {
 			return self::error( $check->get_error_code(), $check->get_error_message() );
 		}
 
-		$pair = self::issue_pair( $client_id, (int) $payload['user_id'], (string) $payload['scopes'] );
+		$bound_resource = (string) ( $payload['resource'] ?? EMCP_Tools_OAuth_Metadata::resource() );
+		$pair           = self::issue_pair( $client_id, (int) $payload['user_id'], (string) $payload['scopes'], $bound_resource );
 		if ( '' === $pair['access'] || '' === $pair['refresh'] ) {
 			return self::error( 'server_error', 'The authorization server could not persist the issued token. Please try again; if it persists, check the database and the site error log.', 500 );
 		}
@@ -136,10 +138,15 @@ class EMCP_Tools_OAuth_Token {
 	private static function refresh( array $p ) {
 		$refresh_token = (string) ( $p['refresh_token'] ?? '' );
 		$client_id     = (string) ( $p['client_id'] ?? '' );
+		$resource      = (string) ( $p['resource'] ?? '' );
 
 		$row = ( '' === $refresh_token ) ? null : EMCP_Tools_OAuth_Store::find_token( $refresh_token, 'refresh' );
 		if ( null === $row || ! hash_equals( (string) $row['client_id'], $client_id ) ) {
 			return self::error( 'invalid_grant', 'Refresh token is invalid or expired.' );
+		}
+		$bound_resource = (string) ( $row['resource'] ?? EMCP_Tools_OAuth_Metadata::resource() );
+		if ( ! EMCP_Tools_OAuth_Metadata::resource_matches( $bound_resource ) || ( '' !== $resource && ! hash_equals( EMCP_Tools_OAuth_Metadata::normalize_resource_uri( $bound_resource ), EMCP_Tools_OAuth_Metadata::normalize_resource_uri( $resource ) ) ) ) {
+			return self::error( 'invalid_target', 'Refresh token was not issued for this MCP server.' );
 		}
 
 		// Rotate: retire the old refresh token, but (a) leave its bound access
@@ -147,7 +154,7 @@ class EMCP_Tools_OAuth_Token {
 		// mid-chat, and (b) keep the retired refresh token usable for a short
 		// grace window so a lost-response retry re-rotates instead of 401'ing.
 		EMCP_Tools_OAuth_Store::rotate_out_refresh( (int) $row['id'], self::refresh_grace() );
-		$pair = self::issue_pair( $client_id, (int) $row['user_id'], (string) $row['scopes'] );
+		$pair = self::issue_pair( $client_id, (int) $row['user_id'], (string) $row['scopes'], $bound_resource );
 		if ( '' === $pair['access'] || '' === $pair['refresh'] ) {
 			return self::error( 'server_error', 'The authorization server could not persist the rotated token. Please try again; if it persists, check the database and the site error log.', 500 );
 		}
@@ -189,9 +196,10 @@ class EMCP_Tools_OAuth_Token {
 	 * @param string     $client_id    Presented client id.
 	 * @param string     $redirect_uri Presented redirect URI.
 	 * @param string     $verifier     PKCE code_verifier.
+	 * @param string     $resource     Presented resource (empty for legacy clients).
 	 * @return true|WP_Error
 	 */
-	public static function validate_code_exchange( ?array $payload, string $client_id, string $redirect_uri, string $verifier ) {
+	public static function validate_code_exchange( ?array $payload, string $client_id, string $redirect_uri, string $verifier, string $resource = '' ) {
 		if ( null === $payload ) {
 			return new WP_Error( 'invalid_grant', 'Authorization code is invalid or expired.' );
 		}
@@ -203,6 +211,13 @@ class EMCP_Tools_OAuth_Token {
 		}
 		if ( ! EMCP_Tools_OAuth_Util::verify_pkce( $verifier, (string) ( $payload['code_challenge'] ?? '' ), 'S256' ) ) {
 			return new WP_Error( 'invalid_grant', 'PKCE verification failed.' );
+		}
+		$bound_resource = (string) ( $payload['resource'] ?? EMCP_Tools_OAuth_Metadata::resource() );
+		if ( ! EMCP_Tools_OAuth_Metadata::resource_matches( $bound_resource ) ) {
+			return new WP_Error( 'invalid_target', 'Authorization code was not issued for this MCP server.' );
+		}
+		if ( '' !== $resource && ! hash_equals( EMCP_Tools_OAuth_Metadata::normalize_resource_uri( $bound_resource ), EMCP_Tools_OAuth_Metadata::normalize_resource_uri( $resource ) ) ) {
+			return new WP_Error( 'invalid_target', 'resource does not match the authorization request.' );
 		}
 		return true;
 	}
@@ -236,14 +251,15 @@ class EMCP_Tools_OAuth_Token {
 	 * @param string $client_id Client id.
 	 * @param int    $user_id   User the tokens act as.
 	 * @param string $scope     Granted scope.
+	 * @param string $resource  Canonical MCP resource.
 	 * @return array{access:string,refresh:string}
 	 */
-	private static function issue_pair( string $client_id, int $user_id, string $scope ): array {
-		$refresh = EMCP_Tools_OAuth_Store::issue_token( 'refresh', $client_id, $user_id, $scope, self::REFRESH_TTL );
+	private static function issue_pair( string $client_id, int $user_id, string $scope, string $resource ): array {
+		$refresh = EMCP_Tools_OAuth_Store::issue_token( 'refresh', $client_id, $user_id, $scope, self::REFRESH_TTL, null, $resource );
 		if ( '' === $refresh['token'] ) {
 			return array( 'access' => '', 'refresh' => '' );
 		}
-		$access  = EMCP_Tools_OAuth_Store::issue_token( 'access', $client_id, $user_id, $scope, self::access_ttl(), (int) $refresh['id'] );
+		$access  = EMCP_Tools_OAuth_Store::issue_token( 'access', $client_id, $user_id, $scope, self::access_ttl(), (int) $refresh['id'], $resource );
 		if ( '' === $access['token'] ) {
 			return array( 'access' => '', 'refresh' => '' );
 		}

@@ -210,6 +210,52 @@ export function resolveCallSite(message, state) {
   return { alias: state.active, message };
 }
 
+/**
+ * Coordinate the per-site HTTP initialization handshake.
+ *
+ * stdin lines are intentionally processed concurrently, so a client can send
+ * `tools/list` before the forwarded `initialize` request has completed.  Keep
+ * the in-flight promise in shared state: subsequent messages await it instead
+ * of creating a second WordPress session that can race the first one.
+ *
+ * @param {Object} state Proxy state.
+ * @param {(alias:string, message:Object) => Promise<Object>} sendToSite Sender.
+ * @param {(message:string) => void} log Logger.
+ * @returns {{initialize(alias:string, message:Object):Promise<Object|undefined>, ensure(alias:string):Promise<void>}}
+ */
+export function createSessionCoordinator(state, sendToSite, log = () => {}) {
+  if (!state.sessionInit) state.sessionInit = {};
+
+  async function initialize(alias, message) {
+    // A client may deliberately start a new handshake after one is established.
+    // Forward that request normally; deduplication only applies while the first
+    // initialization is still in flight.
+    if (state.session[alias]) return sendToSite(alias, message);
+    if (!state.sessionInit[alias]) {
+      const pending = Promise.resolve().then(() => sendToSite(alias, message));
+      let wrapped;
+      wrapped = pending.finally(() => {
+        if (state.sessionInit[alias] === wrapped) delete state.sessionInit[alias];
+      });
+      state.sessionInit[alias] = wrapped;
+    }
+    return state.sessionInit[alias];
+  }
+
+  async function ensure(alias) {
+    if (state.session[alias] || !state.initializeMessage) return;
+    log(`[${alias}] no session — waiting for initialization`);
+    try {
+      await initialize(alias, state.initializeMessage);
+    } catch (e) {
+      log(`[${alias}] init failed: ${e.message}`);
+      throw e;
+    }
+  }
+
+  return { initialize, ensure };
+}
+
 // ---------------------------------------------------------------------------
 // Everything below is the running proxy — skipped when imported for tests.
 // ---------------------------------------------------------------------------
@@ -226,7 +272,7 @@ function runProxy() {
     process.exit(1);
   }
 
-  const state = { sites, active: defaultSite, session: {}, permalinks: {}, initializeMessage: null };
+  const state = { sites, active: defaultSite, session: {}, sessionInit: {}, protocolVersion: {}, permalinks: {}, initializeMessage: null };
   const siteCount = Object.keys(sites).length;
 
   function activeSite() { return state.sites[state.active]; }
@@ -276,6 +322,9 @@ function runProxy() {
     const auth = Buffer.from(`${site.username}:${site.appPassword}`).toString('base64');
     const headers = { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Basic ${auth}`, 'User-Agent': PROXY_UA };
     if (state.session[alias]) headers['Mcp-Session-Id'] = state.session[alias];
+    if (state.protocolVersion[alias] && message.method !== 'initialize') {
+      headers['Mcp-Protocol-Version'] = state.protocolVersion[alias];
+    }
     const payload = JSON.stringify(message);
     const isHttps = site.parsed.protocol === 'https:';
     const options = {
@@ -286,16 +335,20 @@ function runProxy() {
     };
     const res = await doHttpRequest(site, options, payload);
     if (res.headers['mcp-session-id']) state.session[alias] = res.headers['mcp-session-id'];
+    if (message.method === 'initialize') {
+      try {
+        const decoded = JSON.parse(res.body);
+        if (decoded?.result?.protocolVersion) state.protocolVersion[alias] = decoded.result.protocolVersion;
+      } catch { /* The caller reports malformed JSON; do not mask it here. */ }
+    }
     return res;
   }
 
   // Transparently initialize a site that has no session yet (so switching sites
-  // mid-conversation "just works" without the client re-initializing).
-  async function ensureSession(alias) {
-    if (state.session[alias] || !state.initializeMessage) return;
-    logStderr(`[${alias}] no session — sending transparent initialize`);
-    try { await sendToSite(alias, state.initializeMessage); } catch (e) { logStderr(`[${alias}] init failed: ${e.message}`); }
-  }
+  // mid-conversation "just works" without the client re-initializing). The
+  // coordinator also makes immediately-following stdin messages await an
+  // in-flight client initialize instead of sending a duplicate initialize.
+  const sessions = createSessionCoordinator(state, sendToSite, logStderr);
 
   async function handleMessage(line) {
     let message;
@@ -320,8 +373,11 @@ function runProxy() {
       // Per-call routing: a `site` arg on a tools/call targets that site for this
       // call only (stripped before forwarding); everything else uses the active site.
       const { alias: targetAlias, message: outMessage } = resolveCallSite(message, state);
-      if (method !== 'initialize') await ensureSession(targetAlias);
-      const { body, headers, statusCode } = await sendToSite(targetAlias, outMessage);
+      if (method !== 'initialize') await sessions.ensure(targetAlias);
+      const response = method === 'initialize'
+        ? await sessions.initialize(targetAlias, outMessage)
+        : await sendToSite(targetAlias, outMessage);
+      const { body, headers, statusCode } = response;
 
       if (id === null && !method.startsWith('initialize')) return; // notification
 

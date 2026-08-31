@@ -27,6 +27,57 @@ class EMCP_Tools_OAuth_Metadata {
 	 */
 	public static function init(): void {
 		add_action( 'parse_request', array( __CLASS__, 'maybe_serve' ), 0 );
+		add_action( 'rest_api_init', array( __CLASS__, 'register_routes' ) );
+	}
+
+	/** Register edge-friendly aliases for hosts that intercept `/.well-known/`. */
+	public static function register_routes(): void {
+		register_rest_route(
+			EMCP_Tools_OAuth_Server::REST_NAMESPACE,
+			'/protected-resource',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( __CLASS__, 'rest_protected_resource' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+		register_rest_route(
+			EMCP_Tools_OAuth_Server::REST_NAMESPACE,
+			'/authorization-server',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( __CLASS__, 'rest_authorization_server' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+	}
+
+	/** Edge-friendly protected-resource metadata URL used in the 401 challenge. */
+	public static function protected_resource_url(): string {
+		return EMCP_Tools_OAuth_Server::base_url() . '/protected-resource';
+	}
+
+	/** Edge rewrite target for RFC 8414 authorization-server metadata. */
+	public static function authorization_server_url(): string {
+		return EMCP_Tools_OAuth_Server::base_url() . '/authorization-server';
+	}
+
+	/** REST callback for protected-resource metadata. */
+	public static function rest_protected_resource() {
+		return self::rest_response( self::protected_resource_document() );
+	}
+
+	/** REST callback for authorization-server metadata. */
+	public static function rest_authorization_server() {
+		return self::rest_response( self::authorization_server_document() );
+	}
+
+	/** Build a public, cacheable metadata response. */
+	private static function rest_response( array $document ) {
+		$response = new WP_REST_Response( $document, 200 );
+		$response->header( 'Access-Control-Allow-Origin', '*' );
+		$response->header( 'Cache-Control', 'public, max-age=3600' );
+		return $response;
 	}
 
 	/**
@@ -59,6 +110,56 @@ class EMCP_Tools_OAuth_Metadata {
 			return EMCP_Tools_Site_Context::rest_endpoint( 'mcp/emcp-tools-server' );
 		}
 		return rest_url( 'mcp/emcp-tools-server' );
+	}
+
+	/**
+	 * Normalize an absolute OAuth resource URI for comparison. Scheme and host
+	 * are case-insensitive; the path and query remain resource-defining.
+	 *
+	 * @param string $uri Candidate resource URI.
+	 * @return string Empty when the URI is not a usable absolute HTTP(S) URI.
+	 */
+	public static function normalize_resource_uri( string $uri ): string {
+		$parts = wp_parse_url( trim( $uri ) );
+		if ( ! is_array( $parts ) || empty( $parts['scheme'] ) || empty( $parts['host'] ) || isset( $parts['fragment'] ) || isset( $parts['user'] ) || isset( $parts['pass'] ) ) {
+			return '';
+		}
+		$scheme = strtolower( (string) $parts['scheme'] );
+		if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
+			return '';
+		}
+		$out = $scheme . '://' . strtolower( (string) $parts['host'] );
+		if ( isset( $parts['port'] ) ) {
+			$out .= ':' . (int) $parts['port'];
+		}
+		$path = isset( $parts['path'] ) ? (string) $parts['path'] : '';
+		if ( '/' !== $path ) {
+			$path = rtrim( $path, '/' );
+		}
+		$out .= $path;
+		if ( isset( $parts['query'] ) && '' !== (string) $parts['query'] ) {
+			$out .= '?' . $parts['query'];
+		}
+		return $out;
+	}
+
+	/** Whether a presented resource identifies this MCP server. */
+	public static function resource_matches( string $resource ): bool {
+		return self::identifier_matches( $resource, self::resource() );
+	}
+
+	/**
+	 * Compare metadata identifiers after URI-safe normalization.
+	 *
+	 * Used by the public discovery diagnostic for both the protected resource and
+	 * issuer. A 200 response with the right key is not sufficient: another plugin
+	 * can own the shared well-known route and return a valid document describing
+	 * a different MCP server.
+	 */
+	public static function identifier_matches( string $presented, string $expected ): bool {
+		$presented = self::normalize_resource_uri( $presented );
+		$expected  = self::normalize_resource_uri( $expected );
+		return '' !== $presented && '' !== $expected && hash_equals( $expected, $presented );
 	}
 
 	/**
@@ -150,12 +251,19 @@ class EMCP_Tools_OAuth_Metadata {
 		// metadata document we advertise in WWW-Authenticate 404s and OAuth
 		// discovery (ChatGPT, Claude, any RFC 9728 client) dead-ends. No-op on a
 		// root install where the home path is empty.
-		$path = self::strip_home_path( $path );
+		return self::normalize_request_path( $path );
+	}
 
-		if ( '/' !== $path ) {
-			$path = untrailingslashit( $path );
-		}
-		return $path;
+	/**
+	 * Normalize a front-controller request path for root and subdirectory sites.
+	 * Shared by discovery and the browser authorization endpoint.
+	 *
+	 * @param string $path Raw URL path.
+	 * @return string Site-root-relative path without a trailing slash.
+	 */
+	public static function normalize_request_path( string $path ): string {
+		$path = self::strip_home_path( $path );
+		return '/' === $path ? $path : untrailingslashit( $path );
 	}
 
 	/**

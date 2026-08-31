@@ -42,13 +42,15 @@
 /vendor/**/package-lock.json
 /vendor/**/package.json
 /vendor/**/composer.lock
+/vendor/**/.npmrc
 /vendor/**/README*.md
 /vendor/**/README-INITIAL.md
 /vendor/**/CONTRIBUTING*.md
 /vendor/**/SECURITY*.md
 /vendor/**/CHANGELOG*.md
 /vendor/**/CLAUDE.md
-/vendor/**/.wp-env.json
+/vendor/**/.wp-env*.json
+/vendor/wordpress/mcp-adapter/readme.txt
 /vendor/wordpress/php-mcp-schema/skill/
 
 # IDE / Editor

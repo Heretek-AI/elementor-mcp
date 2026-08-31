@@ -272,8 +272,12 @@ $emcp_tools_server_enabled = class_exists( 'EMCP_Tools_Plugin' )
 /.well-known/oauth-protected-resource
 /wp-json/emcp-tools/oauth/*
 /wp-json/mcp/emcp-tools-server</code></pre>
+							<p>
+								<button type="button" class="button" id="elementor-mcp-oauth-test-btn" <?php disabled( ! $emcp_oauth_available ); ?>><?php esc_html_e( 'Test public OAuth discovery', 'emcp-tools' ); ?></button>
+							</p>
+							<p id="elementor-mcp-oauth-test-status" class="description" style="display: none;"></p>
 							<p class="description">
-								<?php esc_html_e( 'Cannot change the CDN? Use an Application Password instead - it authenticates with a header on every request and is never blocked by bot filters. Pick "Application Password" under "Choose your authentication method" below.', 'emcp-tools' ); ?>
+								<?php esc_html_e( 'Cannot change the CDN? Try an Application Password instead. It does not depend on OAuth discovery, but the CDN/WAF must still allow the MCP endpoint and pass the Authorization header through to WordPress.', 'emcp-tools' ); ?>
 							</p>
 						</div>
 					</details>
@@ -586,12 +590,12 @@ $emcp_tools_server_enabled = class_exists( 'EMCP_Tools_Plugin' )
 				</div>
 
 				<div id="elementor-mcp-authtest-row" style="display: none;">
-					<button type="button" class="button" id="elementor-mcp-authtest-btn"><?php esc_html_e( 'Test authentication', 'emcp-tools' ); ?></button>
+					<button type="button" class="button" id="elementor-mcp-authtest-btn"><?php esc_html_e( 'Test full MCP connection', 'emcp-tools' ); ?></button>
 					<p id="elementor-mcp-authtest-status" class="description" style="display: none;"></p>
 
 					<div id="elementor-mcp-authtest-fix" class="elementor-mcp-authtest-fix" style="display: none;">
-						<p><strong><?php esc_html_e( 'Got 401 Unauthorized? Your server is most likely stripping the Authorization header.', 'emcp-tools' ); ?></strong></p>
-						<p class="description"><?php esc_html_e( 'Common on Apache, Plesk, LiteSpeed and some Azure/IIS stacks: the Authorization header never reaches PHP, so WordPress never sees the Application Password and every MCP "initialize" fails with Unauthorized. Pass the header through to PHP, then re-test:', 'emcp-tools' ); ?></p>
+						<p><strong><?php esc_html_e( 'Initialize failed? Check whether your server passes the Authorization header to WordPress.', 'emcp-tools' ); ?></strong></p>
+						<p class="description"><?php esc_html_e( 'A 401 commonly means Apache, Plesk, LiteSpeed, a CDN, or an IIS/Azure proxy removed the Authorization header. Other initialize status codes can indicate a blocked or rewritten MCP route. Pass the header through to PHP and allow the MCP endpoint, then re-test:', 'emcp-tools' ); ?></p>
 
 						<p class="description" style="margin-bottom: 4px;"><strong><?php esc_html_e( 'Apache / Plesk / LiteSpeed', 'emcp-tools' ); ?></strong>: <?php esc_html_e( 'add to .htaccess, above the # BEGIN WordPress block:', 'emcp-tools' ); ?></p>
 						<pre class="elementor-mcp-authtest-snippet">&lt;IfModule mod_rewrite.c&gt;

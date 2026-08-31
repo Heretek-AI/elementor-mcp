@@ -40,7 +40,7 @@ class EMCP_Tools_OAuth_Bearer {
 			// tidy on active sites within minutes, not waiting on a daily WP-Cron.
 			EMCP_Tools_OAuth_Store::gc_throttled();
 			$row = EMCP_Tools_OAuth_Store::find_token( $token, 'access' );
-			if ( null !== $row ) {
+			if ( null !== $row && EMCP_Tools_OAuth_Metadata::resource_matches( (string) ( $row['resource'] ?? EMCP_Tools_OAuth_Metadata::resource() ) ) ) {
 				wp_set_current_user( (int) $row['user_id'] );
 				return true;
 			}
@@ -90,6 +90,22 @@ class EMCP_Tools_OAuth_Bearer {
 	}
 
 	/**
+	 * Build the OAuth challenge advertised by the MCP endpoint.
+	 *
+	 * Keep this in one testable helper: the metadata URL must remain specific to
+	 * EMCP. Advertising the shared bare `/.well-known/oauth-protected-resource`
+	 * path lets another OAuth/MCP plugin on the same site answer with metadata for
+	 * a different resource before EMCP ever sees the request.
+	 */
+	public static function challenge_value(): string {
+		return sprintf(
+			'Bearer resource_metadata="%s", scope="%s"',
+			esc_url_raw( EMCP_Tools_OAuth_Metadata::protected_resource_url() ),
+			EMCP_Tools_OAuth_Server::SCOPE
+		);
+	}
+
+	/**
 	 * Add the `WWW-Authenticate` challenge to unauthorized responses on the MCP
 	 * route, pointing clients at the protected-resource metadata.
 	 *
@@ -111,8 +127,7 @@ class EMCP_Tools_OAuth_Bearer {
 		if ( false === strpos( (string) $request->get_route(), 'mcp/emcp-tools-server' ) ) {
 			return $response;
 		}
-		$metadata = rtrim( (string) home_url(), '/' ) . EMCP_Tools_OAuth_Metadata::PATH_PROTECTED_RESOURCE;
-		$response->header( 'WWW-Authenticate', sprintf( 'Bearer resource_metadata="%s"', $metadata ) );
+		$response->header( 'WWW-Authenticate', self::challenge_value() );
 		return $response;
 	}
 }

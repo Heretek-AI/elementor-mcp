@@ -88,6 +88,15 @@ class EMCP_Tools_Site_Context {
 	}
 
 	/**
+	 * Host clients are expected to use for MCP and OAuth requests.
+	 *
+	 * @return string Hostname without a port.
+	 */
+	public static function public_host(): string {
+		return (string) wp_parse_url( self::public_base_url(), PHP_URL_HOST );
+	}
+
+	/**
 	 * A REST endpoint URL on the reachable public base. With a Server URL
 	 * override set, it is `override + /wp-json/<path>` (pretty permalinks);
 	 * otherwise `rest_url(<path>)` (permalink-aware). Routing every OAuth + MCP

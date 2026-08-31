@@ -276,20 +276,17 @@
 			if ( pick ) { emcpSelectClient( pick ); }
 		}
 
-		// The Basic Authorization header from the last generated credentials,
-		// used by the auth self-test (#41).
-		var emcpAuthHeader = '';
+		// Credentials are held in memory only so the server can run a complete
+		// initialize → initialized → tools/list diagnostic against the public MCP
+		// endpoint. They are never persisted by this page.
+		var emcpTestCredentials = null;
 
-		// Connection auth self-test (#41): proves whether the Authorization
-		// header actually reaches WordPress. Servers like Plesk/Apache/IIS often
-		// strip it, which is the usual cause of the MCP "initialize: Unauthorized"
-		// error. credentials:'omit' ensures ONLY the Authorization header
-		// authenticates (not the admin login cookie), so a 401 here is a true
-		// Basic-auth failure, not a false pass.
+		// Full connection self-test. The previous `/wp/v2/users/me` probe could
+		// pass while the MCP route, session lifecycle, or tools/list still failed.
 		var authBtn = document.getElementById( 'elementor-mcp-authtest-btn' );
 		if ( authBtn ) {
 			authBtn.addEventListener( 'click', function () {
-				if ( ! emcpAuthHeader || typeof emcpToolsAdmin === 'undefined' || ! emcpToolsAdmin.restMeUrl ) {
+				if ( ! emcpTestCredentials || typeof emcpToolsAdmin === 'undefined' || ! emcpToolsAdmin.ajaxUrl || ! emcpToolsAdmin.testConnNonce ) {
 					return;
 				}
 				var statusEl = document.getElementById( 'elementor-mcp-authtest-status' );
@@ -304,27 +301,34 @@
 				}
 				authBtn.disabled = true;
 
+				var payload = new FormData();
+				payload.append( 'action', 'emcp_tools_test_connection' );
+				payload.append( 'nonce', emcpToolsAdmin.testConnNonce );
+				payload.append( 'username', emcpTestCredentials.username );
+				payload.append( 'password', emcpTestCredentials.password );
+
 				/* global fetch */
-				fetch( emcpToolsAdmin.restMeUrl + '?_=' + ( new Date() ).getTime(), {
-					method: 'GET',
-					credentials: 'omit',
-					headers: { Authorization: emcpAuthHeader }
+				fetch( emcpToolsAdmin.ajaxUrl, {
+					method: 'POST',
+					credentials: 'same-origin',
+					body: payload
 				} ).then( function ( response ) {
+					return response.json();
+				} ).then( function ( result ) {
 					authBtn.disabled = false;
-					if ( ! statusEl ) {
-						return;
-					}
-					if ( response.ok ) {
+					if ( ! statusEl ) { return; }
+					if ( result && result.success ) {
 						statusEl.className = 'description elementor-mcp-authtest-ok';
-						statusEl.textContent = emcpToolsAdmin.authOk || 'Authentication works.';
+						var count = result.data && typeof result.data.tool_count === 'number' ? ' (' + result.data.tool_count + ' tools found)' : '';
+						statusEl.textContent = ( emcpToolsAdmin.authOk || 'Full MCP handshake succeeded.' ) + count;
 						if ( fixEl ) {
 							fixEl.style.display = 'none';
 						}
 					} else {
 						statusEl.className = 'description elementor-mcp-authtest-bad';
-						statusEl.textContent = ( emcpToolsAdmin.authFail || 'Authentication failed (HTTP %d).' ).replace( '%d', response.status );
+						statusEl.textContent = result && result.data && result.data.message ? result.data.message : ( emcpToolsAdmin.authError || 'Could not run the MCP connection test.' );
 						if ( fixEl ) {
-							fixEl.style.display = '';
+							fixEl.style.display = result && result.data && result.data.stage === 'initialize' ? '' : 'none';
 						}
 					}
 				} ).catch( function () {
@@ -337,6 +341,52 @@
 						fixEl.style.display = '';
 					}
 				} );
+			} );
+		}
+
+		// OAuth discovery diagnostic: the request runs from WordPress through the
+		// public hostname, which exposes CDN/host interception that an internal
+		// route check would miss.
+		var oauthTestBtn = document.getElementById( 'elementor-mcp-oauth-test-btn' );
+		if ( oauthTestBtn ) {
+			oauthTestBtn.addEventListener( 'click', function () {
+				if ( typeof emcpToolsAdmin === 'undefined' || ! emcpToolsAdmin.ajaxUrl || ! emcpToolsAdmin.testOAuthNonce ) { return; }
+				var oauthStatus = document.getElementById( 'elementor-mcp-oauth-test-status' );
+				var oauthPayload = new FormData();
+				oauthPayload.append( 'action', 'emcp_tools_test_oauth_discovery' );
+				oauthPayload.append( 'nonce', emcpToolsAdmin.testOAuthNonce );
+				oauthTestBtn.disabled = true;
+				if ( oauthStatus ) {
+					oauthStatus.style.display = '';
+					oauthStatus.className = 'description';
+					oauthStatus.textContent = emcpToolsAdmin.oauthTesting || 'Checking public OAuth discovery endpoints…';
+				}
+				fetch( emcpToolsAdmin.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: oauthPayload } )
+					.then( function ( response ) { return response.json(); } )
+					.then( function ( result ) {
+						oauthTestBtn.disabled = false;
+						if ( ! oauthStatus ) { return; }
+						oauthStatus.className = result && result.success ? 'description elementor-mcp-authtest-ok' : 'description elementor-mcp-authtest-bad';
+						var oauthMessage = result && result.data && result.data.message ? result.data.message : 'Could not run the OAuth discovery test.';
+						if ( result && result.data && result.data.checks ) {
+							var failedChecks = [];
+							Object.keys( result.data.checks ).forEach( function ( key ) {
+								var check = result.data.checks[ key ];
+								if ( check && ! check.ok ) {
+									failedChecks.push( key.replace( /_/g, ' ' ) + ': HTTP ' + check.status );
+								}
+							} );
+							if ( failedChecks.length ) { oauthMessage += ' Failed: ' + failedChecks.join( '; ' ) + '.'; }
+						}
+						oauthStatus.textContent = oauthMessage;
+					} )
+					.catch( function () {
+						oauthTestBtn.disabled = false;
+						if ( oauthStatus ) {
+							oauthStatus.className = 'description elementor-mcp-authtest-bad';
+							oauthStatus.textContent = 'Could not run the OAuth discovery test.';
+						}
+					} );
 			} );
 		}
 
@@ -453,8 +503,8 @@
 				resultCopy.value = headerValue;
 			}
 
-			// Arm the auth self-test (#41) with these credentials.
-			emcpAuthHeader = headerValue;
+			// Arm the full MCP self-test with these credentials (memory only).
+			emcpTestCredentials = { username: rawUsername, password: rawAppPassword };
 			var authRow = document.getElementById( 'elementor-mcp-authtest-row' );
 			if ( authRow ) {
 				authRow.style.display = '';

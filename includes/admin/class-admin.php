@@ -283,6 +283,8 @@ class EMCP_Tools_Admin {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'admin_head', array( $this, 'print_menu_icon_style' ) );
 		add_action( 'wp_ajax_emcp_tools_create_app_password', array( $this, 'ajax_create_app_password' ) );
+		add_action( 'wp_ajax_emcp_tools_test_connection', array( $this, 'ajax_test_connection' ) );
+		add_action( 'wp_ajax_emcp_tools_test_oauth_discovery', array( $this, 'ajax_test_oauth_discovery' ) );
 		add_action( 'wp_ajax_emcp_tools_toggle_widget', array( $this, 'ajax_toggle_widget' ) );
 		add_action( 'wp_ajax_emcp_tools_delete_widget', array( $this, 'ajax_delete_widget' ) );
 		add_action( 'wp_ajax_emcp_tools_toggle_block', array( $this, 'ajax_toggle_block' ) );
@@ -2419,19 +2421,20 @@ class EMCP_Tools_Admin {
 				/* translators: %s: client label */
 				'genFirst'     => __( 'Generate your credentials above, the config for %s then appears here.', 'emcp-tools' ),
 				'siteUrl'     => class_exists( 'EMCP_Tools_Site_Context' ) ? EMCP_Tools_Site_Context::public_base_url() : site_url(),
-				'restMeUrl'   => rest_url( 'wp/v2/users/me' ),
 				// Only the filename — never the absolute server path. The proxy runs
 				// on the CLIENT machine, so the server path is both useless to the
 				// user and a needless path disclosure (F-020). The UI points users at
 				// the npx runner or their own local copy of the proxy.
 				'proxyPath'   => 'mcp-proxy.mjs',
-				// Connection auth self-test (#41).
-				'authTesting' => __( 'Testing…', 'emcp-tools' ),
-				'authOk'      => __( '✓ Authentication works, your AI client should connect successfully.', 'emcp-tools' ),
-				'authFail'    => __( '✗ Authentication failed (HTTP %d). If the credentials are correct, your server is stripping the Authorization header, see the fix below.', 'emcp-tools' ),
-				'authError'   => __( 'Could not reach the REST API to test. Check the site URL and that the REST API is enabled.', 'emcp-tools' ),
+				// Full MCP connection + OAuth discovery diagnostics.
+				'authTesting' => __( 'Testing the full MCP handshake…', 'emcp-tools' ),
+				'authOk'      => __( '✓ Full MCP handshake succeeded: initialize, initialized notification, and tools/list all worked.', 'emcp-tools' ),
+				'authError'   => __( 'Could not run the MCP connection test.', 'emcp-tools' ),
+				'oauthTesting' => __( 'Checking public OAuth discovery endpoints…', 'emcp-tools' ),
 				'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
 				'createPwNonce' => wp_create_nonce( 'emcp_tools_create_app_password' ),
+				'testConnNonce' => wp_create_nonce( 'emcp_tools_test_connection' ),
+				'testOAuthNonce' => wp_create_nonce( 'emcp_tools_test_oauth_discovery' ),
 				'trackPromptNonce' => wp_create_nonce( 'emcp_tools_track_prompt_copy' ),
 				'generating'    => __( 'Generating…', 'emcp-tools' ),
 				'pwCreated'     => __( 'Application password created, save it below, it is shown only once.', 'emcp-tools' ),
@@ -2556,15 +2559,25 @@ class EMCP_Tools_Admin {
 			wp_send_json_error( array( 'message' => __( 'Application Passwords are not supported on this WordPress version.', 'emcp-tools' ) ), 400 );
 		}
 
-		// Application passwords only authenticate over HTTPS (or a local environment),
-		// so refuse to mint one that could not actually be used to connect.
-		if ( ! is_ssl() && 'local' !== wp_get_environment_type() ) {
+		// Respect WordPress core and site-policy availability filters. A security
+		// plugin may disable application passwords globally or for this user even
+		// when the core class exists.
+		if ( function_exists( 'wp_is_application_passwords_available' ) && ! wp_is_application_passwords_available() ) {
 			wp_send_json_error(
 				array(
-					'message' => __( 'Application Passwords require HTTPS. Load this site over https:// (or use the WP-CLI connection method for local development).', 'emcp-tools' ),
+					'message' => __( 'Application Passwords are disabled for this site. Check HTTPS and any security-plugin policy, or use OAuth.', 'emcp-tools' ),
 				),
 				400
 			);
+		}
+		if ( function_exists( 'wp_is_application_passwords_available_for_user' ) && ! wp_is_application_passwords_available_for_user( $user ) ) {
+			wp_send_json_error( array( 'message' => __( 'Application Passwords are disabled for this user by site policy.', 'emcp-tools' ) ), 400 );
+		}
+
+		// Compatibility fallback for WordPress versions without the availability
+		// helper (the plugin normally requires a newer core release).
+		if ( ! function_exists( 'wp_is_application_passwords_available' ) && ! is_ssl() && 'local' !== wp_get_environment_type() ) {
+			wp_send_json_error( array( 'message' => __( 'Application Passwords require HTTPS.', 'emcp-tools' ) ), 400 );
 		}
 
 		$app_name = sprintf(
@@ -2590,6 +2603,294 @@ class EMCP_Tools_Admin {
 				'password' => \WP_Application_Passwords::chunk_password( $raw_password ),
 				'name'     => $app_name,
 			)
+		);
+	}
+
+	/**
+	 * AJAX: test Application Password credentials against the real MCP endpoint.
+	 *
+	 * Unlike the old `/wp/v2/users/me` probe, this exercises the complete MCP
+	 * session lifecycle and therefore catches transport, routing, session, and
+	 * tool-registration failures as well as a stripped Authorization header.
+	 *
+	 * @since 3.15.0
+	 */
+	public function ajax_test_connection(): void {
+		check_ajax_referer( 'emcp_tools_test_connection', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to run this test.', 'emcp-tools' ) ), 403 );
+		}
+
+		$username = isset( $_POST['username'] ) ? sanitize_text_field( wp_unslash( $_POST['username'] ) ) : '';
+		$password = isset( $_POST['password'] ) ? trim( (string) wp_unslash( $_POST['password'] ) ) : '';
+		if ( '' === $username || '' === $password ) {
+			wp_send_json_error( array( 'message' => __( 'Enter a username and Application Password first.', 'emcp-tools' ) ), 400 );
+		}
+
+		$result = $this->run_mcp_handshake( $username, $password );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error(
+				array(
+					'message' => $result->get_error_message(),
+					'stage'   => $result->get_error_code(),
+				),
+				400
+			);
+		}
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * Run initialize → notifications/initialized → tools/list via public HTTP.
+	 *
+	 * @param string $username WordPress login.
+	 * @param string $password Application Password.
+	 * @return array|WP_Error
+	 */
+	private function run_mcp_handshake( string $username, string $password ) {
+		$endpoint = class_exists( 'EMCP_Tools_Site_Context' ) ? EMCP_Tools_Site_Context::mcp_endpoint() : rest_url( 'mcp/emcp-tools-server' );
+		$auth     = 'Basic ' . base64_encode( $username . ':' . $password );
+		$session  = '';
+
+		$initialize = $this->mcp_diagnostic_request(
+			$endpoint,
+			$auth,
+			'',
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 1,
+				'method'  => 'initialize',
+				'params'  => array(
+					'protocolVersion' => '2025-11-25',
+					'capabilities'    => (object) array(),
+					'clientInfo'      => array(
+						'name'    => 'EMCP Tools connection test',
+						'version' => defined( 'EMCP_TOOLS_VERSION' ) ? EMCP_TOOLS_VERSION : 'unknown',
+					),
+				),
+			),
+			'initialize'
+		);
+		if ( is_wp_error( $initialize ) ) {
+			return $initialize;
+		}
+
+		$session = (string) wp_remote_retrieve_header( $initialize['response'], 'mcp-session-id' );
+		if ( '' === $session ) {
+			return new WP_Error( 'initialize', __( 'Initialize succeeded but the server did not return an MCP session ID.', 'emcp-tools' ) );
+		}
+		$protocol_version = isset( $initialize['json']['result']['protocolVersion'] ) ? sanitize_text_field( (string) $initialize['json']['result']['protocolVersion'] ) : '';
+		if ( '' === $protocol_version ) {
+			return new WP_Error( 'initialize', __( 'Initialize returned an invalid protocol version.', 'emcp-tools' ) );
+		}
+
+		try {
+			$initialized = $this->mcp_diagnostic_request(
+				$endpoint,
+				$auth,
+				$session,
+				array(
+					'jsonrpc' => '2.0',
+					'method'  => 'notifications/initialized',
+				),
+				'initialized',
+				true,
+				$protocol_version
+			);
+			if ( is_wp_error( $initialized ) ) {
+				return $initialized;
+			}
+
+			$tools = $this->mcp_diagnostic_request(
+				$endpoint,
+				$auth,
+				$session,
+				array(
+					'jsonrpc' => '2.0',
+					'id'      => 2,
+					'method'  => 'tools/list',
+					'params'  => (object) array(),
+				),
+				'tools_list',
+				false,
+				$protocol_version
+			);
+			if ( is_wp_error( $tools ) ) {
+				return $tools;
+			}
+			if ( ! isset( $tools['json']['result']['tools'] ) || ! is_array( $tools['json']['result']['tools'] ) ) {
+				return new WP_Error( 'tools_list', __( 'tools/list returned an invalid MCP response.', 'emcp-tools' ) );
+			}
+
+			return array(
+				'message'    => __( 'Full MCP handshake succeeded.', 'emcp-tools' ),
+				'tool_count' => count( $tools['json']['result']['tools'] ),
+			);
+		} finally {
+			// Best-effort cleanup; never replace the useful diagnostic result with a
+			// session-delete failure.
+			wp_safe_remote_request(
+				$endpoint,
+				array(
+					'method'  => 'DELETE',
+					'timeout' => 10,
+					'headers' => array(
+						'Authorization'        => $auth,
+						'Mcp-Protocol-Version' => $protocol_version,
+						'Mcp-Session-Id'       => $session,
+					),
+				)
+			);
+		}
+	}
+
+	/**
+	 * Send one JSON-RPC request used by the connection diagnostic.
+	 *
+	 * @param string $endpoint           Public MCP endpoint.
+	 * @param string $authorization      Basic authorization header.
+	 * @param string $session            MCP session ID, or empty for initialize.
+	 * @param array  $payload            JSON-RPC payload.
+	 * @param string $stage              Stable diagnostic stage.
+	 * @param bool   $notification       Whether a 202 empty response is valid.
+	 * @param string $protocol_version   Negotiated MCP protocol version.
+	 * @return array|WP_Error
+	 */
+	private function mcp_diagnostic_request( string $endpoint, string $authorization, string $session, array $payload, string $stage, bool $notification = false, string $protocol_version = '' ) {
+		$headers = array(
+			'Accept'        => 'application/json, text/event-stream',
+			'Authorization' => $authorization,
+			'Content-Type'  => 'application/json',
+		);
+		if ( '' !== $session ) {
+			$headers['Mcp-Session-Id'] = $session;
+		}
+		if ( '' !== $protocol_version ) {
+			$headers['Mcp-Protocol-Version'] = $protocol_version;
+		}
+
+		$response = wp_safe_remote_post(
+			$endpoint,
+			array(
+				'timeout'     => 15,
+				'redirection' => 0,
+				'headers'     => $headers,
+				'body'        => wp_json_encode( $payload ),
+			)
+		);
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error( $stage, sprintf( __( '%1$s request failed: %2$s', 'emcp-tools' ), $this->diagnostic_stage_label( $stage ), $response->get_error_message() ) );
+		}
+
+		$status = (int) wp_remote_retrieve_response_code( $response );
+		if ( $notification && in_array( $status, array( 200, 202 ), true ) ) {
+			return array( 'response' => $response, 'json' => array() );
+		}
+		if ( 200 !== $status ) {
+			return new WP_Error(
+				$stage,
+				sprintf(
+					/* translators: 1: MCP handshake stage, 2: HTTP status code. */
+					__( '%1$s failed with HTTP %2$d. Check the endpoint, CDN/WAF rules, and whether the Authorization header reaches WordPress.', 'emcp-tools' ),
+					$this->diagnostic_stage_label( $stage ),
+					$status
+				)
+			);
+		}
+
+		$decoded = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+		if ( ! is_array( $decoded ) ) {
+			return new WP_Error( $stage, sprintf( __( '%s returned a non-JSON response.', 'emcp-tools' ), $this->diagnostic_stage_label( $stage ) ) );
+		}
+		if ( isset( $decoded['error'] ) ) {
+			$error_message = isset( $decoded['error']['message'] ) ? sanitize_text_field( (string) $decoded['error']['message'] ) : __( 'Unknown JSON-RPC error.', 'emcp-tools' );
+			return new WP_Error( $stage, sprintf( __( '%1$s returned an MCP error: %2$s', 'emcp-tools' ), $this->diagnostic_stage_label( $stage ), $error_message ) );
+		}
+
+		return array( 'response' => $response, 'json' => $decoded );
+	}
+
+	/** Human-readable label for a stable diagnostic stage. */
+	private function diagnostic_stage_label( string $stage ): string {
+		$labels = array(
+			'initialize'  => 'initialize',
+			'initialized' => 'notifications/initialized',
+			'tools_list'  => 'tools/list',
+		);
+		return isset( $labels[ $stage ] ) ? $labels[ $stage ] : $stage;
+	}
+
+	/**
+	 * AJAX: check both standards-based well-known URLs and their REST aliases.
+	 *
+	 * @since 3.15.0
+	 */
+	public function ajax_test_oauth_discovery(): void {
+		check_ajax_referer( 'emcp_tools_test_oauth_discovery', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to run this test.', 'emcp-tools' ) ), 403 );
+		}
+		if ( ! class_exists( 'EMCP_Tools_OAuth_Metadata' ) || ! class_exists( 'EMCP_Tools_OAuth_Server' ) || ! EMCP_Tools_OAuth_Server::is_enabled() ) {
+			wp_send_json_error( array( 'message' => __( 'Enable OAuth before testing discovery.', 'emcp-tools' ) ), 400 );
+		}
+
+		$base   = class_exists( 'EMCP_Tools_Site_Context' ) ? EMCP_Tools_Site_Context::public_base_url() : rtrim( (string) home_url(), '/' );
+		$checks = array(
+			'well_known_protected_resource' => $this->probe_oauth_document( $base . EMCP_Tools_OAuth_Metadata::PATH_PROTECTED_RESOURCE, 'resource', EMCP_Tools_OAuth_Metadata::resource() ),
+			'well_known_authorization_server' => $this->probe_oauth_document( $base . EMCP_Tools_OAuth_Metadata::PATH_AUTH_SERVER, 'issuer', EMCP_Tools_OAuth_Metadata::issuer() ),
+			'rest_protected_resource'       => $this->probe_oauth_document( EMCP_Tools_OAuth_Metadata::protected_resource_url(), 'resource', EMCP_Tools_OAuth_Metadata::resource() ),
+			'rest_authorization_server'     => $this->probe_oauth_document( EMCP_Tools_OAuth_Metadata::authorization_server_url(), 'issuer', EMCP_Tools_OAuth_Metadata::issuer() ),
+		);
+
+		$root_ok = $checks['well_known_protected_resource']['ok'] && $checks['well_known_authorization_server']['ok'];
+		$rest_ok = $checks['rest_protected_resource']['ok'] && $checks['rest_authorization_server']['ok'];
+		if ( $root_ok && $rest_ok ) {
+			wp_send_json_success( array( 'message' => __( 'OAuth discovery is publicly reachable through both standard well-known URLs and REST aliases.', 'emcp-tools' ), 'checks' => $checks ) );
+		}
+		if ( ! $root_ok && $rest_ok ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'EMCP OAuth routes work, but the public .well-known URLs do not return EMCP metadata. A CDN/host may be intercepting them, or another plugin may own the shared paths. Review the failed values, then bypass or rewrite those routes before reconnecting the client.', 'emcp-tools' ),
+					'checks'  => $checks,
+				),
+				400
+			);
+		}
+
+		wp_send_json_error( array( 'message' => __( 'OAuth discovery is not reachable. Review the failed checks and confirm the REST API, HTTPS, permalink routing, and CDN/WAF rules.', 'emcp-tools' ), 'checks' => $checks ), 400 );
+	}
+
+	/** Probe one public OAuth metadata document without following redirects. */
+	private function probe_oauth_document( string $url, string $required_key, string $expected_value ): array {
+		$response = wp_safe_remote_get( $url, array( 'timeout' => 12, 'redirection' => 0 ) );
+		if ( is_wp_error( $response ) ) {
+			return array( 'ok' => false, 'status' => 0, 'message' => $response->get_error_message() );
+		}
+		$status  = (int) wp_remote_retrieve_response_code( $response );
+		$decoded = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+		$actual  = is_array( $decoded ) && isset( $decoded[ $required_key ] ) && is_string( $decoded[ $required_key ] ) ? $decoded[ $required_key ] : '';
+		$matches = '' !== $actual && EMCP_Tools_OAuth_Metadata::identifier_matches( $actual, $expected_value );
+		$valid   = 200 === $status && $matches;
+		$message = __( 'Expected OAuth metadata JSON was not returned.', 'emcp-tools' );
+		if ( $valid ) {
+			$message = __( 'OK', 'emcp-tools' );
+		} elseif ( 200 === $status && '' !== $actual && ! $matches ) {
+			$message = sprintf(
+				/* translators: 1: metadata identifier returned, 2: EMCP identifier expected. */
+				__( 'Metadata identifies "%1$s", but EMCP expected "%2$s". Another plugin, CDN, or host may own this URL.', 'emcp-tools' ),
+				sanitize_text_field( $actual ),
+				sanitize_text_field( $expected_value )
+			);
+		}
+		return array(
+			'ok'       => $valid,
+			'status'   => $status,
+			'actual'   => $actual,
+			'expected' => $expected_value,
+			'message'  => $message,
 		);
 	}
 

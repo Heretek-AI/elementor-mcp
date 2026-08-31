@@ -65,9 +65,9 @@ class EMCP_Tools_OAuth_Authorize {
 	public static function maybe_serve( $wp = null ): void {
 		$uri  = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
 		$path = (string) wp_parse_url( $uri, PHP_URL_PATH );
-		if ( '/' !== $path ) {
-			$path = rtrim( $path, '/' );
-		}
+		$path = class_exists( 'EMCP_Tools_OAuth_Metadata' )
+			? EMCP_Tools_OAuth_Metadata::normalize_request_path( $path )
+			: ( '/' === $path ? $path : rtrim( $path, '/' ) );
 		if ( self::PATH !== $path ) {
 			return;
 		}
@@ -193,6 +193,13 @@ class EMCP_Tools_OAuth_Authorize {
 		if ( '' === $challenge ) {
 			self::redirect_error( $redirect_uri, 'invalid_request', $state );
 		}
+		$resource = (string) ( $p['resource'] ?? '' );
+		if ( '' === $resource ) {
+			$resource = EMCP_Tools_OAuth_Metadata::resource();
+		}
+		if ( ! EMCP_Tools_OAuth_Metadata::resource_matches( $resource ) ) {
+			self::redirect_error( $redirect_uri, 'invalid_target', $state );
+		}
 
 		$code = EMCP_Tools_OAuth_Store::issue_code(
 			array(
@@ -201,6 +208,7 @@ class EMCP_Tools_OAuth_Authorize {
 				'redirect_uri'   => $redirect_uri,
 				'code_challenge' => $challenge,
 				'scopes'         => (string) ( $p['scope'] ?? EMCP_Tools_OAuth_Server::SCOPE ),
+				'resource'       => EMCP_Tools_OAuth_Metadata::resource(),
 			)
 		);
 
@@ -230,12 +238,22 @@ class EMCP_Tools_OAuth_Authorize {
 		if ( 'S256' !== ( $params['code_challenge_method'] ?? '' ) || '' === (string) ( $params['code_challenge'] ?? '' ) ) {
 			return new WP_Error( 'invalid_request', 'PKCE with S256 is required.' );
 		}
+		$resource = trim( (string) ( $params['resource'] ?? '' ) );
+		if ( '' === $resource ) {
+			// Compatibility for older clients on this single-resource server. New
+			// MCP clients send resource explicitly; mismatches are always rejected.
+			$resource = EMCP_Tools_OAuth_Metadata::resource();
+		}
+		if ( ! EMCP_Tools_OAuth_Metadata::resource_matches( $resource ) ) {
+			return new WP_Error( 'invalid_target', 'The requested resource is not this MCP server.' );
+		}
 		return array(
 			'client_id'      => (string) ( $params['client_id'] ?? '' ),
 			'redirect_uri'   => (string) ( $params['redirect_uri'] ?? '' ),
 			'code_challenge' => (string) $params['code_challenge'],
 			'state'          => (string) ( $params['state'] ?? '' ),
 			'scope'          => (string) ( $params['scope'] ?? EMCP_Tools_OAuth_Server::SCOPE ),
+			'resource'       => EMCP_Tools_OAuth_Metadata::resource(),
 		);
 	}
 
@@ -279,7 +297,7 @@ class EMCP_Tools_OAuth_Authorize {
 	/**
 	 * Render the consent screen HTML.
 	 *
-	 * @param array $ctx { client_id, client_name, redirect_uri, code_challenge, state, scope }.
+	 * @param array $ctx { client_id, client_name, redirect_uri, code_challenge, state, scope, resource }.
 	 * @return string
 	 */
 	public static function render_consent( array $ctx ): string {
@@ -290,7 +308,7 @@ class EMCP_Tools_OAuth_Authorize {
 		$deny_label = __( 'Deny', 'emcp-tools' );
 
 		$hidden = '';
-		foreach ( array( 'client_id', 'redirect_uri', 'code_challenge', 'state', 'scope' ) as $k ) {
+		foreach ( array( 'client_id', 'redirect_uri', 'code_challenge', 'state', 'scope', 'resource' ) as $k ) {
 			$hidden .= '<input type="hidden" name="' . esc_attr( $k ) . '" value="' . esc_attr( (string) ( $ctx[ $k ] ?? '' ) ) . '" />';
 		}
 		$hidden .= '<input type="hidden" name="_emcp_oauth_nonce" value="' . esc_attr( $nonce ) . '" />';

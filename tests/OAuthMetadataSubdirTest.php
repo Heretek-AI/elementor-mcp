@@ -12,7 +12,10 @@
  * @package EMCP_Tools
  */
 
+require_once dirname( __DIR__ ) . '/includes/class-site-context.php';
+require_once dirname( __DIR__ ) . '/includes/oauth/class-oauth-server.php';
 require_once dirname( __DIR__ ) . '/includes/oauth/class-oauth-metadata.php';
+require_once dirname( __DIR__ ) . '/includes/oauth/class-oauth-bearer.php';
 
 class OAuthMetadataSubdirTest extends \PHPUnit\Framework\TestCase {
 
@@ -68,5 +71,46 @@ class OAuthMetadataSubdirTest extends \PHPUnit\Framework\TestCase {
 		$this->assertTrue( EMCP_Tools_OAuth_Metadata::path_matches( '/.well-known/oauth-protected-resource', '/.well-known/oauth-protected-resource' ) );
 		$this->assertTrue( EMCP_Tools_OAuth_Metadata::path_matches( '/.well-known/oauth-protected-resource/wp-json/mcp/x', '/.well-known/oauth-protected-resource' ) );
 		$this->assertFalse( EMCP_Tools_OAuth_Metadata::path_matches( '/.well-known/oauth-protected-resource-other', '/.well-known/oauth-protected-resource' ) );
+	}
+
+	/** Resource comparison normalizes only URI components that are insensitive. */
+	public function test_resource_uri_normalization() {
+		$this->assertSame(
+			'https://example.test/wp-json/mcp/emcp-tools-server',
+			EMCP_Tools_OAuth_Metadata::normalize_resource_uri( 'HTTPS://EXAMPLE.TEST/wp-json/mcp/emcp-tools-server/' )
+		);
+		$this->assertSame( '', EMCP_Tools_OAuth_Metadata::normalize_resource_uri( '/wp-json/mcp/emcp-tools-server' ) );
+		$this->assertSame( '', EMCP_Tools_OAuth_Metadata::normalize_resource_uri( 'https://example.test/resource#fragment' ) );
+		$this->assertSame( '', EMCP_Tools_OAuth_Metadata::normalize_resource_uri( 'https://user@example.test/resource' ) );
+	}
+
+	/** OAuth codes and tokens must not be accepted for a different audience. */
+	public function test_resource_match_is_bound_to_the_canonical_mcp_endpoint() {
+		$resource = EMCP_Tools_OAuth_Metadata::resource();
+		$this->assertTrue( EMCP_Tools_OAuth_Metadata::resource_matches( $resource . '/' ) );
+		$this->assertFalse( EMCP_Tools_OAuth_Metadata::resource_matches( 'https://attacker.example/wp-json/mcp/emcp-tools-server' ) );
+		$this->assertFalse( EMCP_Tools_OAuth_Metadata::resource_matches( $resource . '?audience=other' ) );
+	}
+
+	/** The challenge must never advertise the shared bare metadata path (#130). */
+	public function test_challenge_advertises_emcp_specific_metadata_url() {
+		$metadata_url = EMCP_Tools_OAuth_Metadata::protected_resource_url();
+		$challenge    = EMCP_Tools_OAuth_Bearer::challenge_value();
+
+		$this->assertStringContainsString( 'resource_metadata="' . $metadata_url . '"', $challenge );
+		$this->assertStringNotContainsString( 'resource_metadata="' . EMCP_Tools_OAuth_Metadata::issuer() . EMCP_Tools_OAuth_Metadata::PATH_PROTECTED_RESOURCE . '"', $challenge );
+		$this->assertStringContainsString( 'scope="mcp"', $challenge );
+	}
+
+	/** A valid-looking document for another plugin must fail diagnostics (#130). */
+	public function test_metadata_identifier_rejects_another_plugins_document() {
+		$expected = EMCP_Tools_OAuth_Metadata::resource();
+		$this->assertTrue( EMCP_Tools_OAuth_Metadata::identifier_matches( $expected, $expected ) );
+		$this->assertFalse(
+			EMCP_Tools_OAuth_Metadata::identifier_matches(
+				EMCP_Tools_OAuth_Metadata::issuer() . '/wp-json/mcp/another-plugin',
+				$expected
+			)
+		);
 	}
 }

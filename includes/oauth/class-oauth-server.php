@@ -114,6 +114,9 @@ class EMCP_Tools_OAuth_Server {
 		if ( function_exists( 'is_ssl' ) && is_ssl() ) {
 			return true;
 		}
+		if ( class_exists( 'EMCP_Tools_Site_Context' ) && 'https' === strtolower( (string) wp_parse_url( EMCP_Tools_Site_Context::public_base_url(), PHP_URL_SCHEME ) ) ) {
+			return true;
+		}
 		if ( 0 === strpos( (string) home_url(), 'https://' ) ) {
 			return true;
 		}

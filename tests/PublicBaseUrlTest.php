@@ -40,6 +40,7 @@ class PublicBaseUrlTest extends \PHPUnit\Framework\TestCase {
 		$GLOBALS['emcp_test']['rest_url_base']                          = 'https://reach.test/wp-json';
 		$GLOBALS['emcp_test']['options']['emcp_tools_public_base_url'] = 'https://override.test/';
 		$this->assertSame( 'https://override.test', EMCP_Tools_Site_Context::public_base_url() );
+		$this->assertSame( 'override.test', EMCP_Tools_Site_Context::public_host() );
 	}
 
 	/** mcp_endpoint(): no override → rest_url() endpoint. */

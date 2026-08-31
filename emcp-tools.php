@@ -3,9 +3,9 @@
  * Plugin Name:       EMCP Tools
  * Plugin URI:        https://github.com/msrbuilds/elementor-mcp
  * Description:       Extends the WordPress MCP Adapter to expose Elementor data, widgets, and page design tools as MCP tools for AI agents.
- * Version:           3.14.1
+ * Version:           3.14.2
  * Requires at least: 6.9
- * Tested up to:      7.0
+ * Tested up to:      7.1
  * Requires PHP:      8.1
  * Author:            Mian Shahzad Raza
  * Author URI:        https://msrbuilds.com
@@ -161,7 +161,7 @@ if ( EMCP_Tools_Migration::is_legacy_plugin_active() ) {
 }
 
 // Plugin constants.
-define( 'EMCP_TOOLS_VERSION', '3.14.1' );
+define( 'EMCP_TOOLS_VERSION', '3.14.2' );
 define( 'EMCP_TOOLS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'EMCP_TOOLS_URL', plugin_dir_url( __FILE__ ) );
 define( 'EMCP_TOOLS_BASENAME', plugin_basename( __FILE__ ) );

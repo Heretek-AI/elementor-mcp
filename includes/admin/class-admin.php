@@ -4116,8 +4116,10 @@ class EMCP_Tools_Admin {
 			'type'     => 'config',
 			'lang'     => 'json',
 			'paths'    => array(
-				array( 'path' => '~/.gemini/antigravity/mcp_config.json', 'label' => __( 'macOS / Linux', 'emcp-tools' ) ),
-				array( 'path' => '%USERPROFILE%\\.gemini\\antigravity\\mcp_config.json', 'label' => __( 'Windows', 'emcp-tools' ) ),
+				array( 'path' => '~/.gemini/config/mcp_config.json', 'label' => __( 'macOS / Linux (CLI)', 'emcp-tools' ) ),
+				array( 'path' => '~/.gemini/antigravity/mcp_config.json', 'label' => __( 'macOS / Linux (IDE)', 'emcp-tools' ) ),
+				array( 'path' => '%USERPROFILE%\\.gemini\\config\\mcp_config.json', 'label' => __( 'Windows (CLI)', 'emcp-tools' ) ),
+				array( 'path' => '%USERPROFILE%\\.gemini\\antigravity\\mcp_config.json', 'label' => __( 'Windows (IDE)', 'emcp-tools' ) ),
 			),
 			'template' => "{\n    \"mcpServers\": {\n        \"%NAME%\": {\n            \"command\": \"npx\",\n            \"args\": [\n                \"-y\",\n                \"mcp-remote\",\n                \"%ENDPOINT%\"\n            ]\n        }\n    }\n}",
 		);
@@ -4213,7 +4215,7 @@ class EMCP_Tools_Admin {
 				'label'   => __( 'Antigravity', 'emcp-tools' ),
 				'icon'    => 'editor-code',
 				'image'   => 'antigravity.png',
-				'methods' => array( 'bundle' => false, 'cli' => null, 'ai_prompt' => false, 'json' => array( 'http' ) ),
+				'methods' => array( 'bundle' => false, 'cli' => null, 'ai_prompt' => false, 'json' => array( 'antigravity-http' ) ),
 				'oauth'   => $oauth_antigravity,
 			),
 			array(

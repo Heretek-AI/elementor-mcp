@@ -110,6 +110,18 @@
     }
   },
 
+  "antigravity_direct_http": {
+    "_description": "Antigravity (IDE / CLI) — direct HTTP connection (add to ~/.gemini/config/mcp_config.json or ~/.gemini/antigravity/mcp_config.json)",
+    "mcpServers": {
+      "emcp-tools": {
+        "serverUrl": "https://your-site.com/wp-json/mcp/emcp-tools-server",
+        "headers": {
+          "Authorization": "Basic BASE64_OF_USERNAME:APP_PASSWORD"
+        }
+      }
+    }
+  },
+
   "mcp_inspector_wpcli": {
     "_description": "MCP Inspector — test and debug tools via WP-CLI",
     "_command": "npx @modelcontextprotocol/inspector wp mcp-adapter serve --server=emcp-tools-server --user=admin --path=/path/to/wordpress"

@@ -1348,6 +1348,10 @@
 		var servers = {};
 		if ( variant === 'npx' )  { servers[ key ] = Object.assign( { type: 'stdio' }, npx ); return { mcpServers: servers }; }
 		if ( variant === 'http' ) { servers[ key ] = http; return { mcpServers: servers }; }
+		if ( variant === 'antigravity-http' ) {
+			servers[ key ] = { serverUrl: c.endpoint, headers: { Authorization: 'Basic ' + c.b64 } };
+			return { mcpServers: servers };
+		}
 		if ( variant === 'remote' ) {
 			servers[ key ] = { command: 'npx', args: [ '-y', 'mcp-remote', c.endpoint, '--header', 'Authorization: Basic ' + c.b64 ] };
 			return { mcpServers: servers };
@@ -1592,6 +1596,7 @@
 			else if ( variant === 'openclaw-npx' ) { html += emcpCopyBlock( 'Manual config — Node proxy / npx (openclaw.json)', emcpOpenclawConfig( 'npx' ) ); }
 			else if ( variant === 'hermes-http' ) { html += emcpCopyBlock( 'Manual config — direct HTTP (config.yaml)', emcpHermesConfig( 'http' ) ); }
 			else if ( variant === 'hermes-npx' ) { html += emcpCopyBlock( 'Manual config — Node proxy / npx (config.yaml)', emcpHermesConfig( 'npx' ) ); }
+			else if ( variant === 'antigravity-http' ) { html += emcpCopyBlock( 'Manual config — direct HTTP (mcp_config.json)', JSON.stringify( emcpJsonConfig( 'antigravity-http' ), null, 4 ) ); }
 			else {
 				var label = variant === 'npx' ? 'Manual config — Node proxy (npx)'
 					: variant === 'http' ? 'Manual config — direct HTTP'

@@ -275,6 +275,13 @@ class EMCP_Tools_Ability_Registrar {
 			$this->ability_names = array_merge( $this->ability_names, $metabox->get_ability_names() );
 		}
 
+		// Comic Easel webcomic publishing abilities — only when Comic Easel is active.
+		if ( class_exists( 'EMCP_Tools_Comic_Easel_Integration' ) && EMCP_Tools_Comic_Easel_Integration::is_active() ) {
+			$comic_easel = new EMCP_Tools_Comic_Easel_Integration();
+			$comic_easel->register();
+			$this->ability_names = array_merge( $this->ability_names, $comic_easel->get_ability_names() );
+		}
+
 		// Forms-tab integrations. CF7 is free; the five entry-storing plugins are
 		// Pro. Each registers only when its plugin is active (is_available()).
 		$form_integrations = array();

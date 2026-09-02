@@ -4037,6 +4037,10 @@ class EMCP_Tools_Admin {
 				'label' => __( 'Elementor Addons', 'emcp-tools' ),
 				'desc'  => __( 'Discover addon widget packs, and manage Ultimate Addons for Elementor templates.', 'emcp-tools' ),
 			),
+			'publishing' => array(
+				'label' => __( 'Publishing & Comics', 'emcp-tools' ),
+				'desc'  => __( 'Webcomic publishing, chapters, characters, multi-image strips, and source tracking.', 'emcp-tools' ),
+			),
 			'other'     => array(
 				'label' => __( 'Other Integrations', 'emcp-tools' ),
 				'desc'  => __( 'Additional plugin integrations.', 'emcp-tools' ),
@@ -4364,6 +4368,20 @@ class EMCP_Tools_Admin {
 	 */
 	public static function blocksy_extensions_available(): bool {
 		return class_exists( '\\Blocksy\\ExtensionsManager' );
+	}
+
+	/**
+	 * Whether the Comic Easel integration's tools are available (Comic Easel is
+	 * installed and active).
+	 *
+	 * @since 3.15.0
+	 * @return bool
+	 */
+	public static function comic_easel_available(): bool {
+		if ( class_exists( 'EMCP_Tools_Comic_Easel_Integration' ) ) {
+			return EMCP_Tools_Comic_Easel_Integration::is_active();
+		}
+		return post_type_exists( 'comic' ) || function_exists( 'ceo_display_comic' ) || defined( 'CEO_VERSION' );
 	}
 
 	/**
@@ -5826,6 +5844,30 @@ class EMCP_Tools_Admin {
 						'operations'       => array( 'update-post-seo', 'update-term-seo' ),
 						'available'        => self::surerank_available(),
 						'requires'         => array( 'name' => 'SureRank', 'kind' => 'plugin' ),
+					),
+				),
+			),
+			'wp_comic_easel'   => array(
+				'platform' => 'plugins',
+				'group'    => 'publishing',
+				'label'    => __( 'Comic Easel', 'emcp-tools' ),
+				'note'     => __( 'Comic Easel webcomic publishing integration: manage comics, multi-image strips (comic-html-below), source tracking (source_tweet_id / source_url), chapters, characters, and chronological navigation.', 'emcp-tools' ),
+				'tools'    => array(
+					'emcp-tools/comic-read'  => array(
+						'label'       => __( 'Comic Easel Read', 'emcp-tools' ),
+						'description' => __( 'Read comics, multi-image strips, source metadata, chapters, characters, locations, and navigation links.', 'emcp-tools' ),
+						'badges'      => array( 'read-only' ),
+						'operations'  => array( 'get-comic', 'list-comics', 'find-by-source', 'get-navigation', 'list-chapters', 'list-characters', 'list-locations', 'get-settings' ),
+						'available'   => self::comic_easel_available(),
+						'requires'    => array( 'name' => 'Comic Easel', 'kind' => 'plugin' ),
+					),
+					'emcp-tools/comic-write' => array(
+						'label'       => __( 'Comic Easel Write', 'emcp-tools' ),
+						'description' => __( 'Create, update, or delete comics, multi-image strips (comic-html-below), source tracking metadata, chapters, and characters.', 'emcp-tools' ),
+						'badges'      => array(),
+						'operations'  => array( 'create-comic', 'update-comic', 'delete-comic', 'create-chapter', 'update-chapter', 'delete-chapter', 'create-character', 'set-source' ),
+						'available'   => self::comic_easel_available(),
+						'requires'    => array( 'name' => 'Comic Easel', 'kind' => 'plugin' ),
 					),
 				),
 			),

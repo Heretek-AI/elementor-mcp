@@ -8,17 +8,34 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
+if ( ! class_exists( 'EMCP_Tools_Packager' ) ) {
+	$packager_file = class_exists( 'EMCP_Tools_Pro_Loader' ) ? EMCP_Tools_Pro_Loader::path( 'includes/migrate/class-packager.php' ) : '';
+	if ( '' !== $packager_file && file_exists( $packager_file ) ) {
+		require_once $packager_file;
+	}
+}
+
+if ( ! class_exists( 'ZipArchive' ) ) {
+	echo '<div class="notice notice-warning"><p>' . esc_html__( 'The PHP ZipArchive extension is not installed or enabled on this server. Zip backups cannot be created.', 'emcp-tools' ) . '</p></div>';
+}
+
 if ( isset( $_POST['emcp_create_backup'] ) && check_admin_referer( 'emcp_migrate_action' ) ) {
 	if ( current_user_can( 'manage_options' ) ) {
-		$name = sanitize_file_name( (string) ( $_POST['backup_name'] ?? '' ) );
-		$archive = EMCP_Tools_Packager::create_archive( $name );
-		if ( $archive ) {
-			echo '<div class="notice notice-success is-dismissible"><p>' . sprintf( esc_html__( 'Backup archive "%s" created successfully.', 'emcp-tools' ), esc_html( basename( $archive ) ) ) . '</p></div>';
+		if ( ! class_exists( 'ZipArchive' ) ) {
+			echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Cannot create backup: ZipArchive extension is required.', 'emcp-tools' ) . '</p></div>';
+		} elseif ( class_exists( 'EMCP_Tools_Packager' ) ) {
+			$name = sanitize_file_name( (string) ( $_POST['backup_name'] ?? '' ) );
+			$archive = EMCP_Tools_Packager::create_archive( $name );
+			if ( $archive ) {
+				echo '<div class="notice notice-success is-dismissible"><p>' . sprintf( esc_html__( 'Backup archive "%s" created successfully.', 'emcp-tools' ), esc_html( basename( $archive ) ) ) . '</p></div>';
+			} else {
+				echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Failed to create backup archive. Check disk permissions.', 'emcp-tools' ) . '</p></div>';
+			}
 		}
 	}
 }
 
-$backups = EMCP_Tools_Packager::list_archives();
+$backups = class_exists( 'EMCP_Tools_Packager' ) ? EMCP_Tools_Packager::list_archives() : array();
 ?>
 
 <div class="wrap elementor-mcp-migrate">

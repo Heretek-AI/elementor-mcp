@@ -30,10 +30,11 @@ final class EMCP_Tools_Pro_Loader {
 		'includes/memory/class-memory-injector.php',
 		'includes/memory/class-memory-enforcer.php',
 		'includes/memory/class-memory-summarizer.php',
-		// Backup / Migrate / Sync MCP tools (Pro). The engine classes load with
-		// the module on init:5; this ability class is loaded here so the registrar
-		// (wp_abilities_api_init, earlier) can register the group when the module
-		// is enabled. Executors lazy-load the engines defensively.
+		// Backup / Migrate / Sync (Pro).
+		'includes/migrate/class-db-exporter.php',
+		'includes/migrate/class-db-importer.php',
+		'includes/migrate/class-search-replace.php',
+		'includes/migrate/class-packager.php',
 		// Forms integrations (Pro adapters; the base + CF7 are free-tree).
 		// Elementor addon widget packs (discovery + curation only; placement
 		// stays on the generic add-free-widget tool).

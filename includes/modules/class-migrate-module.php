@@ -22,7 +22,14 @@ class EMCP_Tools_Migrate_Module extends EMCP_Tools_Module {
 		return in_array( 'migrate', $active, true );
 	}
 
-	public function register(): void {}
+	public function register(): void {
+		if ( ! class_exists( 'EMCP_Tools_Packager' ) ) {
+			$packager = EMCP_Tools_Pro_Loader::path( 'includes/migrate/class-packager.php' );
+			if ( '' !== $packager ) {
+				require_once $packager;
+			}
+		}
+	}
 
 	public function render_settings(): void {
 		?>

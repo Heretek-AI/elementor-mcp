@@ -72,7 +72,11 @@
 				},
 				error: function(xhr) {
 					$('.emcp-loading').remove();
-					messagesContainer.append('<div class="emcp-msg emcp-msg-assistant" style="color:red;">Error connecting to AI service. Please check API key in settings.</div>');
+					var errText = 'Error connecting to AI service. Please check API key and endpoint in settings.';
+					if (xhr.responseJSON && xhr.responseJSON.message) {
+						errText = xhr.responseJSON.message;
+					}
+					messagesContainer.append('<div class="emcp-msg emcp-msg-assistant" style="color:#d63638;">' + $('<div>').text(errText).html() + '</div>');
 				}
 			});
 		}

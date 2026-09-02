@@ -305,6 +305,7 @@ class EMCP_Tools_Admin {
 		add_action( 'wp_ajax_emcp_tools_delete_php_snippet', array( $this, 'ajax_delete_php_snippet' ) );
 		add_action( 'wp_ajax_emcp_tools_notifications_read', array( $this, 'ajax_notifications_read' ) );
 		add_action( 'wp_ajax_emcp_tools_check_updates', array( $this, 'ajax_check_updates' ) );
+		add_action( 'wp_ajax_emcp_tools_ai_test_connection', array( $this, 'ajax_ai_test_connection' ) );
 		add_action( 'admin_post_emcp_tools_download_mcpb', array( $this, 'handle_download_mcpb' ) );
 		add_action( 'admin_post_' . self::ACTION_DISMISS_PROMPTS_NOTICE, array( $this, 'handle_dismiss_prompts_notice' ) );
 		add_action( 'admin_post_' . self::ACTION_ROLLBACK_CHANGE, array( $this, 'handle_rollback_change' ) );
@@ -2991,6 +2992,133 @@ class EMCP_Tools_Admin {
 			wp_safe_redirect( remove_query_arg( array( 'emcp_check_updates', '_wpnonce' ) ) );
 			exit;
 		}
+	}
+
+	/**
+	 * AJAX: test AI Chat provider endpoint connection and model.
+	 *
+	 * @since 3.16.0
+	 */
+	public function ajax_ai_test_connection(): void {
+		check_ajax_referer( 'emcp_ai_chat_settings', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to run this test.', 'emcp-tools' ) ), 403 );
+		}
+
+		$provider_key = isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( $_POST['provider'] ) ) : 'openai';
+		$model        = isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : '';
+		$api_key      = isset( $_POST['api_key'] ) ? trim( (string) wp_unslash( $_POST['api_key'] ) ) : '';
+		$endpoint     = isset( $_POST['custom_endpoint'] ) ? sanitize_text_field( wp_unslash( $_POST['custom_endpoint'] ) ) : '';
+
+		// If api_key not supplied in request, fall back to saved key.
+		if ( '' === $api_key && class_exists( 'EMCP_Tools_AI_Chat_Settings' ) ) {
+			$api_key = EMCP_Tools_AI_Chat_Settings::get_api_key();
+		}
+
+		if ( 'custom' === $provider_key ) {
+			if ( '' === $endpoint && class_exists( 'EMCP_Tools_AI_Chat_Settings' ) ) {
+				$endpoint = EMCP_Tools_AI_Chat_Settings::get_custom_endpoint();
+			}
+			if ( class_exists( 'EMCP_Tools_AI_Chat_Settings' ) ) {
+				$endpoint = EMCP_Tools_AI_Chat_Settings::normalize_endpoint( $endpoint );
+			}
+			if ( empty( $endpoint ) ) {
+				wp_send_json_error( array( 'message' => __( 'Custom endpoint URL is required.', 'emcp-tools' ) ), 400 );
+			}
+		} else {
+			$providers = class_exists( 'EMCP_Tools_AI_Providers' ) ? EMCP_Tools_AI_Providers::get_providers() : array();
+			if ( ! isset( $providers[ $provider_key ] ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid provider specified.', 'emcp-tools' ) ), 400 );
+			}
+			$endpoint = $providers[ $provider_key ]['endpoint'];
+		}
+
+		if ( '' === $model ) {
+			wp_send_json_error( array( 'message' => __( 'Model name is required.', 'emcp-tools' ) ), 400 );
+		}
+
+		$headers = array(
+			'Content-Type' => 'application/json',
+		);
+		if ( 'anthropic' === $provider_key ) {
+			$headers['x-api-key'] = $api_key;
+			$headers['anthropic-version'] = '2023-06-01';
+		} elseif ( '' !== $api_key ) {
+			$headers['Authorization'] = 'Bearer ' . $api_key;
+		}
+
+		$payload = array(
+			'model'      => $model,
+			'max_tokens' => 10,
+			'messages'   => array(
+				array( 'role' => 'user', 'content' => 'Hello' ),
+			),
+		);
+
+		$start_time = microtime( true );
+		$response   = wp_remote_post(
+			$endpoint,
+			array(
+				'timeout' => 15,
+				'headers' => $headers,
+				'body'    => wp_json_encode( $payload ),
+			)
+		);
+		$duration = round( ( microtime( true ) - $start_time ) * 1000 );
+
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_error(
+				array(
+					'message'  => sprintf( __( 'Connection failed: %s', 'emcp-tools' ), $response->get_error_message() ),
+					'endpoint' => $endpoint,
+				),
+				400
+			);
+		}
+
+		$code     = (int) wp_remote_retrieve_response_code( $response );
+		$raw_body = wp_remote_retrieve_body( $response );
+		$body     = json_decode( $raw_body, true );
+
+		if ( $code >= 400 ) {
+			$err_msg = '';
+			if ( is_array( $body ) ) {
+				if ( ! empty( $body['error']['message'] ) ) {
+					$err_msg = (string) $body['error']['message'];
+				} elseif ( ! empty( $body['message'] ) ) {
+					$err_msg = (string) $body['message'];
+				}
+			}
+			if ( '' === $err_msg ) {
+				$err_msg = sprintf( __( 'Endpoint returned HTTP %d: %s', 'emcp-tools' ), $code, substr( strip_tags( $raw_body ), 0, 150 ) );
+			}
+			wp_send_json_error(
+				array(
+					'message'  => $err_msg,
+					'code'     => $code,
+					'endpoint' => $endpoint,
+				),
+				400
+			);
+		}
+
+		$preview = '';
+		if ( isset( $body['choices'][0]['message']['content'] ) ) {
+			$preview = trim( (string) $body['choices'][0]['message']['content'] );
+		} elseif ( isset( $body['content'][0]['text'] ) ) {
+			$preview = trim( (string) $body['content'][0]['text'] );
+		}
+
+		wp_send_json_success(
+			array(
+				'message'  => __( 'Connection successful! Received response from model.', 'emcp-tools' ),
+				'latency'  => $duration . 'ms',
+				'preview'  => $preview,
+				'endpoint' => $endpoint,
+				'model'    => $model,
+			)
+		);
 	}
 
 	/**

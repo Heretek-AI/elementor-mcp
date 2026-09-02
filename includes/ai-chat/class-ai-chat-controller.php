@@ -41,7 +41,15 @@ class EMCP_Tools_AI_Chat_Controller {
 			return new WP_Error( 'invalid_provider', __( 'Provider not configured.', 'emcp-tools' ), array( 'status' => 400 ) );
 		}
 
-		$endpoint = $providers[ $provider_key ]['endpoint'];
+		if ( 'custom' === $provider_key ) {
+			$endpoint = EMCP_Tools_AI_Chat_Settings::get_custom_endpoint();
+			if ( empty( $endpoint ) ) {
+				return new WP_Error( 'missing_endpoint', __( 'Custom endpoint URL is required.', 'emcp-tools' ), array( 'status' => 400 ) );
+			}
+		} else {
+			$endpoint = $providers[ $provider_key ]['endpoint'];
+		}
+
 		$payload  = array(
 			'model'    => $model,
 			'messages' => array_merge(
@@ -56,7 +64,7 @@ class EMCP_Tools_AI_Chat_Controller {
 		if ( 'anthropic' === $provider_key ) {
 			$headers['x-api-key'] = $api_key;
 			$headers['anthropic-version'] = '2023-06-01';
-		} else {
+		} elseif ( '' !== $api_key ) {
 			$headers['Authorization'] = 'Bearer ' . $api_key;
 		}
 
@@ -73,7 +81,25 @@ class EMCP_Tools_AI_Chat_Controller {
 			return $response;
 		}
 
-		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+		$code     = (int) wp_remote_retrieve_response_code( $response );
+		$raw_body = wp_remote_retrieve_body( $response );
+		$body     = json_decode( $raw_body, true );
+
+		if ( $code >= 400 ) {
+			$err_msg = '';
+			if ( is_array( $body ) ) {
+				if ( ! empty( $body['error']['message'] ) ) {
+					$err_msg = (string) $body['error']['message'];
+				} elseif ( ! empty( $body['message'] ) ) {
+					$err_msg = (string) $body['message'];
+				}
+			}
+			if ( '' === $err_msg ) {
+				$err_msg = sprintf( __( 'AI endpoint returned HTTP %d: %s', 'emcp-tools' ), $code, substr( strip_tags( $raw_body ), 0, 200 ) );
+			}
+			return new WP_Error( 'api_error', $err_msg, array( 'status' => $code ) );
+		}
+
 		return rest_ensure_response( $body );
 	}
 }

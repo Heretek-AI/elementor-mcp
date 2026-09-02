@@ -37,6 +37,11 @@ class EMCP_Tools_AI_Providers {
 				'endpoint' => 'http://localhost:11434/v1/chat/completions',
 				'models'   => array( 'llama3.1', 'mistral', 'qwen2.5-coder' ),
 			),
+			'custom'     => array(
+				'name'     => __( 'Custom (OpenAI-Compatible)', 'emcp-tools' ),
+				'endpoint' => class_exists( 'EMCP_Tools_AI_Chat_Settings' ) ? EMCP_Tools_AI_Chat_Settings::get_custom_endpoint() : 'http://localhost:11434/v1/chat/completions',
+				'models'   => array( 'custom-model', 'llama3.3', 'deepseek-chat', 'qwen2.5-coder' ),
+			),
 		);
 	}
 }

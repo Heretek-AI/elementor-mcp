@@ -98,7 +98,20 @@ class EMCP_Tools_Migrate_Abilities {
 		);
 	}
 
+	private static function ensure_packager(): void {
+		if ( ! class_exists( 'EMCP_Tools_Packager' ) && class_exists( 'EMCP_Tools_Pro_Loader' ) ) {
+			$packager = EMCP_Tools_Pro_Loader::path( 'includes/migrate/class-packager.php' );
+			if ( '' !== $packager ) {
+				require_once $packager;
+			}
+		}
+	}
+
 	public function execute_create_backup( array $args ): array {
+		self::ensure_packager();
+		if ( ! class_exists( 'EMCP_Tools_Packager' ) ) {
+			return array( 'success' => false, 'message' => __( 'Packager engine is not available.', 'emcp-tools' ) );
+		}
 		$name = sanitize_file_name( (string) ( $args['name'] ?? '' ) );
 		$file = EMCP_Tools_Packager::create_archive( $name );
 		if ( ! $file ) {
@@ -112,6 +125,10 @@ class EMCP_Tools_Migrate_Abilities {
 	}
 
 	public function execute_list_backups(): array {
+		self::ensure_packager();
+		if ( ! class_exists( 'EMCP_Tools_Packager' ) ) {
+			return array( 'backups' => array() );
+		}
 		return array( 'backups' => EMCP_Tools_Packager::list_archives() );
 	}
 

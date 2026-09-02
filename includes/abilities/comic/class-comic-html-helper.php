@@ -125,6 +125,10 @@ class EMCP_Tools_Comic_Html_Helper {
 			return $images;
 		}
 
+		if ( false !== strpos( $html, '&lt;' ) || false !== strpos( $html, '&quot;' ) ) {
+			$html = html_entity_decode( $html, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML401 );
+		}
+
 		// Match all <img> tags.
 		if ( ! preg_match_all( '/<img[^>]+>/i', $html, $matches ) ) {
 			return $images;

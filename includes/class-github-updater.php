@@ -39,8 +39,8 @@ class EMCP_Tools_GitHub_Updater {
 	/** Shorter cache after a failed/empty lookup so we recover quickly. */
 	const CACHE_TTL_FAIL = 2 * HOUR_IN_SECONDS;
 
-	/** Matches the release ZIP asset. */
-	const ASSET_PATTERN = '/^.*elementor-mcp.*\.zip$/i';
+	/** Matches the release ZIP asset (elementor-mcp or emcp-tools). */
+	const ASSET_PATTERN = '/^.*(elementor-mcp|emcp-tools).*\.zip$/i';
 
 	/**
 	 * The installed plugin folder slug (e.g. `emcp-tools` or `elementor-mcp`),
@@ -193,10 +193,10 @@ class EMCP_Tools_GitHub_Updater {
 		}
 
 		$info                = new stdClass();
-		$info->name          = 'EMCP Tools';
+		$info->name          = 'EMCP Tools Unlocked';
 		$info->slug          = $this->slug;
 		$info->version       = $release['version'];
-		$info->author        = '<a href="https://msrbuilds.com">Mian Shahzad Raza</a>';
+		$info->author        = '<a href="https://github.com/Heretek-AI">Heretek AI</a>';
 		$info->homepage      = 'https://github.com/' . self::REPO;
 		$info->download_link = $release['package'];
 		$info->trunk         = $release['package'];
@@ -299,7 +299,7 @@ class EMCP_Tools_GitHub_Updater {
 				'timeout' => 15,
 				'headers' => array(
 					'Accept'     => 'application/vnd.github+json',
-					'User-Agent' => 'EMCP-Tools-Updater/' . EMCP_TOOLS_VERSION,
+					'User-Agent' => 'Heretek-AI-Elementor-MCP-Updater/' . EMCP_TOOLS_VERSION,
 				),
 			)
 		);
@@ -315,7 +315,7 @@ class EMCP_Tools_GitHub_Updater {
 			return null;
 		}
 
-		// Skip drafts / pre-releases — free users should only get stable builds.
+		// Skip drafts / pre-releases — users should only get stable builds.
 		if ( ! empty( $data['draft'] ) || ! empty( $data['prerelease'] ) ) {
 			set_transient( self::TRANSIENT, array(), self::CACHE_TTL_FAIL );
 			return null;
@@ -325,16 +325,19 @@ class EMCP_Tools_GitHub_Updater {
 		$package = '';
 		foreach ( (array) ( $data['assets'] ?? array() ) as $asset ) {
 			if ( ! empty( $asset['name'] ) && preg_match( self::ASSET_PATTERN, $asset['name'] ) ) {
-				// The URL is handed to WordPress's upgrader, which downloads and
-				// installs it as a plugin. It comes from api.github.com over TLS,
-				// so this is not a hole so much as an unstated assumption: make it
-				// stated, and refuse anything that is not this repo's own release
-				// asset. Costs one comparison and pins the trust boundary.
 				$url = (string) ( $asset['browser_download_url'] ?? '' );
 				if ( self::is_release_asset_url( $url ) ) {
 					$package = $url;
 				}
 				break;
+			}
+		}
+
+		// Fallback to GitHub source zipball if no explicit release asset binary was uploaded.
+		if ( '' === $package && ! empty( $data['zipball_url'] ) ) {
+			$zipball = (string) $data['zipball_url'];
+			if ( self::is_release_asset_url( $zipball ) ) {
+				$package = $zipball;
 			}
 		}
 
@@ -469,10 +472,35 @@ class EMCP_Tools_GitHub_Updater {
 		$path = (string) ( $parts['path'] ?? '' );
 
 		if ( 'github.com' === $host ) {
-			return 0 === strpos( $path, '/' . self::REPO . '/releases/' );
+			return 0 === strpos( $path, '/' . self::REPO . '/releases/' )
+				|| 0 === strpos( $path, '/' . self::REPO . '/archive/' );
+		}
+
+		if ( 'api.github.com' === $host ) {
+			return 0 === strpos( $path, '/repos/' . self::REPO . '/zipball/' );
+		}
+
+		if ( 'codeload.github.com' === $host ) {
+			return 0 === strpos( $path, '/' . self::REPO . '/' );
 		}
 
 		return 'objects.githubusercontent.com' === $host || 'release-assets.githubusercontent.com' === $host;
+	}
+
+	/**
+	 * Force an immediate release check by purging transients.
+	 *
+	 * @return bool
+	 */
+	public static function check_now(): bool {
+		delete_transient( self::TRANSIENT );
+		$updates = get_site_transient( 'update_plugins' );
+		if ( is_object( $updates ) ) {
+			unset( $updates->response[ EMCP_TOOLS_BASENAME ] );
+			unset( $updates->no_update[ EMCP_TOOLS_BASENAME ] );
+			set_site_transient( 'update_plugins', $updates );
+		}
+		return true;
 	}
 
 }

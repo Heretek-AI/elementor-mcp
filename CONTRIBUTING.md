@@ -2,19 +2,19 @@
 
 Thanks for being here. Bug reports, docs fixes, prompts, and new tools are all genuinely useful, and you don't need to write PHP to help.
 
-- **Found a bug?** [Open a bug report](https://github.com/msrbuilds/elementor-mcp/issues/new?template=bug_report.yml)
-- **Want a tool that doesn't exist?** [Request a feature](https://github.com/msrbuilds/elementor-mcp/issues/new?template=feature_request.yml)
-- **Want a plugin supported?** [Request an integration](https://github.com/msrbuilds/elementor-mcp/issues/new?template=integration_request.yml)
-- **Just an idea or a question?** [Start a discussion](https://github.com/msrbuilds/elementor-mcp/issues/new?template=idea.yml)
+- **Found a bug?** [Open a bug report](https://github.com/Heretek-AI/elementor-mcp/issues/new)
+- **Want a tool that doesn't exist?** [Request a feature](https://github.com/Heretek-AI/elementor-mcp/issues/new)
+- **Want a plugin supported?** [Request an integration](https://github.com/Heretek-AI/elementor-mcp/issues/new)
+- **Just an idea or a question?** [Start a discussion](https://github.com/Heretek-AI/elementor-mcp/discussions)
 
-User documentation lives at **[emcptools.com/docs](https://emcptools.com/docs/)**. This file is about working on the plugin itself.
+Documentation and setup guides live in **[README.md](README.md)**. This file is about working on the plugin itself.
 
 ## Ways to contribute
 
 | | What it involves |
 |---|---|
 | **Report a bug** | The most valuable thing you can do. Include your MCP client, the tool you called, and what came back. |
-| **Improve the docs** | The docs live in the website repo, but if something in this repo is wrong or stale, a PR fixing it is very welcome. |
+| **Improve the docs** | If something in the documentation is wrong or stale, a PR fixing it is very welcome. |
 | **Contribute a prompt** | A landing-page blueprint in [`prompts/`](prompts/). No PHP needed, see [Contributing prompts](#contributing-prompts). |
 | **Add a tool** | A new MCP ability in an existing domain. See [Adding a tool](#adding-a-tool). |
 | **Add an integration** | Support for a plugin we don't cover yet. This is the highest-leverage code contribution, see [Adding an integration](#adding-an-integration). |
@@ -25,8 +25,8 @@ User documentation lives at **[emcptools.com/docs](https://emcptools.com/docs/)*
 
 ```bash
 cd /path/to/wordpress/wp-content/plugins
-git clone https://github.com/msrbuilds/elementor-mcp.git emcp-tools
-cd emcp-tools
+git clone https://github.com/Heretek-AI/elementor-mcp.git elementor-mcp
+cd elementor-mcp
 composer install
 ```
 
@@ -43,7 +43,7 @@ npx @modelcontextprotocol/inspector wp mcp-adapter serve \
   --server=emcp-tools-server --user=admin --path=/path/to/wordpress
 ```
 
-> **Note on the `pro/` directory.** The Pro tier lives in a separate private repository, mounted as a git submodule at `pro/`. A normal clone simply won't have it, and the plugin runs fine without it, every Pro unit is guarded. If you see references to `pro/` in the code, that's why.
+> **Note on the unlocked architecture:** In this fork, all Pro features (AI Chat, Block Builder, Widget Builder, Themer Pro, Agent Skills runtime, Project Memory, and all integrations) are bundled directly in the main tree without private git submodules. Every user and developer gets full access out of the box.
 
 ## Repository layout
 
@@ -177,15 +177,13 @@ Put new tests in `tests/`, named `SomethingTest.php`. Test the pure logic, valid
 
 ## Reporting bugs
 
-Use the [bug report template](https://github.com/msrbuilds/elementor-mcp/issues/new?template=bug_report.yml). The details that actually speed up a fix:
+Use [GitHub Issues](https://github.com/Heretek-AI/elementor-mcp/issues/new). The details that actually speed up a fix:
 
 - Plugin, WordPress, and PHP versions (and Elementor, if relevant)
 - Which **MCP client** you're using
 - The **tool you called** and the arguments
 - What you expected versus what happened
 - Anything from `wp-content/debug.log`
-
-For anything security-sensitive, please **don't** open a public issue. Email **hello@msrbuilds.com** instead.
 
 ---
 

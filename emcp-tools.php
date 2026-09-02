@@ -1,14 +1,14 @@
 <?php
 /**
- * Plugin Name:       EMCP Tools
- * Plugin URI:        https://github.com/msrbuilds/elementor-mcp
- * Description:       Extends the WordPress MCP Adapter to expose Elementor data, widgets, and page design tools as MCP tools for AI agents.
+ * Plugin Name:       EMCP Tools Unlocked
+ * Plugin URI:        https://github.com/Heretek-AI/elementor-mcp
+ * Description:       Community-unlocked enterprise edition of Elementor MCP Tools by Heretek AI. Exposes Elementor & WordPress as MCP tools with all 269 Pro features included free.
  * Version:           3.14.2
  * Requires at least: 6.9
  * Tested up to:      7.1
  * Requires PHP:      8.1
- * Author:            Mian Shahzad Raza
- * Author URI:        https://msrbuilds.com
+ * Author:            Heretek AI (originally by Mian Shahzad Raza)
+ * Author URI:        https://github.com/Heretek-AI
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       emcp-tools

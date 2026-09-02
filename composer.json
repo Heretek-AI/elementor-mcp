@@ -1,6 +1,6 @@
 {
-    "name": "developer/elementor-mcp",
-    "description": "MCP Tools for Elementor Plugin",
+    "name": "heretek-ai/elementor-mcp",
+    "description": "Unlocked MCP Tools for Elementor & WordPress by Heretek AI",
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
     "require": {

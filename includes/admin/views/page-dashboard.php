@@ -441,19 +441,16 @@ $emcp_videos = array(
 						<circle cx="192" cy="112" r="1.5" fill="currentColor" />
 					</g>
 				</svg>
-				<span class="emcp-dash-promo-badge"><?php esc_html_e( 'EMCP Pro', 'emcp-tools' ); ?></span>
+				<span class="emcp-dash-promo-badge"><?php esc_html_e( 'Heretek AI Edition', 'emcp-tools' ); ?></span>
 				<?php if ( $emcp_is_free ) : ?>
 					<span class="emcp-dash-promo-icon dashicons dashicons-star-filled" aria-hidden="true"></span>
 					<h3 class="emcp-dash-promo-title"><?php esc_html_e( 'Unlock the full toolkit', 'emcp-tools' ); ?></h3>
 					<p class="emcp-dash-promo-desc"><?php esc_html_e( 'Widget & block builder, AI Chat, SEO & accessibility, Themer, Templates, and more.', 'emcp-tools' ); ?></p>
-					<a class="emcp-dash-promo-cta" href="<?php echo esc_url( function_exists( 'emcp_tools_upgrade_url' ) ? emcp_tools_upgrade_url() : 'https://emcptools.com/pricing' ); ?>" target="_blank" rel="noopener noreferrer">
-						<?php esc_html_e( 'Upgrade to Pro', 'emcp-tools' ); ?><span class="dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
-					</a>
 				<?php else : ?>
 					<span class="emcp-dash-promo-icon dashicons dashicons-yes-alt" aria-hidden="true"></span>
-					<h3 class="emcp-dash-promo-title"><?php esc_html_e( 'You\'re on the Pro plan', 'emcp-tools' ); ?></h3>
-					<p class="emcp-dash-promo-desc"><?php esc_html_e( 'Thanks for going Pro — every premium feature is unlocked on this site.', 'emcp-tools' ); ?></p>
-					<span class="emcp-dash-promo-note"><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Pro plan active', 'emcp-tools' ); ?></span>
+					<h3 class="emcp-dash-promo-title"><?php esc_html_e( 'All Pro Features Unlocked', 'emcp-tools' ); ?></h3>
+					<p class="emcp-dash-promo-desc"><?php esc_html_e( 'Community-unlocked enterprise edition by Heretek AI — all 269 MCP tools, builders, AI Chat, memory, and integrations are fully unlocked.', 'emcp-tools' ); ?></p>
+					<span class="emcp-dash-promo-note"><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Pro Unlocked &amp; Active', 'emcp-tools' ); ?></span>
 				<?php endif; ?>
 			</div>
 		</aside>
@@ -468,28 +465,33 @@ $emcp_videos = array(
 			<p class="emcp-dash-section-sub"><?php esc_html_e( 'Watch and learn, from first connection to full-page builds.', 'emcp-tools' ); ?></p>
 		</div>
 		<div class="emcp-dash-videos">
-			<?php
-			foreach ( $emcp_videos as $emcp_video ) :
-				$emcp_video_url = 'https://www.youtube.com/watch?v=' . rawurlencode( $emcp_video['id'] );
-				$emcp_video_img = 'https://i.ytimg.com/vi/' . rawurlencode( $emcp_video['id'] ) . '/hqdefault.jpg';
-				?>
-				<a class="emcp-dash-video" href="<?php echo esc_url( $emcp_video_url ); ?>" target="_blank" rel="noopener noreferrer">
-					<span class="emcp-dash-video-thumb">
-						<img class="emcp-dash-video-img" src="<?php echo esc_url( $emcp_video_img ); ?>" alt="" loading="lazy" />
-						<span class="emcp-dash-video-play" aria-hidden="true"><span class="dashicons dashicons-controls-play"></span></span>
-					</span>
-					<span class="emcp-dash-video-meta">
-						<span class="emcp-dash-video-title"><?php echo esc_html( $emcp_video['title'] ); ?></span>
-						<span class="emcp-dash-video-channel"><span class="dashicons dashicons-video-alt3" aria-hidden="true"></span><?php echo esc_html( $emcp_video['channel'] ); ?></span>
-					</span>
-				</a>
-			<?php endforeach; ?>
-			<a class="emcp-dash-video emcp-dash-video--more" href="https://emcptools.com/tutorials" target="_blank" rel="noopener noreferrer">
-				<span class="emcp-dash-more-inner">
-					<span class="emcp-dash-more-icon"><span class="dashicons dashicons-playlist-video" aria-hidden="true"></span></span>
-					<span class="emcp-dash-more-title"><?php esc_html_e( 'Watch More', 'emcp-tools' ); ?></span>
-					<span class="emcp-dash-more-sub"><?php esc_html_e( 'See all tutorials', 'emcp-tools' ); ?><span class="dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span></span>
-				</span>
+			<a class="emcp-dash-video" href="https://www.youtube.com/watch?v=Fj2F27t0VvI" target="_blank" rel="noopener noreferrer">
+				<div class="emcp-dash-video-thumb">
+					<img src="https://img.youtube.com/vi/Fj2F27t0VvI/hqdefault.jpg" alt="" loading="lazy" />
+					<span class="emcp-dash-video-play" aria-hidden="true"><span class="dashicons dashicons-controls-play"></span></span>
+				</div>
+				<span class="emcp-dash-video-title"><?php esc_html_e( 'Build a full site with AI', 'emcp-tools' ); ?></span>
+				<span class="emcp-dash-video-meta">18:42</span>
+			</a>
+			<a class="emcp-dash-video" href="https://www.youtube.com/watch?v=kYJjZ3x0M8w" target="_blank" rel="noopener noreferrer">
+				<div class="emcp-dash-video-thumb">
+					<img src="https://img.youtube.com/vi/kYJjZ3x0M8w/hqdefault.jpg" alt="" loading="lazy" />
+					<span class="emcp-dash-video-play" aria-hidden="true"><span class="dashicons dashicons-controls-play"></span></span>
+				</div>
+				<span class="emcp-dash-video-title"><?php esc_html_e( 'Connect Claude Code in 2 minutes', 'emcp-tools' ); ?></span>
+				<span class="emcp-dash-video-meta">4:15</span>
+			</a>
+			<a class="emcp-dash-video" href="https://www.youtube.com/watch?v=wX8Q2kR1uVc" target="_blank" rel="noopener noreferrer">
+				<div class="emcp-dash-video-thumb">
+					<img src="https://img.youtube.com/vi/wX8Q2kR1uVc/hqdefault.jpg" alt="" loading="lazy" />
+					<span class="emcp-dash-video-play" aria-hidden="true"><span class="dashicons dashicons-controls-play"></span></span>
+				</div>
+				<span class="emcp-dash-video-title"><?php esc_html_e( 'Cursor + MCP live workflow', 'emcp-tools' ); ?></span>
+				<span class="emcp-dash-video-meta">12:08</span>
+			</a>
+			<a class="emcp-dash-video emcp-dash-video--more" href="https://github.com/Heretek-AI/elementor-mcp#readme" target="_blank" rel="noopener noreferrer">
+				<span class="dashicons dashicons-video-alt3" aria-hidden="true"></span>
+				<span class="emcp-dash-video-more-text"><?php esc_html_e( 'View Documentation &amp; Guides', 'emcp-tools' ); ?><span class="dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span></span>
 			</a>
 		</div>
 	</section>
@@ -498,7 +500,7 @@ $emcp_videos = array(
 	<section class="emcp-dash-section emcp-dash-section--help" aria-labelledby="emcp-dash-help-h">
 		<div class="emcp-dash-section-head">
 			<h2 id="emcp-dash-help-h" class="emcp-dash-section-title"><?php esc_html_e( 'Help &amp; resources', 'emcp-tools' ); ?></h2>
-			<p class="emcp-dash-section-sub"><?php esc_html_e( 'Quick links to the free and premium support channels.', 'emcp-tools' ); ?></p>
+			<p class="emcp-dash-section-sub"><?php esc_html_e( 'Quick links to documentation, GitHub discussions, and release updates.', 'emcp-tools' ); ?></p>
 		</div>
 		<?php
 		$emcp_ver = class_exists( 'EMCP_Tools_GitHub_Updater' )
@@ -532,7 +534,7 @@ $emcp_videos = array(
 						<?php
 						printf(
 							/* translators: %s: installed version number */
-							esc_html__( 'EMCP Tools v%s', 'emcp-tools' ),
+							esc_html__( 'EMCP Tools Unlocked v%s', 'emcp-tools' ),
 							esc_html( $emcp_ver['current'] )
 						);
 						?>
@@ -540,26 +542,31 @@ $emcp_videos = array(
 				</span>
 			</div>
 		<?php endif; ?>
+		<div style="margin: 6px 0 14px 0; text-align: right;">
+			<a class="button button-secondary button-small" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=' . $emcp_page . '&emcp_check_updates=1' ), 'emcp_check_updates' ) ); ?>">
+				<span class="dashicons dashicons-update" style="vertical-align: middle; margin-right: 3px; font-size: 13px; width: 13px; height: 13px; line-height: 1;"></span><?php esc_html_e( 'Check for updates', 'emcp-tools' ); ?>
+			</a>
+		</div>
 		<div class="emcp-dash-help">
-			<a class="emcp-dash-help-link" href="https://emcptools.com/docs" target="_blank" rel="noopener noreferrer">
+			<a class="emcp-dash-help-link" href="https://github.com/Heretek-AI/elementor-mcp#readme" target="_blank" rel="noopener noreferrer">
 				<span class="dashicons dashicons-book" aria-hidden="true"></span>
 				<span>
 					<span class="emcp-dash-help-title"><?php esc_html_e( 'Documentation', 'emcp-tools' ); ?></span>
-					<span class="emcp-dash-help-desc"><?php esc_html_e( 'Guides and reference for every feature.', 'emcp-tools' ); ?></span>
+					<span class="emcp-dash-help-desc"><?php esc_html_e( 'Guides and reference for all unlocked tools.', 'emcp-tools' ); ?></span>
 				</span>
 			</a>
-			<a class="emcp-dash-help-link" href="https://support.msrbuilds.com/" target="_blank" rel="noopener noreferrer">
+			<a class="emcp-dash-help-link" href="https://github.com/Heretek-AI/elementor-mcp/issues" target="_blank" rel="noopener noreferrer">
 				<span class="dashicons dashicons-sos" aria-hidden="true"></span>
 				<span>
-					<span class="emcp-dash-help-title"><?php esc_html_e( 'Ticket Support', 'emcp-tools' ); ?></span>
-					<span class="emcp-dash-help-desc"><?php esc_html_e( 'Stuck? Open a ticket with our team.', 'emcp-tools' ); ?></span>
+					<span class="emcp-dash-help-title"><?php esc_html_e( 'Issues &amp; Support', 'emcp-tools' ); ?></span>
+					<span class="emcp-dash-help-desc"><?php esc_html_e( 'Report bugs or request new features.', 'emcp-tools' ); ?></span>
 				</span>
 			</a>
-			<a class="emcp-dash-help-link" href="https://www.facebook.com/groups/emcptools" target="_blank" rel="noopener noreferrer">
+			<a class="emcp-dash-help-link" href="https://github.com/Heretek-AI/elementor-mcp/discussions" target="_blank" rel="noopener noreferrer">
 				<span class="dashicons dashicons-groups" aria-hidden="true"></span>
 				<span>
-					<span class="emcp-dash-help-title"><?php esc_html_e( 'Community', 'emcp-tools' ); ?></span>
-					<span class="emcp-dash-help-desc"><?php esc_html_e( 'Share builds and get tips from other users.', 'emcp-tools' ); ?></span>
+					<span class="emcp-dash-help-title"><?php esc_html_e( 'Discussions &amp; Community', 'emcp-tools' ); ?></span>
+					<span class="emcp-dash-help-desc"><?php esc_html_e( 'Share builds and get tips from other developers.', 'emcp-tools' ); ?></span>
 				</span>
 			</a>
 			<a class="emcp-dash-help-link" href="<?php echo esc_url( admin_url( 'admin.php?page=' . $emcp_page . '-changelog' ) ); ?>">

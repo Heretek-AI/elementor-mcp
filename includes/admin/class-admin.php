@@ -280,6 +280,7 @@ class EMCP_Tools_Admin {
 		add_action( 'admin_menu', array( $this, 'add_settings_page' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_init', array( $this, 'maybe_apply_default_disabled_tools' ) );
+		add_action( 'admin_init', array( $this, 'maybe_check_updates' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'admin_head', array( $this, 'print_menu_icon_style' ) );
 		add_action( 'wp_ajax_emcp_tools_create_app_password', array( $this, 'ajax_create_app_password' ) );
@@ -303,6 +304,7 @@ class EMCP_Tools_Admin {
 		add_action( 'wp_ajax_emcp_tools_toggle_php_snippet', array( $this, 'ajax_toggle_php_snippet' ) );
 		add_action( 'wp_ajax_emcp_tools_delete_php_snippet', array( $this, 'ajax_delete_php_snippet' ) );
 		add_action( 'wp_ajax_emcp_tools_notifications_read', array( $this, 'ajax_notifications_read' ) );
+		add_action( 'wp_ajax_emcp_tools_check_updates', array( $this, 'ajax_check_updates' ) );
 		add_action( 'admin_post_emcp_tools_download_mcpb', array( $this, 'handle_download_mcpb' ) );
 		add_action( 'admin_post_' . self::ACTION_DISMISS_PROMPTS_NOTICE, array( $this, 'handle_dismiss_prompts_notice' ) );
 		add_action( 'admin_post_' . self::ACTION_ROLLBACK_CHANGE, array( $this, 'handle_rollback_change' ) );
@@ -2961,6 +2963,37 @@ class EMCP_Tools_Admin {
 	}
 
 	/**
+	 * AJAX: check for plugin updates against GitHub immediately.
+	 */
+	public function ajax_check_updates(): void {
+		if ( ! current_user_can( 'update_plugins' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Forbidden.', 'emcp-tools' ) ), 403 );
+		}
+		if ( ! check_ajax_referer( 'emcp_tools_check_updates', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'emcp-tools' ) ), 403 );
+		}
+
+		if ( class_exists( 'EMCP_Tools_GitHub_Updater' ) ) {
+			EMCP_Tools_GitHub_Updater::check_now();
+		}
+
+		wp_send_json_success( array( 'message' => __( 'Update cache cleared. Refreshing status...', 'emcp-tools' ) ) );
+	}
+
+	/**
+	 * Admin request: check for plugin updates immediately and redirect back.
+	 */
+	public function maybe_check_updates(): void {
+		if ( ! empty( $_GET['emcp_check_updates'] ) && check_admin_referer( 'emcp_check_updates' ) ) {
+			if ( current_user_can( 'update_plugins' ) && class_exists( 'EMCP_Tools_GitHub_Updater' ) ) {
+				EMCP_Tools_GitHub_Updater::check_now();
+			}
+			wp_safe_redirect( remove_query_arg( array( 'emcp_check_updates', '_wpnonce' ) ) );
+			exit;
+		}
+	}
+
+	/**
 	 * AJAX: activate/deactivate a generated Gutenberg block from the Blocks tab.
 	 *
 	 * @since 3.7.0
@@ -3626,8 +3659,8 @@ class EMCP_Tools_Admin {
 			<div class="emcp-appbar">
 				<div class="emcp-appbar-brand">
 					<img class="emcp-appbar-logo" src="<?php echo esc_url( EMCP_TOOLS_URL . 'assets/img/icon-sm.png' ); ?>" alt="" />
-					<span class="emcp-appbar-title emcp-appbar-title--full"><?php esc_html_e( 'EMCP Tools', 'emcp-tools' ); ?></span>
-					<span class="emcp-appbar-title emcp-appbar-title--short"><?php esc_html_e( 'MCP Tools', 'emcp-tools' ); ?></span>
+					<span class="emcp-appbar-title emcp-appbar-title--full"><?php esc_html_e( 'EMCP Tools Unlocked', 'emcp-tools' ); ?></span>
+					<span class="emcp-appbar-title emcp-appbar-title--short"><?php esc_html_e( 'EMCP Unlocked', 'emcp-tools' ); ?></span>
 					<span class="emcp-appbar-version">v<?php echo esc_html( EMCP_TOOLS_VERSION ); ?></span>
 				</div>
 				<div class="emcp-appbar-actions">
@@ -3664,11 +3697,10 @@ class EMCP_Tools_Admin {
 							<span class="dashicons dashicons-arrow-down-alt2 emcp-help-caret" aria-hidden="true"></span>
 						</button>
 						<div class="emcp-help-dropdown" role="menu">
-							<a role="menuitem" href="https://support.msrbuilds.com/" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-sos" aria-hidden="true"></span><?php esc_html_e( 'Ticket Support', 'emcp-tools' ); ?></a>
-							<a role="menuitem" href="https://emcptools.com/docs" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-book" aria-hidden="true"></span><?php esc_html_e( 'Documentation', 'emcp-tools' ); ?></a>
-							<a role="menuitem" href="https://www.facebook.com/groups/emcptools" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-groups" aria-hidden="true"></span><?php esc_html_e( 'Community', 'emcp-tools' ); ?></a>
-							<a role="menuitem" href="https://discord.gg/vJfksd3S9j" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-format-chat" aria-hidden="true"></span><?php esc_html_e( 'Discord', 'emcp-tools' ); ?></a>
-							<a role="menuitem" href="https://emcptools.com/tutorials" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-video-alt3" aria-hidden="true"></span><?php esc_html_e( 'Tutorials', 'emcp-tools' ); ?></a>
+							<a role="menuitem" href="https://github.com/Heretek-AI/elementor-mcp/issues" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-sos" aria-hidden="true"></span><?php esc_html_e( 'Issues &amp; Support', 'emcp-tools' ); ?></a>
+							<a role="menuitem" href="https://github.com/Heretek-AI/elementor-mcp#readme" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-book" aria-hidden="true"></span><?php esc_html_e( 'Documentation', 'emcp-tools' ); ?></a>
+							<a role="menuitem" href="https://github.com/Heretek-AI/elementor-mcp/discussions" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-format-chat" aria-hidden="true"></span><?php esc_html_e( 'Discussions &amp; Community', 'emcp-tools' ); ?></a>
+							<a role="menuitem" href="https://github.com/Heretek-AI/elementor-mcp/releases" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-update" aria-hidden="true"></span><?php esc_html_e( 'GitHub Releases', 'emcp-tools' ); ?></a>
 						</div>
 					</div>
 					<div class="emcp-notif">
@@ -4514,11 +4546,7 @@ class EMCP_Tools_Admin {
 	 * @return bool
 	 */
 	public static function affiliation_page_available(): bool {
-		if ( ! function_exists( 'emcp_tools_fs' ) ) {
-			return false;
-		}
-		$fs = emcp_tools_fs();
-		return $fs->has_affiliate_program() && ! $fs->is_activation_mode();
+		return false;
 	}
 
 	/**

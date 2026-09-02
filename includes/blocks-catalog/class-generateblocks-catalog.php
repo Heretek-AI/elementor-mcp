@@ -9,6 +9,14 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class EMCP_Tools_GenerateBlocks_Catalog {
+	const PLUGIN_FILE = 'generateblocks/plugin.php';
+
+	public static function is_active(): bool {
+		return defined( 'GENERATEBLOCKS_VERSION' )
+			|| class_exists( 'GenerateBlocks' )
+			|| ( function_exists( 'is_plugin_active' ) && is_plugin_active( self::PLUGIN_FILE ) );
+	}
+
 	public static function get_blocks(): array {
 		return array(
 			'generateblocks/container' => array( 'title' => 'Container', 'category' => 'generateblocks' ),

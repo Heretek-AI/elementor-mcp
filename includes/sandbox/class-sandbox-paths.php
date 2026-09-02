@@ -45,7 +45,8 @@ class EMCP_Tools_Sandbox_Paths {
 	 * @return string
 	 */
 	public static function base_dir(): string {
-		$dir = rtrim( WP_CONTENT_DIR, '/\\' ) . '/' . self::folder();
+		$content_dir = defined( 'WP_CONTENT_DIR' ) ? WP_CONTENT_DIR : ( defined( 'ABSPATH' ) ? ABSPATH . 'wp-content' : dirname( EMCP_TOOLS_DIR ) . '/..' );
+		$dir = rtrim( $content_dir, '/\\' ) . '/' . self::folder();
 		/**
 		 * Filter the absolute sandbox base directory. Pair with
 		 * `emcp_tools_sandbox_url` to keep the served URL consistent when

@@ -21,6 +21,22 @@ class EMCP_Tools_Memory_Store {
 	const META_TARGET   = '_emcp_target';
 	const META_SESSION  = '_emcp_session';
 
+	const TYPES = array( 'rule', 'fact', 'context', 'style', 'decision' );
+
+	/** @var self|null */
+	private static $instance = null;
+
+	public static function instance(): self {
+		if ( null === self::$instance ) {
+			self::$instance = new self();
+		}
+		return self::$instance;
+	}
+
+	public static function user_has_access(): bool {
+		return current_user_can( 'manage_options' );
+	}
+
 	/**
 	 * Init post type.
 	 */
@@ -129,6 +145,84 @@ class EMCP_Tools_Memory_Store {
 		);
 		$query = new WP_Query( wp_parse_args( $args, $defaults ) );
 		return $query->posts;
+	}
+
+	public function pending_count(): int {
+		$counts = wp_count_posts( self::POST_TYPE );
+		return isset( $counts->pending ) ? (int) $counts->pending : 0;
+	}
+
+	public function set_guidance_status( int $id, string $status ): bool {
+		$post = get_post( $id );
+		if ( ! $post || self::POST_TYPE !== $post->post_type ) {
+			return false;
+		}
+		return (bool) wp_update_post(
+			array(
+				'ID'          => $id,
+				'post_status' => $status,
+			)
+		);
+	}
+
+	public function add_guidance( array $data ) {
+		$post_id = wp_insert_post(
+			array(
+				'post_type'    => self::POST_TYPE,
+				'post_status'  => sanitize_key( $data['status'] ?? 'publish' ),
+				'post_title'   => sanitize_text_field( $data['title'] ?? '' ),
+				'post_content' => wp_kses_post( $data['body'] ?? '' ),
+			),
+			true
+		);
+		if ( is_wp_error( $post_id ) ) {
+			return $post_id;
+		}
+		if ( ! empty( $data['type'] ) ) {
+			update_post_meta( $post_id, self::META_SEVERITY, sanitize_key( $data['type'] ) );
+		}
+		if ( ! empty( $data['source'] ) ) {
+			update_post_meta( $post_id, '_emcp_source', sanitize_text_field( $data['source'] ) );
+		}
+		return $post_id;
+	}
+
+	public function update_guidance( int $id, array $data ): bool {
+		$post = get_post( $id );
+		if ( ! $post || self::POST_TYPE !== $post->post_type ) {
+			return false;
+		}
+		$args = array( 'ID' => $id );
+		if ( isset( $data['body'] ) ) {
+			$args['post_content'] = wp_kses_post( $data['body'] );
+		}
+		if ( isset( $data['title'] ) ) {
+			$args['post_title'] = sanitize_text_field( $data['title'] );
+		}
+		if ( isset( $data['status'] ) ) {
+			$args['post_status'] = sanitize_key( $data['status'] );
+		}
+		wp_update_post( $args );
+		if ( isset( $data['type'] ) ) {
+			update_post_meta( $id, self::META_SEVERITY, sanitize_key( $data['type'] ) );
+		}
+		return true;
+	}
+
+	public static function uninstall_cleanup(): void {
+		$posts = get_posts(
+			array(
+				'post_type'      => self::POST_TYPE,
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+			)
+		);
+		foreach ( $posts as $pid ) {
+			wp_delete_post( $pid, true );
+		}
+		delete_option( 'emcp_tools_memory_auto_summarize' );
+		delete_option( 'emcp_tools_memory_require_approval' );
 	}
 }
 

@@ -309,6 +309,7 @@ $comic_res = EMCP_Tools_Comic_Write_Operations::create_comic(
 			15462,
 			array( 'url' => 'https://shad-base.com/wp-content/uploads/2026/07/981-Sem-Titulo_20260709003450.png', 'width' => 1536, 'height' => 2048, 'alt' => 'Doodles page 3' ),
 		),
+		'date'              => '2026-08-19T16:58:06.000Z',
 		'source_tweet_id'   => '1829012345678901234',
 		'source_url'        => 'https://x.com/luckyyzinto/status/1829012345678901234',
 		'chapters'          => array( 'luckyyzinto-archive' ),
@@ -322,6 +323,7 @@ $created_id = $comic_res['id'];
 echo "Created Comic ID: $created_id\n";
 echo 'Total Pages: ' . $comic_res['total_pages'] . "\n";
 assert( $comic_res['total_pages'] === 3 );
+assert( $comic_res['date'] === '2026-08-19 16:58:06' );
 assert( $comic_res['source']['source_tweet_id'] === '1829012345678901234' );
 assert( $comic_res['source']['source_url'] === 'https://x.com/luckyyzinto/status/1829012345678901234' );
 assert( ! empty( $comic_res['comic_html_below'] ) );

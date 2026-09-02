@@ -1,0 +1,410 @@
+{
+    "fetched_at": 1788365371,
+    "categories": [
+        {
+            "slug": "landing-pages",
+            "label": "High-Converting Landing Pages",
+            "templates": [
+                {
+                    "id": "landing-pages-1",
+                    "title": "High-Converting Landing Pages V1",
+                    "category": "landing-pages",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for High-Converting Landing Pages.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                },
+                {
+                    "id": "landing-pages-2",
+                    "title": "High-Converting Landing Pages V2",
+                    "category": "landing-pages",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for High-Converting Landing Pages.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                },
+                {
+                    "id": "landing-pages-3",
+                    "title": "High-Converting Landing Pages V3",
+                    "category": "landing-pages",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for High-Converting Landing Pages.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                },
+                {
+                    "id": "landing-pages-4",
+                    "title": "High-Converting Landing Pages V4",
+                    "category": "landing-pages",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for High-Converting Landing Pages.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                },
+                {
+                    "id": "landing-pages-5",
+                    "title": "High-Converting Landing Pages V5",
+                    "category": "landing-pages",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for High-Converting Landing Pages.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "slug": "homepages",
+            "label": "Modern Agency Homepages",
+            "templates": [
+                {
+                    "id": "homepages-1",
+                    "title": "Modern Agency Homepages V1",
+                    "category": "homepages",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for Modern Agency Homepages.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                },
+                {
+                    "id": "homepages-2",
+                    "title": "Modern Agency Homepages V2",
+                    "category": "homepages",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for Modern Agency Homepages.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                },
+                {
+                    "id": "homepages-3",
+                    "title": "Modern Agency Homepages V3",
+                    "category": "homepages",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for Modern Agency Homepages.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                },
+                {
+                    "id": "homepages-4",
+                    "title": "Modern Agency Homepages V4",
+                    "category": "homepages",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for Modern Agency Homepages.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                },
+                {
+                    "id": "homepages-5",
+                    "title": "Modern Agency Homepages V5",
+                    "category": "homepages",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for Modern Agency Homepages.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "slug": "services",
+            "label": "Service & Solution Pages",
+            "templates": [
+                {
+                    "id": "services-1",
+                    "title": "Service & Solution Pages V1",
+                    "category": "services",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for Service & Solution Pages.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                },
+                {
+                    "id": "services-2",
+                    "title": "Service & Solution Pages V2",
+                    "category": "services",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for Service & Solution Pages.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                },
+                {
+                    "id": "services-3",
+                    "title": "Service & Solution Pages V3",
+                    "category": "services",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for Service & Solution Pages.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                },
+                {
+                    "id": "services-4",
+                    "title": "Service & Solution Pages V4",
+                    "category": "services",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for Service & Solution Pages.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                },
+                {
+                    "id": "services-5",
+                    "title": "Service & Solution Pages V5",
+                    "category": "services",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for Service & Solution Pages.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "slug": "headers",
+            "label": "Dynamic Headers",
+            "templates": [
+                {
+                    "id": "headers-1",
+                    "title": "Dynamic Headers V1",
+                    "category": "headers",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for Dynamic Headers.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                },
+                {
+                    "id": "headers-2",
+                    "title": "Dynamic Headers V2",
+                    "category": "headers",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for Dynamic Headers.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                },
+                {
+                    "id": "headers-3",
+                    "title": "Dynamic Headers V3",
+                    "category": "headers",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for Dynamic Headers.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                },
+                {
+                    "id": "headers-4",
+                    "title": "Dynamic Headers V4",
+                    "category": "headers",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for Dynamic Headers.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                },
+                {
+                    "id": "headers-5",
+                    "title": "Dynamic Headers V5",
+                    "category": "headers",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for Dynamic Headers.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "slug": "footers",
+            "label": "Conversion Footers",
+            "templates": [
+                {
+                    "id": "footers-1",
+                    "title": "Conversion Footers V1",
+                    "category": "footers",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for Conversion Footers.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                },
+                {
+                    "id": "footers-2",
+                    "title": "Conversion Footers V2",
+                    "category": "footers",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for Conversion Footers.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                },
+                {
+                    "id": "footers-3",
+                    "title": "Conversion Footers V3",
+                    "category": "footers",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for Conversion Footers.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                },
+                {
+                    "id": "footers-4",
+                    "title": "Conversion Footers V4",
+                    "category": "footers",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for Conversion Footers.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                },
+                {
+                    "id": "footers-5",
+                    "title": "Conversion Footers V5",
+                    "category": "footers",
+                    "thumbnail": "",
+                    "description": "Clean, responsive Elementor design for Conversion Footers.",
+                    "content": [
+                        {
+                            "id": "sec1",
+                            "elType": "section",
+                            "settings": [],
+                            "elements": []
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

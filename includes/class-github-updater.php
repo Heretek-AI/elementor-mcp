@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class EMCP_Tools_GitHub_Updater {
 
 	/** GitHub `owner/repo` the free releases live on. */
-	const REPO = 'msrbuilds/elementor-mcp';
+	const REPO = 'Heretek-AI/elementor-mcp';
 
 	/** Transient caching the parsed latest-release payload (limits API hits). */
 	const TRANSIENT = 'emcp_tools_github_release';
@@ -39,8 +39,8 @@ class EMCP_Tools_GitHub_Updater {
 	/** Shorter cache after a failed/empty lookup so we recover quickly. */
 	const CACHE_TTL_FAIL = 2 * HOUR_IN_SECONDS;
 
-	/** Matches the free release ZIP asset (never the Pro zip, which isn't on GitHub). */
-	const ASSET_PATTERN = '/^emcp-tools-[0-9].*\.zip$/i';
+	/** Matches the release ZIP asset. */
+	const ASSET_PATTERN = '/^.*elementor-mcp.*\.zip$/i';
 
 	/**
 	 * The installed plugin folder slug (e.g. `emcp-tools` or `elementor-mcp`),
@@ -55,17 +55,11 @@ class EMCP_Tools_GitHub_Updater {
 	}
 
 	/**
-	 * Register the update hooks — but only for the FREE build. On premium builds
-	 * (the `.emcp-pro` marker is present and Freemius reports is_premium) Freemius
-	 * owns updates, so we stay out of the way to avoid a double-updater conflict.
+	 * Register the update hooks for the unlocked fork.
 	 *
 	 * @return void
 	 */
 	public function init(): void {
-		if ( $this->is_premium_build() ) {
-			return;
-		}
-
 		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'inject_update' ) );
 		add_filter( 'plugins_api', array( $this, 'plugin_info' ), 10, 3 );
 		add_filter( 'upgrader_source_selection', array( $this, 'rename_source_dir' ), 10, 4 );
@@ -99,20 +93,17 @@ class EMCP_Tools_GitHub_Updater {
 			'current'          => $current,
 			'latest'           => $latest,
 			'update_available' => $update,
-			'update_url'       => self_admin_url( 'plugins.php' ),
+			'update_url'       => self_admin_url( 'update-core.php' ),
 		);
 	}
 
 	/**
-	 * Whether this is the premium build (Freemius handles those updates).
+	 * Whether this is an external premium build. Unlocked fork updates via GitHub.
 	 *
 	 * @return bool
 	 */
 	private function is_premium_build(): bool {
-		if ( file_exists( EMCP_TOOLS_DIR . '.emcp-pro' ) ) {
-			return true;
-		}
-		return function_exists( 'emcp_tools_fs' ) && emcp_tools_fs()->is_premium();
+		return false;
 	}
 
 	/**

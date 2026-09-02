@@ -1,0 +1,2814 @@
+{
+    "categories": [
+        {
+            "slug": "corporate",
+            "label": "Corporate & Tech",
+            "kits": [
+                {
+                    "slug": "corporate-1",
+                    "title": "Corporate & Tech Preset 1",
+                    "description": "Hand-crafted Corporate & Tech typography and color harmony kit #1.",
+                    "category": "corporate",
+                    "tags": [
+                        "corporate",
+                        "preset1"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#0F172A"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#475569"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1E293B"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#38BDF8"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "corporate-2",
+                    "title": "Corporate & Tech Preset 2",
+                    "description": "Hand-crafted Corporate & Tech typography and color harmony kit #2.",
+                    "category": "corporate",
+                    "tags": [
+                        "corporate",
+                        "preset2"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#18181B"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#71717A"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#27272A"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#F43F5E"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "corporate-3",
+                    "title": "Corporate & Tech Preset 3",
+                    "description": "Hand-crafted Corporate & Tech typography and color harmony kit #3.",
+                    "category": "corporate",
+                    "tags": [
+                        "corporate",
+                        "preset3"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#14532D"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#166534"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1E293B"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#22C55E"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "corporate-4",
+                    "title": "Corporate & Tech Preset 4",
+                    "description": "Hand-crafted Corporate & Tech typography and color harmony kit #4.",
+                    "category": "corporate",
+                    "tags": [
+                        "corporate",
+                        "preset4"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#701A75"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#86198F"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#3B0764"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#D946EF"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "corporate-5",
+                    "title": "Corporate & Tech Preset 5",
+                    "description": "Hand-crafted Corporate & Tech typography and color harmony kit #5.",
+                    "category": "corporate",
+                    "tags": [
+                        "corporate",
+                        "preset5"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#1E3A5F"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#334155"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1F2937"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#2563EB"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "slug": "creative",
+            "label": "Creative & Agency",
+            "kits": [
+                {
+                    "slug": "creative-1",
+                    "title": "Creative & Agency Preset 1",
+                    "description": "Hand-crafted Creative & Agency typography and color harmony kit #1.",
+                    "category": "creative",
+                    "tags": [
+                        "creative",
+                        "preset1"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#0F172A"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#475569"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1E293B"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#38BDF8"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "creative-2",
+                    "title": "Creative & Agency Preset 2",
+                    "description": "Hand-crafted Creative & Agency typography and color harmony kit #2.",
+                    "category": "creative",
+                    "tags": [
+                        "creative",
+                        "preset2"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#18181B"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#71717A"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#27272A"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#F43F5E"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "creative-3",
+                    "title": "Creative & Agency Preset 3",
+                    "description": "Hand-crafted Creative & Agency typography and color harmony kit #3.",
+                    "category": "creative",
+                    "tags": [
+                        "creative",
+                        "preset3"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#14532D"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#166534"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1E293B"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#22C55E"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "creative-4",
+                    "title": "Creative & Agency Preset 4",
+                    "description": "Hand-crafted Creative & Agency typography and color harmony kit #4.",
+                    "category": "creative",
+                    "tags": [
+                        "creative",
+                        "preset4"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#701A75"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#86198F"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#3B0764"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#D946EF"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "creative-5",
+                    "title": "Creative & Agency Preset 5",
+                    "description": "Hand-crafted Creative & Agency typography and color harmony kit #5.",
+                    "category": "creative",
+                    "tags": [
+                        "creative",
+                        "preset5"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#1E3A5F"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#334155"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1F2937"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#2563EB"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "slug": "warm",
+            "label": "Warm & Artisan",
+            "kits": [
+                {
+                    "slug": "warm-1",
+                    "title": "Warm & Artisan Preset 1",
+                    "description": "Hand-crafted Warm & Artisan typography and color harmony kit #1.",
+                    "category": "warm",
+                    "tags": [
+                        "warm",
+                        "preset1"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#0F172A"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#475569"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1E293B"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#38BDF8"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "warm-2",
+                    "title": "Warm & Artisan Preset 2",
+                    "description": "Hand-crafted Warm & Artisan typography and color harmony kit #2.",
+                    "category": "warm",
+                    "tags": [
+                        "warm",
+                        "preset2"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#18181B"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#71717A"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#27272A"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#F43F5E"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "warm-3",
+                    "title": "Warm & Artisan Preset 3",
+                    "description": "Hand-crafted Warm & Artisan typography and color harmony kit #3.",
+                    "category": "warm",
+                    "tags": [
+                        "warm",
+                        "preset3"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#14532D"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#166534"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1E293B"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#22C55E"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "warm-4",
+                    "title": "Warm & Artisan Preset 4",
+                    "description": "Hand-crafted Warm & Artisan typography and color harmony kit #4.",
+                    "category": "warm",
+                    "tags": [
+                        "warm",
+                        "preset4"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#701A75"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#86198F"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#3B0764"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#D946EF"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "warm-5",
+                    "title": "Warm & Artisan Preset 5",
+                    "description": "Hand-crafted Warm & Artisan typography and color harmony kit #5.",
+                    "category": "warm",
+                    "tags": [
+                        "warm",
+                        "preset5"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#1E3A5F"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#334155"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1F2937"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#2563EB"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "slug": "minimal",
+            "label": "Minimal & Clean",
+            "kits": [
+                {
+                    "slug": "minimal-1",
+                    "title": "Minimal & Clean Preset 1",
+                    "description": "Hand-crafted Minimal & Clean typography and color harmony kit #1.",
+                    "category": "minimal",
+                    "tags": [
+                        "minimal",
+                        "preset1"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#0F172A"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#475569"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1E293B"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#38BDF8"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "minimal-2",
+                    "title": "Minimal & Clean Preset 2",
+                    "description": "Hand-crafted Minimal & Clean typography and color harmony kit #2.",
+                    "category": "minimal",
+                    "tags": [
+                        "minimal",
+                        "preset2"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#18181B"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#71717A"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#27272A"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#F43F5E"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "minimal-3",
+                    "title": "Minimal & Clean Preset 3",
+                    "description": "Hand-crafted Minimal & Clean typography and color harmony kit #3.",
+                    "category": "minimal",
+                    "tags": [
+                        "minimal",
+                        "preset3"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#14532D"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#166534"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1E293B"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#22C55E"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "minimal-4",
+                    "title": "Minimal & Clean Preset 4",
+                    "description": "Hand-crafted Minimal & Clean typography and color harmony kit #4.",
+                    "category": "minimal",
+                    "tags": [
+                        "minimal",
+                        "preset4"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#701A75"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#86198F"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#3B0764"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#D946EF"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "minimal-5",
+                    "title": "Minimal & Clean Preset 5",
+                    "description": "Hand-crafted Minimal & Clean typography and color harmony kit #5.",
+                    "category": "minimal",
+                    "tags": [
+                        "minimal",
+                        "preset5"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#1E3A5F"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#334155"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1F2937"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#2563EB"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "slug": "luxury",
+            "label": "Luxury & Editorial",
+            "kits": [
+                {
+                    "slug": "luxury-1",
+                    "title": "Luxury & Editorial Preset 1",
+                    "description": "Hand-crafted Luxury & Editorial typography and color harmony kit #1.",
+                    "category": "luxury",
+                    "tags": [
+                        "luxury",
+                        "preset1"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#0F172A"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#475569"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1E293B"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#38BDF8"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "luxury-2",
+                    "title": "Luxury & Editorial Preset 2",
+                    "description": "Hand-crafted Luxury & Editorial typography and color harmony kit #2.",
+                    "category": "luxury",
+                    "tags": [
+                        "luxury",
+                        "preset2"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#18181B"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#71717A"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#27272A"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#F43F5E"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "luxury-3",
+                    "title": "Luxury & Editorial Preset 3",
+                    "description": "Hand-crafted Luxury & Editorial typography and color harmony kit #3.",
+                    "category": "luxury",
+                    "tags": [
+                        "luxury",
+                        "preset3"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#14532D"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#166534"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1E293B"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#22C55E"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "luxury-4",
+                    "title": "Luxury & Editorial Preset 4",
+                    "description": "Hand-crafted Luxury & Editorial typography and color harmony kit #4.",
+                    "category": "luxury",
+                    "tags": [
+                        "luxury",
+                        "preset4"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#701A75"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#86198F"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#3B0764"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#D946EF"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "luxury-5",
+                    "title": "Luxury & Editorial Preset 5",
+                    "description": "Hand-crafted Luxury & Editorial typography and color harmony kit #5.",
+                    "category": "luxury",
+                    "tags": [
+                        "luxury",
+                        "preset5"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#1E3A5F"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#334155"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1F2937"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#2563EB"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "slug": "nature",
+            "label": "Nature & Wellness",
+            "kits": [
+                {
+                    "slug": "nature-1",
+                    "title": "Nature & Wellness Preset 1",
+                    "description": "Hand-crafted Nature & Wellness typography and color harmony kit #1.",
+                    "category": "nature",
+                    "tags": [
+                        "nature",
+                        "preset1"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#0F172A"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#475569"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1E293B"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#38BDF8"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "nature-2",
+                    "title": "Nature & Wellness Preset 2",
+                    "description": "Hand-crafted Nature & Wellness typography and color harmony kit #2.",
+                    "category": "nature",
+                    "tags": [
+                        "nature",
+                        "preset2"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#18181B"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#71717A"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#27272A"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#F43F5E"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "nature-3",
+                    "title": "Nature & Wellness Preset 3",
+                    "description": "Hand-crafted Nature & Wellness typography and color harmony kit #3.",
+                    "category": "nature",
+                    "tags": [
+                        "nature",
+                        "preset3"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#14532D"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#166534"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1E293B"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#22C55E"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "nature-4",
+                    "title": "Nature & Wellness Preset 4",
+                    "description": "Hand-crafted Nature & Wellness typography and color harmony kit #4.",
+                    "category": "nature",
+                    "tags": [
+                        "nature",
+                        "preset4"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#701A75"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#86198F"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#3B0764"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#D946EF"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "nature-5",
+                    "title": "Nature & Wellness Preset 5",
+                    "description": "Hand-crafted Nature & Wellness typography and color harmony kit #5.",
+                    "category": "nature",
+                    "tags": [
+                        "nature",
+                        "preset5"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#1E3A5F"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#334155"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1F2937"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#2563EB"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "slug": "cyber",
+            "label": "Tech & High-Contrast",
+            "kits": [
+                {
+                    "slug": "cyber-1",
+                    "title": "Tech & High-Contrast Preset 1",
+                    "description": "Hand-crafted Tech & High-Contrast typography and color harmony kit #1.",
+                    "category": "cyber",
+                    "tags": [
+                        "cyber",
+                        "preset1"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#0F172A"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#475569"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1E293B"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#38BDF8"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "cyber-2",
+                    "title": "Tech & High-Contrast Preset 2",
+                    "description": "Hand-crafted Tech & High-Contrast typography and color harmony kit #2.",
+                    "category": "cyber",
+                    "tags": [
+                        "cyber",
+                        "preset2"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#18181B"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#71717A"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#27272A"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#F43F5E"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "cyber-3",
+                    "title": "Tech & High-Contrast Preset 3",
+                    "description": "Hand-crafted Tech & High-Contrast typography and color harmony kit #3.",
+                    "category": "cyber",
+                    "tags": [
+                        "cyber",
+                        "preset3"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#14532D"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#166534"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1E293B"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#22C55E"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "cyber-4",
+                    "title": "Tech & High-Contrast Preset 4",
+                    "description": "Hand-crafted Tech & High-Contrast typography and color harmony kit #4.",
+                    "category": "cyber",
+                    "tags": [
+                        "cyber",
+                        "preset4"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#701A75"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#86198F"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#3B0764"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#D946EF"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "cyber-5",
+                    "title": "Tech & High-Contrast Preset 5",
+                    "description": "Hand-crafted Tech & High-Contrast typography and color harmony kit #5.",
+                    "category": "cyber",
+                    "tags": [
+                        "cyber",
+                        "preset5"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#1E3A5F"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#334155"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1F2937"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#2563EB"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "slug": "bold",
+            "label": "Bold & Energetic",
+            "kits": [
+                {
+                    "slug": "bold-1",
+                    "title": "Bold & Energetic Preset 1",
+                    "description": "Hand-crafted Bold & Energetic typography and color harmony kit #1.",
+                    "category": "bold",
+                    "tags": [
+                        "bold",
+                        "preset1"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#0F172A"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#475569"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1E293B"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#38BDF8"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "bold-2",
+                    "title": "Bold & Energetic Preset 2",
+                    "description": "Hand-crafted Bold & Energetic typography and color harmony kit #2.",
+                    "category": "bold",
+                    "tags": [
+                        "bold",
+                        "preset2"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#18181B"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#71717A"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#27272A"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#F43F5E"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "bold-3",
+                    "title": "Bold & Energetic Preset 3",
+                    "description": "Hand-crafted Bold & Energetic typography and color harmony kit #3.",
+                    "category": "bold",
+                    "tags": [
+                        "bold",
+                        "preset3"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#14532D"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#166534"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1E293B"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#22C55E"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "bold-4",
+                    "title": "Bold & Energetic Preset 4",
+                    "description": "Hand-crafted Bold & Energetic typography and color harmony kit #4.",
+                    "category": "bold",
+                    "tags": [
+                        "bold",
+                        "preset4"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#701A75"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#86198F"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#3B0764"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#D946EF"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "bold-5",
+                    "title": "Bold & Energetic Preset 5",
+                    "description": "Hand-crafted Bold & Energetic typography and color harmony kit #5.",
+                    "category": "bold",
+                    "tags": [
+                        "bold",
+                        "preset5"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#1E3A5F"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#334155"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1F2937"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#2563EB"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "slug": "medical",
+            "label": "Health & Medical",
+            "kits": [
+                {
+                    "slug": "medical-1",
+                    "title": "Health & Medical Preset 1",
+                    "description": "Hand-crafted Health & Medical typography and color harmony kit #1.",
+                    "category": "medical",
+                    "tags": [
+                        "medical",
+                        "preset1"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#0F172A"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#475569"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1E293B"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#38BDF8"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "medical-2",
+                    "title": "Health & Medical Preset 2",
+                    "description": "Hand-crafted Health & Medical typography and color harmony kit #2.",
+                    "category": "medical",
+                    "tags": [
+                        "medical",
+                        "preset2"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#18181B"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#71717A"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#27272A"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#F43F5E"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "medical-3",
+                    "title": "Health & Medical Preset 3",
+                    "description": "Hand-crafted Health & Medical typography and color harmony kit #3.",
+                    "category": "medical",
+                    "tags": [
+                        "medical",
+                        "preset3"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#14532D"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#166534"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1E293B"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#22C55E"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "medical-4",
+                    "title": "Health & Medical Preset 4",
+                    "description": "Hand-crafted Health & Medical typography and color harmony kit #4.",
+                    "category": "medical",
+                    "tags": [
+                        "medical",
+                        "preset4"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#701A75"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#86198F"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#3B0764"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#D946EF"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "medical-5",
+                    "title": "Health & Medical Preset 5",
+                    "description": "Hand-crafted Health & Medical typography and color harmony kit #5.",
+                    "category": "medical",
+                    "tags": [
+                        "medical",
+                        "preset5"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#1E3A5F"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#334155"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1F2937"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#2563EB"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "slug": "retail",
+            "label": "Modern Retail",
+            "kits": [
+                {
+                    "slug": "retail-1",
+                    "title": "Modern Retail Preset 1",
+                    "description": "Hand-crafted Modern Retail typography and color harmony kit #1.",
+                    "category": "retail",
+                    "tags": [
+                        "retail",
+                        "preset1"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#0F172A"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#475569"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1E293B"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#38BDF8"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "retail-2",
+                    "title": "Modern Retail Preset 2",
+                    "description": "Hand-crafted Modern Retail typography and color harmony kit #2.",
+                    "category": "retail",
+                    "tags": [
+                        "retail",
+                        "preset2"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#18181B"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#71717A"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#27272A"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#F43F5E"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "retail-3",
+                    "title": "Modern Retail Preset 3",
+                    "description": "Hand-crafted Modern Retail typography and color harmony kit #3.",
+                    "category": "retail",
+                    "tags": [
+                        "retail",
+                        "preset3"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#14532D"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#166534"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1E293B"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#22C55E"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "retail-4",
+                    "title": "Modern Retail Preset 4",
+                    "description": "Hand-crafted Modern Retail typography and color harmony kit #4.",
+                    "category": "retail",
+                    "tags": [
+                        "retail",
+                        "preset4"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#701A75"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#86198F"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#3B0764"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#D946EF"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                },
+                {
+                    "slug": "retail-5",
+                    "title": "Modern Retail Preset 5",
+                    "description": "Hand-crafted Modern Retail typography and color harmony kit #5.",
+                    "category": "retail",
+                    "tags": [
+                        "retail",
+                        "preset5"
+                    ],
+                    "colors": {
+                        "primary": {
+                            "title": "Primary",
+                            "color": "#1E3A5F"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "color": "#334155"
+                        },
+                        "text": {
+                            "title": "Text",
+                            "color": "#1F2937"
+                        },
+                        "accent": {
+                            "title": "Accent",
+                            "color": "#2563EB"
+                        }
+                    },
+                    "custom_colors": [
+                        {
+                            "title": "Surface",
+                            "color": "#F8FAFC"
+                        },
+                        {
+                            "title": "Muted",
+                            "color": "#94A3B8"
+                        }
+                    ],
+                    "typography": {
+                        "primary": {
+                            "title": "Primary",
+                            "font_family": "Inter",
+                            "font_weight": "700"
+                        },
+                        "secondary": {
+                            "title": "Secondary",
+                            "font_family": "Inter",
+                            "font_weight": "600"
+                        },
+                        "body": {
+                            "title": "Body Text",
+                            "font_family": "Inter",
+                            "font_weight": "400"
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

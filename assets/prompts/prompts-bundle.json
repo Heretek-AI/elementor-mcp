@@ -1,0 +1,425 @@
+{
+    "fetched_at": 1788365371,
+    "categories": [
+        {
+            "slug": "food-dining",
+            "label": "Food & Dining",
+            "prompts": [
+                {
+                    "slug": "food-dining-1",
+                    "title": "Food & Dining Landing Page Pro",
+                    "description": "High-converting Elementor landing page blueprint for Food & Dining (Landing Page Pro).",
+                    "content": "# Food & Dining Landing Page Pro\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "food-dining-2",
+                    "title": "Food & Dining Services Showcase",
+                    "description": "High-converting Elementor landing page blueprint for Food & Dining (Services Showcase).",
+                    "content": "# Food & Dining Services Showcase\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "food-dining-3",
+                    "title": "Food & Dining Authority Homepage",
+                    "description": "High-converting Elementor landing page blueprint for Food & Dining (Authority Homepage).",
+                    "content": "# Food & Dining Authority Homepage\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "food-dining-4",
+                    "title": "Food & Dining Conversion Funnel",
+                    "description": "High-converting Elementor landing page blueprint for Food & Dining (Conversion Funnel).",
+                    "content": "# Food & Dining Conversion Funnel\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "food-dining-5",
+                    "title": "Food & Dining Modern Portfolio",
+                    "description": "High-converting Elementor landing page blueprint for Food & Dining (Modern Portfolio).",
+                    "content": "# Food & Dining Modern Portfolio\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "food-dining-6",
+                    "title": "Food & Dining Lead Magnet Page",
+                    "description": "High-converting Elementor landing page blueprint for Food & Dining (Lead Magnet Page).",
+                    "content": "# Food & Dining Lead Magnet Page\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                }
+            ]
+        },
+        {
+            "slug": "automotive",
+            "label": "Automotive & Transport",
+            "prompts": [
+                {
+                    "slug": "automotive-1",
+                    "title": "Automotive & Transport Landing Page Pro",
+                    "description": "High-converting Elementor landing page blueprint for Automotive & Transport (Landing Page Pro).",
+                    "content": "# Automotive & Transport Landing Page Pro\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "automotive-2",
+                    "title": "Automotive & Transport Services Showcase",
+                    "description": "High-converting Elementor landing page blueprint for Automotive & Transport (Services Showcase).",
+                    "content": "# Automotive & Transport Services Showcase\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "automotive-3",
+                    "title": "Automotive & Transport Authority Homepage",
+                    "description": "High-converting Elementor landing page blueprint for Automotive & Transport (Authority Homepage).",
+                    "content": "# Automotive & Transport Authority Homepage\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "automotive-4",
+                    "title": "Automotive & Transport Conversion Funnel",
+                    "description": "High-converting Elementor landing page blueprint for Automotive & Transport (Conversion Funnel).",
+                    "content": "# Automotive & Transport Conversion Funnel\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "automotive-5",
+                    "title": "Automotive & Transport Modern Portfolio",
+                    "description": "High-converting Elementor landing page blueprint for Automotive & Transport (Modern Portfolio).",
+                    "content": "# Automotive & Transport Modern Portfolio\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "automotive-6",
+                    "title": "Automotive & Transport Lead Magnet Page",
+                    "description": "High-converting Elementor landing page blueprint for Automotive & Transport (Lead Magnet Page).",
+                    "content": "# Automotive & Transport Lead Magnet Page\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                }
+            ]
+        },
+        {
+            "slug": "health-wellness",
+            "label": "Health & Wellness",
+            "prompts": [
+                {
+                    "slug": "health-wellness-1",
+                    "title": "Health & Wellness Landing Page Pro",
+                    "description": "High-converting Elementor landing page blueprint for Health & Wellness (Landing Page Pro).",
+                    "content": "# Health & Wellness Landing Page Pro\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "health-wellness-2",
+                    "title": "Health & Wellness Services Showcase",
+                    "description": "High-converting Elementor landing page blueprint for Health & Wellness (Services Showcase).",
+                    "content": "# Health & Wellness Services Showcase\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "health-wellness-3",
+                    "title": "Health & Wellness Authority Homepage",
+                    "description": "High-converting Elementor landing page blueprint for Health & Wellness (Authority Homepage).",
+                    "content": "# Health & Wellness Authority Homepage\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "health-wellness-4",
+                    "title": "Health & Wellness Conversion Funnel",
+                    "description": "High-converting Elementor landing page blueprint for Health & Wellness (Conversion Funnel).",
+                    "content": "# Health & Wellness Conversion Funnel\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "health-wellness-5",
+                    "title": "Health & Wellness Modern Portfolio",
+                    "description": "High-converting Elementor landing page blueprint for Health & Wellness (Modern Portfolio).",
+                    "content": "# Health & Wellness Modern Portfolio\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "health-wellness-6",
+                    "title": "Health & Wellness Lead Magnet Page",
+                    "description": "High-converting Elementor landing page blueprint for Health & Wellness (Lead Magnet Page).",
+                    "content": "# Health & Wellness Lead Magnet Page\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                }
+            ]
+        },
+        {
+            "slug": "professional",
+            "label": "Professional Services",
+            "prompts": [
+                {
+                    "slug": "professional-1",
+                    "title": "Professional Services Landing Page Pro",
+                    "description": "High-converting Elementor landing page blueprint for Professional Services (Landing Page Pro).",
+                    "content": "# Professional Services Landing Page Pro\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "professional-2",
+                    "title": "Professional Services Services Showcase",
+                    "description": "High-converting Elementor landing page blueprint for Professional Services (Services Showcase).",
+                    "content": "# Professional Services Services Showcase\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "professional-3",
+                    "title": "Professional Services Authority Homepage",
+                    "description": "High-converting Elementor landing page blueprint for Professional Services (Authority Homepage).",
+                    "content": "# Professional Services Authority Homepage\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "professional-4",
+                    "title": "Professional Services Conversion Funnel",
+                    "description": "High-converting Elementor landing page blueprint for Professional Services (Conversion Funnel).",
+                    "content": "# Professional Services Conversion Funnel\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "professional-5",
+                    "title": "Professional Services Modern Portfolio",
+                    "description": "High-converting Elementor landing page blueprint for Professional Services (Modern Portfolio).",
+                    "content": "# Professional Services Modern Portfolio\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "professional-6",
+                    "title": "Professional Services Lead Magnet Page",
+                    "description": "High-converting Elementor landing page blueprint for Professional Services (Lead Magnet Page).",
+                    "content": "# Professional Services Lead Magnet Page\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                }
+            ]
+        },
+        {
+            "slug": "home-services",
+            "label": "Home Services & Trades",
+            "prompts": [
+                {
+                    "slug": "home-services-1",
+                    "title": "Home Services & Trades Landing Page Pro",
+                    "description": "High-converting Elementor landing page blueprint for Home Services & Trades (Landing Page Pro).",
+                    "content": "# Home Services & Trades Landing Page Pro\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "home-services-2",
+                    "title": "Home Services & Trades Services Showcase",
+                    "description": "High-converting Elementor landing page blueprint for Home Services & Trades (Services Showcase).",
+                    "content": "# Home Services & Trades Services Showcase\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "home-services-3",
+                    "title": "Home Services & Trades Authority Homepage",
+                    "description": "High-converting Elementor landing page blueprint for Home Services & Trades (Authority Homepage).",
+                    "content": "# Home Services & Trades Authority Homepage\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "home-services-4",
+                    "title": "Home Services & Trades Conversion Funnel",
+                    "description": "High-converting Elementor landing page blueprint for Home Services & Trades (Conversion Funnel).",
+                    "content": "# Home Services & Trades Conversion Funnel\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "home-services-5",
+                    "title": "Home Services & Trades Modern Portfolio",
+                    "description": "High-converting Elementor landing page blueprint for Home Services & Trades (Modern Portfolio).",
+                    "content": "# Home Services & Trades Modern Portfolio\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "home-services-6",
+                    "title": "Home Services & Trades Lead Magnet Page",
+                    "description": "High-converting Elementor landing page blueprint for Home Services & Trades (Lead Magnet Page).",
+                    "content": "# Home Services & Trades Lead Magnet Page\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                }
+            ]
+        },
+        {
+            "slug": "lifestyle",
+            "label": "Lifestyle & Entertainment",
+            "prompts": [
+                {
+                    "slug": "lifestyle-1",
+                    "title": "Lifestyle & Entertainment Landing Page Pro",
+                    "description": "High-converting Elementor landing page blueprint for Lifestyle & Entertainment (Landing Page Pro).",
+                    "content": "# Lifestyle & Entertainment Landing Page Pro\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "lifestyle-2",
+                    "title": "Lifestyle & Entertainment Services Showcase",
+                    "description": "High-converting Elementor landing page blueprint for Lifestyle & Entertainment (Services Showcase).",
+                    "content": "# Lifestyle & Entertainment Services Showcase\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "lifestyle-3",
+                    "title": "Lifestyle & Entertainment Authority Homepage",
+                    "description": "High-converting Elementor landing page blueprint for Lifestyle & Entertainment (Authority Homepage).",
+                    "content": "# Lifestyle & Entertainment Authority Homepage\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "lifestyle-4",
+                    "title": "Lifestyle & Entertainment Conversion Funnel",
+                    "description": "High-converting Elementor landing page blueprint for Lifestyle & Entertainment (Conversion Funnel).",
+                    "content": "# Lifestyle & Entertainment Conversion Funnel\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "lifestyle-5",
+                    "title": "Lifestyle & Entertainment Modern Portfolio",
+                    "description": "High-converting Elementor landing page blueprint for Lifestyle & Entertainment (Modern Portfolio).",
+                    "content": "# Lifestyle & Entertainment Modern Portfolio\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "lifestyle-6",
+                    "title": "Lifestyle & Entertainment Lead Magnet Page",
+                    "description": "High-converting Elementor landing page blueprint for Lifestyle & Entertainment (Lead Magnet Page).",
+                    "content": "# Lifestyle & Entertainment Lead Magnet Page\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                }
+            ]
+        },
+        {
+            "slug": "tech-saas",
+            "label": "Technology & SaaS",
+            "prompts": [
+                {
+                    "slug": "tech-saas-1",
+                    "title": "Technology & SaaS Landing Page Pro",
+                    "description": "High-converting Elementor landing page blueprint for Technology & SaaS (Landing Page Pro).",
+                    "content": "# Technology & SaaS Landing Page Pro\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "tech-saas-2",
+                    "title": "Technology & SaaS Services Showcase",
+                    "description": "High-converting Elementor landing page blueprint for Technology & SaaS (Services Showcase).",
+                    "content": "# Technology & SaaS Services Showcase\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "tech-saas-3",
+                    "title": "Technology & SaaS Authority Homepage",
+                    "description": "High-converting Elementor landing page blueprint for Technology & SaaS (Authority Homepage).",
+                    "content": "# Technology & SaaS Authority Homepage\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "tech-saas-4",
+                    "title": "Technology & SaaS Conversion Funnel",
+                    "description": "High-converting Elementor landing page blueprint for Technology & SaaS (Conversion Funnel).",
+                    "content": "# Technology & SaaS Conversion Funnel\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "tech-saas-5",
+                    "title": "Technology & SaaS Modern Portfolio",
+                    "description": "High-converting Elementor landing page blueprint for Technology & SaaS (Modern Portfolio).",
+                    "content": "# Technology & SaaS Modern Portfolio\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "tech-saas-6",
+                    "title": "Technology & SaaS Lead Magnet Page",
+                    "description": "High-converting Elementor landing page blueprint for Technology & SaaS (Lead Magnet Page).",
+                    "content": "# Technology & SaaS Lead Magnet Page\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                }
+            ]
+        },
+        {
+            "slug": "real-estate",
+            "label": "Real Estate & Architecture",
+            "prompts": [
+                {
+                    "slug": "real-estate-1",
+                    "title": "Real Estate & Architecture Landing Page Pro",
+                    "description": "High-converting Elementor landing page blueprint for Real Estate & Architecture (Landing Page Pro).",
+                    "content": "# Real Estate & Architecture Landing Page Pro\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "real-estate-2",
+                    "title": "Real Estate & Architecture Services Showcase",
+                    "description": "High-converting Elementor landing page blueprint for Real Estate & Architecture (Services Showcase).",
+                    "content": "# Real Estate & Architecture Services Showcase\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "real-estate-3",
+                    "title": "Real Estate & Architecture Authority Homepage",
+                    "description": "High-converting Elementor landing page blueprint for Real Estate & Architecture (Authority Homepage).",
+                    "content": "# Real Estate & Architecture Authority Homepage\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "real-estate-4",
+                    "title": "Real Estate & Architecture Conversion Funnel",
+                    "description": "High-converting Elementor landing page blueprint for Real Estate & Architecture (Conversion Funnel).",
+                    "content": "# Real Estate & Architecture Conversion Funnel\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "real-estate-5",
+                    "title": "Real Estate & Architecture Modern Portfolio",
+                    "description": "High-converting Elementor landing page blueprint for Real Estate & Architecture (Modern Portfolio).",
+                    "content": "# Real Estate & Architecture Modern Portfolio\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "real-estate-6",
+                    "title": "Real Estate & Architecture Lead Magnet Page",
+                    "description": "High-converting Elementor landing page blueprint for Real Estate & Architecture (Lead Magnet Page).",
+                    "content": "# Real Estate & Architecture Lead Magnet Page\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                }
+            ]
+        },
+        {
+            "slug": "creative",
+            "label": "Creative & Agency",
+            "prompts": [
+                {
+                    "slug": "creative-1",
+                    "title": "Creative & Agency Landing Page Pro",
+                    "description": "High-converting Elementor landing page blueprint for Creative & Agency (Landing Page Pro).",
+                    "content": "# Creative & Agency Landing Page Pro\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "creative-2",
+                    "title": "Creative & Agency Services Showcase",
+                    "description": "High-converting Elementor landing page blueprint for Creative & Agency (Services Showcase).",
+                    "content": "# Creative & Agency Services Showcase\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "creative-3",
+                    "title": "Creative & Agency Authority Homepage",
+                    "description": "High-converting Elementor landing page blueprint for Creative & Agency (Authority Homepage).",
+                    "content": "# Creative & Agency Authority Homepage\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "creative-4",
+                    "title": "Creative & Agency Conversion Funnel",
+                    "description": "High-converting Elementor landing page blueprint for Creative & Agency (Conversion Funnel).",
+                    "content": "# Creative & Agency Conversion Funnel\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "creative-5",
+                    "title": "Creative & Agency Modern Portfolio",
+                    "description": "High-converting Elementor landing page blueprint for Creative & Agency (Modern Portfolio).",
+                    "content": "# Creative & Agency Modern Portfolio\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "creative-6",
+                    "title": "Creative & Agency Lead Magnet Page",
+                    "description": "High-converting Elementor landing page blueprint for Creative & Agency (Lead Magnet Page).",
+                    "content": "# Creative & Agency Lead Magnet Page\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                }
+            ]
+        },
+        {
+            "slug": "retail",
+            "label": "Retail & E-commerce",
+            "prompts": [
+                {
+                    "slug": "retail-1",
+                    "title": "Retail & E-commerce Landing Page Pro",
+                    "description": "High-converting Elementor landing page blueprint for Retail & E-commerce (Landing Page Pro).",
+                    "content": "# Retail & E-commerce Landing Page Pro\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "retail-2",
+                    "title": "Retail & E-commerce Services Showcase",
+                    "description": "High-converting Elementor landing page blueprint for Retail & E-commerce (Services Showcase).",
+                    "content": "# Retail & E-commerce Services Showcase\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "retail-3",
+                    "title": "Retail & E-commerce Authority Homepage",
+                    "description": "High-converting Elementor landing page blueprint for Retail & E-commerce (Authority Homepage).",
+                    "content": "# Retail & E-commerce Authority Homepage\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "retail-4",
+                    "title": "Retail & E-commerce Conversion Funnel",
+                    "description": "High-converting Elementor landing page blueprint for Retail & E-commerce (Conversion Funnel).",
+                    "content": "# Retail & E-commerce Conversion Funnel\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "retail-5",
+                    "title": "Retail & E-commerce Modern Portfolio",
+                    "description": "High-converting Elementor landing page blueprint for Retail & E-commerce (Modern Portfolio).",
+                    "content": "# Retail & E-commerce Modern Portfolio\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                },
+                {
+                    "slug": "retail-6",
+                    "title": "Retail & E-commerce Lead Magnet Page",
+                    "description": "High-converting Elementor landing page blueprint for Retail & E-commerce (Lead Magnet Page).",
+                    "content": "# Retail & E-commerce Lead Magnet Page\n\nBuild a responsive Elementor page with hero, value propositions, social proof, grid of offerings, and contact form."
+                }
+            ]
+        }
+    ]
+}

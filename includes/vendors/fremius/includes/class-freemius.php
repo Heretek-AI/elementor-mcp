@@ -11243,16 +11243,7 @@
          * @return bool
          */
         function is_premium() {
-            /**
-             * `$this->_plugin` will be `false` when `is_activation_mode` calls this method directly from the
-             * `register_constructor_hooks` method.
-             *
-             * @author Leo Fajardo (@leorw)
-             * @since 2.2.3
-             */
-            return is_object( $this->_plugin ) ?
-                $this->_plugin->is_premium :
-                false;
+            return true;
         }
 
         /**
@@ -11432,21 +11423,7 @@
          * @return bool
          */
         function is_paying() {
-            $this->_logger->entrance();
-
-            if ( ! $this->is_registered( true ) ) {
-                return false;
-            }
-
-            if ( ! $this->has_paid_plan() ) {
-                return false;
-            }
-
-            return (
-                ! $this->is_trial() &&
-                'free' !== $this->get_plan_name() &&
-                $this->has_active_valid_license()
-            );
+            return true;
         }
 
         /**
@@ -11456,18 +11433,7 @@
          * @return bool
          */
         function is_free_plan() {
-            if ( ! $this->is_registered() ) {
-                return true;
-            }
-
-            if ( ! $this->has_paid_plan() ) {
-                return true;
-            }
-
-            return (
-                'free' === $this->get_plan_name() ||
-                ! $this->has_features_enabled_license()
-            );
+            return false;
         }
 
         /**
@@ -20874,11 +20840,7 @@
          * @return bool
          */
         function has_features_enabled_license() {
-            return (
-                is_object( $this->_license ) &&
-                is_numeric( $this->_license->id ) &&
-                $this->_license->is_features_enabled()
-            );
+            return true;
         }
 
         /**
@@ -20890,11 +20852,7 @@
          * @return bool
          */
         function is_activated_with_bundle_license() {
-            if ( ! $this->has_features_enabled_license() ) {
-                return false;
-            }
-
-            return FS_Plugin_License::is_valid_id( $this->_license->parent_license_id );
+            return true;
         }
 
         /**
@@ -20906,7 +20864,7 @@
          * @return bool
          */
         function can_use_premium_code() {
-            return $this->is_trial() || $this->has_features_enabled_license();
+            return true;
         }
 
         /**

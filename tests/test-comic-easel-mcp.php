@@ -414,7 +414,61 @@ $dispatched = $integration->execute_read(
 assert( $dispatched['id'] === $created_id );
 echo "PASS: Ability dispatchers verified!\n\n";
 
-echo "=== TEST 7: Delete Comic with Confirm Guard ===\n";
+echo "=== TEST 7: Dispatcher Schema Exposure (comic-write scheme discoverable) ===\n";
+
+$read_schema  = $GLOBALS['abilities']['emcp-tools/comic-read']['input_schema'];
+$write_schema = $GLOBALS['abilities']['emcp-tools/comic-write']['input_schema'];
+
+// 1. comic-write must NOT require operation: the empty-op discovery call is legal.
+$write_required = isset( $write_schema['required'] ) ? (array) $write_schema['required'] : array();
+assert( ! in_array( 'operation', $write_required, true ) );
+echo "PASS: comic-write does not require operation (empty-op discovery call is legal).\n";
+
+// 2. Both operation props carry an enum equal to the single source of truth (op_schema keys).
+$read_spec_keys  = array_keys( EMCP_Tools_Comic_Read_Operations::op_schema() );
+$write_spec_keys = array_keys( EMCP_Tools_Comic_Write_Operations::op_schema() );
+assert( isset( $read_schema['properties']['operation']['enum'] ) );
+assert( $read_schema['properties']['operation']['enum'] === $read_spec_keys );
+assert( isset( $write_schema['properties']['operation']['enum'] ) );
+assert( $write_schema['properties']['operation']['enum'] === $write_spec_keys );
+echo 'PASS: operation enum == op_schema() keys (read: ' . count( $read_spec_keys ) . ', write: ' . count( $write_spec_keys ) . " ops).\n";
+
+// 3. The empty-op catalog exposes a typed schema + example per operation.
+$cat_write = $integration->execute_write( array() );
+assert( isset( $cat_write['operations']['create-comic'] ) );
+$cc = $cat_write['operations']['create-comic'];
+assert( isset( $cc['schema']['type'] ) && 'object' === $cc['schema']['type'] );
+assert( is_array( $cc['schema']['properties'] ) );
+assert( $cc['schema']['required'] === array( 'title' ) );
+assert( is_array( $cc['example'] ) && isset( $cc['example']['title'] ) );
+echo "PASS: empty-op catalog returns a typed schema + example per operation.\n";
+
+// 4. The exact contract facts the ingestion agent could not determine are now exposed.
+$cc_props = $cc['schema']['properties'];
+assert( isset( $cc_props['status']['enum'] ) && in_array( 'publish', $cc_props['status']['enum'], true ) );
+assert( ( $cc_props['status']['default'] ?? '' ) === 'publish' );
+foreach ( array( 'status', 'date', 'author', 'author_id', 'characters', 'locations', 'tags', 'content_warning', 'comic_html_below' ) as $exposed ) {
+	assert( isset( $cc_props[ $exposed ] ), "create-comic schema missing field: $exposed" );
+}
+echo "PASS: create-comic schema exposes status (enum incl. publish, default publish), date, author, characters, locations, tags, content_warning, comic_html_below.\n";
+
+// 5. Parity guard: every field the executors read must be documented (no drift allowed).
+$create_comic_fields = array( 'title', 'content', 'status', 'date', 'author_id', 'author', 'featured_media_id', 'featured_media_url', 'additional_images', 'comic_html_below', 'comic_html_above', 'hovertext', 'transcript', 'content_warning', 'chapters', 'characters', 'locations', 'tags', 'source_tweet_id', 'source_url' );
+foreach ( $create_comic_fields as $field ) {
+	assert( isset( $cc_props[ $field ] ), "op_schema create-comic missing executor field: $field" );
+}
+$update_props = $cat_write['operations']['update-comic']['schema']['properties'];
+foreach ( array_merge( array( 'id', 'append_images' ), $create_comic_fields ) as $field ) {
+	assert( isset( $update_props[ $field ] ), "op_schema update-comic missing executor field: $field" );
+}
+echo 'PASS: op_schema() documents every field the create-comic/update-comic executors read (' . count( $create_comic_fields ) . " shared fields).\n";
+
+// 6. Discovery-catalog operation lists match op_schema() keys (one source of truth).
+assert( array_keys( $cat_write['operations'] ) === $write_spec_keys );
+assert( array_keys( $integration->execute_read( array() )['operations'] ) === $read_spec_keys );
+echo "PASS: discovery-catalog operation lists match op_schema() keys.\n\n";
+
+echo "=== TEST 8: Delete Comic with Confirm Guard ===\n";
 $fail_del = EMCP_Tools_Comic_Write_Operations::delete_comic( array( 'id' => $created_id ) );
 assert( is_wp_error( $fail_del ) ); // confirm missing
 $ok_del = EMCP_Tools_Comic_Write_Operations::delete_comic( array( 'id' => $created_id, 'confirm' => true ) );
@@ -422,4 +476,4 @@ assert( ! is_wp_error( $ok_del ) );
 assert( $ok_del['deleted'] === true );
 echo "PASS: delete_comic confirm guard and execution verified!\n\n";
 
-echo "ALL 7 COMIC EASEL MCP TEST SUITES PASSED 100%!\n";
+echo "ALL 8 COMIC EASEL MCP TEST SUITES PASSED 100%!\n";

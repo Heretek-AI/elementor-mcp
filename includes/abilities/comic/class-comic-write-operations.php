@@ -555,6 +555,163 @@ class EMCP_Tools_Comic_Write_Operations {
 		);
 	}
 
+	/**
+	 * Single source of truth for the write dispatcher's per-operation argument schema.
+	 *
+	 * The integration class derives the tool `operation` enum, the discovery catalog,
+	 * and (indirectly) the tool description from this map, so the documented contract
+	 * can never drift from the fields these executors actually read. `arguments`
+	 * schemas are advisory (the executors tolerate mixed shapes), but accurate.
+	 *
+	 * @return array{description:string,example:array,schema:array} keyed by operation name.
+	 */
+	public static function op_schema(): array {
+		// Field schemas shared by create-comic and update-comic (both read these keys).
+		$comic_fields = array(
+			'content'           => array( 'type' => 'string', 'description' => __( 'Comic description / body (HTML allowed; sanitized with wp_kses_post).', 'emcp-tools' ) ),
+			'status'            => array( 'type' => 'string', 'enum' => array( 'publish', 'draft', 'pending', 'private', 'future' ), 'default' => 'publish', 'description' => __( 'Publication status. Defaults to "publish"; use "draft" to queue for editorial review.', 'emcp-tools' ) ),
+			'date'              => array( 'type' => array( 'string', 'integer' ), 'description' => __( 'Backdate to the source timestamp: ISO 8601 (e.g. 2026-08-19T16:58:06.000Z), "Y-m-d H:i:s", or a unix timestamp. Omit to use the current time.', 'emcp-tools' ) ),
+			'author_id'         => array( 'type' => 'integer', 'description' => __( 'WordPress user ID to attribute the comic to.', 'emcp-tools' ) ),
+			'author'            => array( 'type' => array( 'integer', 'string' ), 'description' => __( 'Post author: a numeric user ID, or a WP user login/slug (resolved at write time).', 'emcp-tools' ) ),
+			'featured_media_id' => array( 'type' => 'integer', 'description' => __( 'Media Library attachment ID for page 1 (takes precedence over featured_media_url).', 'emcp-tools' ) ),
+			'featured_media_url' => array( 'type' => 'string', 'format' => 'uri', 'description' => __( 'Remote image URL sideloaded as page 1 when featured_media_id is absent.', 'emcp-tools' ) ),
+			'additional_images' => array( 'type' => 'array', 'items' => array(), 'description' => __( 'Pages 2..N. Each item is a Media Library attachment ID (int), an image URL (string, sideloaded), or an object { url, alt, width?, height? }. Rendered into comic-html-below.', 'emcp-tools' ) ),
+			'comic_html_below'  => array( 'type' => 'string', 'description' => __( 'Raw HTML rendered below the comic (advanced; usually prefer additional_images).', 'emcp-tools' ) ),
+			'comic_html_above'  => array( 'type' => 'string', 'description' => __( 'Raw HTML rendered above the comic.', 'emcp-tools' ) ),
+			'hovertext'         => array( 'type' => 'string', 'description' => __( 'Title/alt hover text for the comic image.', 'emcp-tools' ) ),
+			'transcript'        => array( 'type' => 'string', 'description' => __( 'Text transcript of the comic (accessibility).', 'emcp-tools' ) ),
+			'content_warning'   => array( 'type' => 'string', 'description' => __( 'Content-warning label (stored as comic-content-warning).', 'emcp-tools' ) ),
+			'chapters'          => array( 'type' => 'array', 'items' => array(), 'description' => __( 'Chapter / story-arc terms: term IDs, slugs, or names (missing names are created).', 'emcp-tools' ) ),
+			'characters'        => array( 'type' => 'array', 'items' => array(), 'description' => __( 'Character terms: term IDs, slugs, or names (missing names are created).', 'emcp-tools' ) ),
+			'locations'         => array( 'type' => 'array', 'items' => array(), 'description' => __( 'Location terms: term IDs, slugs, or names (missing names are created).', 'emcp-tools' ) ),
+			'tags'              => array( 'type' => 'array', 'items' => array(), 'description' => __( 'Post tags: term IDs, slugs, or names.', 'emcp-tools' ) ),
+			'source_tweet_id'   => array( 'type' => 'string', 'description' => __( 'Original X/Twitter status ID — source tracking and scraper idempotency (find-by-source).', 'emcp-tools' ) ),
+			'source_url'        => array( 'type' => 'string', 'format' => 'uri', 'description' => __( 'Original X/Twitter status URL — source tracking.', 'emcp-tools' ) ),
+		);
+
+		return array(
+			'create-comic'     => array(
+				'description' => __( 'Create a comic post with a featured image (page 1), optional multi-image strip (additional_images, pages 2..N), source-tracking metadata, taxonomies, and presentation meta.', 'emcp-tools' ),
+				'example'     => array(
+					'title'             => 'Example Archive — 2026-08-19',
+					'status'            => 'publish',
+					'date'              => '2026-08-19T16:58:06.000Z',
+					'featured_media_id' => 15461,
+					'additional_images' => array( 15462, 'https://example.com/wp-content/uploads/2026/08/page3.png' ),
+					'chapters'          => array( 'luckyyzinto-archive' ),
+					'source_tweet_id'   => '1829012345678901234',
+					'source_url'        => 'https://x.com/luckyyzinto/status/1829012345678901234',
+				),
+				'schema'      => array(
+					'type'       => 'object',
+					'properties' => array(
+						'title' => array( 'type' => 'string', 'description' => __( 'Comic title (required; also used to name sideloaded attachment files).', 'emcp-tools' ) ),
+					) + $comic_fields,
+					'required' => array( 'title' ),
+				),
+			),
+			'update-comic'     => array(
+				'description' => __( 'Update an existing comic: post fields, featured image, additional_images (replace or append), source metadata, and taxonomies. Only supplied fields change.', 'emcp-tools' ),
+				'example'     => array(
+					'id'                => 123,
+					'append_images'     => true,
+					'additional_images' => array( 'https://example.com/wp-content/uploads/2026/08/page4.png' ),
+					'status'            => 'publish',
+				),
+				'schema'      => array(
+					'type'       => 'object',
+					'properties' => array(
+						'id'             => array( 'type' => 'integer', 'description' => __( 'Comic post ID (required).', 'emcp-tools' ) ),
+						'append_images'  => array( 'type' => 'boolean', 'default' => false, 'description' => __( 'When set with additional_images, append the new pages to the existing strip instead of replacing it.', 'emcp-tools' ) ),
+						'title'          => array( 'type' => 'string', 'description' => __( 'New comic title.', 'emcp-tools' ) ),
+					) + $comic_fields,
+					'required' => array( 'id' ),
+				),
+			),
+			'delete-comic'     => array(
+				'description' => __( 'Trash (or permanently delete) a comic post. Requires confirm: true.', 'emcp-tools' ),
+				'example'     => array( 'id' => 123, 'confirm' => true, 'force' => false ),
+				'schema'      => array(
+					'type'       => 'object',
+					'properties' => array(
+						'id'      => array( 'type' => 'integer', 'description' => __( 'Comic post ID (required).', 'emcp-tools' ) ),
+						'force'   => array( 'type' => 'boolean', 'default' => false, 'description' => __( 'Permanently delete instead of moving to trash.', 'emcp-tools' ) ),
+						'confirm' => array( 'type' => 'boolean', 'default' => false, 'description' => __( 'Must be true to delete.', 'emcp-tools' ) ),
+					),
+					'required' => array( 'id', 'confirm' ),
+				),
+			),
+			'create-chapter'   => array(
+				'description' => __( 'Create a chapter / story-arc term, optionally nested under a parent chapter and ordered via menu_order.', 'emcp-tools' ),
+				'example'     => array( 'name' => 'Environmental Challenge', 'slug' => 'environmental-challenge', 'description' => 'Story arc', 'menu_order' => 5 ),
+				'schema'      => array(
+					'type'       => 'object',
+					'properties' => array(
+						'name'        => array( 'type' => 'string', 'description' => __( 'Chapter name (required).', 'emcp-tools' ) ),
+						'slug'        => array( 'type' => 'string', 'description' => __( 'URL slug; auto-derived from name when omitted.', 'emcp-tools' ) ),
+						'parent'      => array( 'type' => 'integer', 'description' => __( 'Parent chapter term ID for a nested arc.', 'emcp-tools' ) ),
+						'description' => array( 'type' => 'string', 'description' => __( 'Chapter description.', 'emcp-tools' ) ),
+						'menu_order'  => array( 'type' => 'integer', 'description' => __( 'Sort order within the chapter list.', 'emcp-tools' ) ),
+					),
+					'required' => array( 'name' ),
+				),
+			),
+			'update-chapter'   => array(
+				'description' => __( 'Update a chapter term: name, slug, parent, description, or menu_order.', 'emcp-tools' ),
+				'example'     => array( 'id' => 12, 'name' => 'Environmental Challenge (R)', 'menu_order' => 6 ),
+				'schema'      => array(
+					'type'       => 'object',
+					'properties' => array(
+						'id'          => array( 'type' => 'integer', 'description' => __( 'Chapter term ID (required).', 'emcp-tools' ) ),
+						'name'        => array( 'type' => 'string', 'description' => __( 'New chapter name.', 'emcp-tools' ) ),
+						'slug'        => array( 'type' => 'string', 'description' => __( 'New URL slug.', 'emcp-tools' ) ),
+						'parent'      => array( 'type' => 'integer', 'description' => __( 'New parent chapter term ID (0 = top level).', 'emcp-tools' ) ),
+						'description' => array( 'type' => 'string', 'description' => __( 'New description.', 'emcp-tools' ) ),
+						'menu_order'  => array( 'type' => 'integer', 'description' => __( 'New sort order.', 'emcp-tools' ) ),
+					),
+					'required' => array( 'id' ),
+				),
+			),
+			'delete-chapter'   => array(
+				'description' => __( 'Delete a chapter term. Requires confirm: true.', 'emcp-tools' ),
+				'example'     => array( 'id' => 12, 'confirm' => true ),
+				'schema'      => array(
+					'type'       => 'object',
+					'properties' => array(
+						'id'      => array( 'type' => 'integer', 'description' => __( 'Chapter term ID (required).', 'emcp-tools' ) ),
+						'confirm' => array( 'type' => 'boolean', 'default' => false, 'description' => __( 'Must be true to delete.', 'emcp-tools' ) ),
+					),
+					'required' => array( 'id', 'confirm' ),
+				),
+			),
+			'create-character' => array(
+				'description' => __( 'Create a character term.', 'emcp-tools' ),
+				'example'     => array( 'name' => 'Lucky Yzinto', 'description' => 'Main character' ),
+				'schema'      => array(
+					'type'       => 'object',
+					'properties' => array(
+						'name'        => array( 'type' => 'string', 'description' => __( 'Character name (required).', 'emcp-tools' ) ),
+						'description' => array( 'type' => 'string', 'description' => __( 'Character description.', 'emcp-tools' ) ),
+					),
+					'required' => array( 'name' ),
+				),
+			),
+			'set-source'       => array(
+				'description' => __( 'Attach source_tweet_id / source_url to an existing comic post (used to backfill provenance after import).', 'emcp-tools' ),
+				'example'     => array( 'id' => 123, 'source_tweet_id' => '1829012345678901234', 'source_url' => 'https://x.com/luckyyzinto/status/1829012345678901234' ),
+				'schema'      => array(
+					'type'       => 'object',
+					'properties' => array(
+						'id'             => array( 'type' => 'integer', 'description' => __( 'Comic post ID (required).', 'emcp-tools' ) ),
+						'source_tweet_id' => array( 'type' => 'string', 'description' => __( 'Original X/Twitter status ID.', 'emcp-tools' ) ),
+						'source_url'      => array( 'type' => 'string', 'format' => 'uri', 'description' => __( 'Original X/Twitter status URL.', 'emcp-tools' ) ),
+					),
+					'required' => array( 'id' ),
+				),
+			),
+		);
+	}
+
 	// ── Private helpers ──────────────────────────────────────────────────
 
 	/**

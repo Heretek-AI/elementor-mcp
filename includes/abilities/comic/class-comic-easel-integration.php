@@ -55,22 +55,30 @@ class EMCP_Tools_Comic_Easel_Integration {
 	 * Register the abilities with the WordPress Abilities API.
 	 */
 	public function register(): void {
+		$read_names  = array_keys( EMCP_Tools_Comic_Read_Operations::op_schema() );
+		$write_names = array_keys( EMCP_Tools_Comic_Write_Operations::op_schema() );
+
 		emcp_tools_register_ability(
 			'emcp-tools/comic-read',
 			array(
 				'label'               => __( 'Comic Easel Read', 'emcp-tools' ),
-				'description'         => __( 'Read Comic Easel webcomics, multi-image strips (comic-html-below), source tracking (source_tweet_id, source_url), chapters, characters, and chronological navigation. Call with no operation to list catalog.', 'emcp-tools' ),
+				'description'         => sprintf(
+					/* translators: %1$s: comma-separated operation names */
+					__( 'Read Comic Easel webcomics, multi-image strips (comic-html-below), source tracking (source_tweet_id, source_url), chapters, characters, and chronological navigation. Discovery: call with NO operation to receive each operation\'s JSON schema and an example, then call again with { operation, arguments }. Read operations: %1$s.', 'emcp-tools' ),
+					implode( ', ', $read_names )
+				),
 				'category'            => 'emcp-tools',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
 						'operation' => array(
 							'type'        => 'string',
-							'description' => __( 'The read operation to run. One of: get-comic, list-comics, find-by-source, get-navigation, list-chapters, list-characters, list-locations, get-settings. Omit to list operations.', 'emcp-tools' ),
+							'enum'        => $read_names,
+							'description' => __( 'The read operation to run. Omit to list operations.', 'emcp-tools' ),
 						),
 						'arguments' => array(
 							'type'        => 'object',
-							'description' => __( 'Arguments passed to the chosen operation.', 'emcp-tools' ),
+							'description' => __( 'Arguments passed to the chosen operation (see the catalog returned when operation is omitted).', 'emcp-tools' ),
 						),
 					),
 				),
@@ -88,21 +96,25 @@ class EMCP_Tools_Comic_Easel_Integration {
 			'emcp-tools/comic-write',
 			array(
 				'label'               => __( 'Comic Easel Write', 'emcp-tools' ),
-				'description'         => __( 'Create, update, or delete Comic Easel webcomics, multi-image strips (comic-html-below), source tracking metadata, chapters, and characters. Call with no operation to list catalog.', 'emcp-tools' ),
+				'description'         => sprintf(
+					/* translators: %1$s: comma-separated operation names */
+					__( 'Create, update, or delete Comic Easel webcomics, multi-image strips (comic-html-below), source tracking (source_tweet_id, source_url), chapters, and characters. Discovery: call with NO operation to receive each operation\'s JSON schema and an example, then call again with { operation, arguments }. Write operations: %1$s. create-comic: status defaults to "publish" (pass "draft" to queue for review); backdate with date (ISO 8601 / Y-m-d H:i:s / unix timestamp); page 1 via featured_media_id/featured_media_url, pages 2..N via additional_images (attachment IDs or URLs); author via author_id or author (login/slug).', 'emcp-tools' ),
+					implode( ', ', $write_names )
+				),
 				'category'            => 'emcp-tools',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
 						'operation' => array(
 							'type'        => 'string',
-							'description' => __( 'The write operation to run. One of: create-comic, update-comic, delete-comic, create-chapter, update-chapter, delete-chapter, create-character, set-source. Omit to list operations.', 'emcp-tools' ),
+							'enum'        => $write_names,
+							'description' => __( 'The write operation to run. Omit to list operations.', 'emcp-tools' ),
 						),
 						'arguments' => array(
 							'type'        => 'object',
-							'description' => __( 'Arguments passed to the chosen operation.', 'emcp-tools' ),
+							'description' => __( 'Arguments passed to the chosen operation (see the catalog returned when operation is omitted).', 'emcp-tools' ),
 						),
 					),
-					'required'   => array( 'operation' ),
 				),
 				'output_schema'       => array( 'type' => 'object' ),
 				'permission_callback' => array( $this, 'can_write' ),
@@ -113,6 +125,74 @@ class EMCP_Tools_Comic_Easel_Integration {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Build a discovery-catalog response from an operations spec (op_schema).
+	 *
+	 * Backward-compatible with the earlier hand-maintained catalogs: each operation
+	 * entry keeps the flat `arguments` hint map (now derived from the schema) and
+	 * gains a typed `schema` plus a realistic `example`.
+	 *
+	 * @param string $tool        Ability name.
+	 * @param string $description Catalog description.
+	 * @param array  $spec        op_schema() output: name => { description, example, schema }.
+	 * @return array
+	 */
+	private function catalog( string $tool, string $description, array $spec ): array {
+		$operations = array();
+
+		foreach ( $spec as $name => $entry ) {
+			$schema   = (array) ( $entry['schema'] ?? array() );
+			$required = (array) ( $schema['required'] ?? array() );
+			$props    = (array) ( $schema['properties'] ?? array() );
+			$args     = array();
+
+			foreach ( $props as $arg_name => $prop ) {
+				$args[ $arg_name ] = self::argument_hint( (array) $prop, in_array( $arg_name, $required, true ) );
+			}
+
+			$operations[ $name ] = array(
+				'description' => (string) ( $entry['description'] ?? $name ),
+				'arguments'   => $args,
+				'required'    => $required,
+				'schema'      => $schema,
+				'example'     => (array) ( $entry['example'] ?? array() ),
+			);
+		}
+
+		return array(
+			'tool'        => $tool,
+			'description' => $description,
+			'operations'  => $operations,
+		);
+	}
+
+	/**
+	 * Render a short human hint for one schema property (the catalog `arguments` value).
+	 *
+	 * @param array $prop     Property schema.
+	 * @param bool  $required Whether the property is in the operation's required list.
+	 * @return string
+	 */
+	private static function argument_hint( array $prop, bool $required ): string {
+		$type = isset( $prop['type'] ) ? $prop['type'] : 'mixed';
+		if ( is_array( $type ) ) {
+			$type = implode( '|', $type );
+		}
+		$hint = str_replace( 'integer', 'int', (string) $type );
+
+		if ( ! empty( $prop['enum'] ) && is_array( $prop['enum'] ) ) {
+			$hint .= ' (enum: ' . implode( '|', $prop['enum'] ) . ')';
+		}
+		if ( array_key_exists( 'default', $prop ) ) {
+			$hint .= ' (default: ' . ( is_bool( $prop['default'] ) ? ( $prop['default'] ? 'true' : 'false' ) : (string) $prop['default'] ) . ')';
+		}
+		if ( $required ) {
+			$hint .= ' (required)';
+		}
+
+		return $hint;
 	}
 
 	/**
@@ -180,43 +260,10 @@ class EMCP_Tools_Comic_Easel_Integration {
 				return EMCP_Tools_Comic_Read_Operations::get_settings();
 
 			case '':
-				return array(
-					'tool'        => 'emcp-tools/comic-read',
-					'description' => __( 'Read Comic Easel webcomics, multi-image strips, source tracking, chapters, and navigation.', 'emcp-tools' ),
-					'operations'  => array(
-						'get-comic'       => array(
-							'description' => __( 'Get full comic details: featured image, multi-image strip, source metadata, taxonomies, and navigation.', 'emcp-tools' ),
-							'arguments'   => array( 'id' => 'int (optional)', 'slug' => 'string (optional)' ),
-						),
-						'list-comics'     => array(
-							'description' => __( 'List comics with filtering by chapter, character, location, tag, status, and chronological story order.', 'emcp-tools' ),
-							'arguments'   => array( 'chapter' => 'slug|id', 'character' => 'slug|id', 'status' => 'string', 'order' => 'ASC|DESC', 'page' => 'int', 'per_page' => 'int' ),
-						),
-						'find-by-source'  => array(
-							'description' => __( 'Find an existing comic by source_tweet_id or source_url (idempotency check for scrapers / n8n).', 'emcp-tools' ),
-							'arguments'   => array( 'source_tweet_id' => 'string (optional)', 'source_url' => 'string (optional)' ),
-						),
-						'get-navigation'  => array(
-							'description' => __( 'Get First/Previous/Next/Latest and In-Chapter navigation links for a comic.', 'emcp-tools' ),
-							'arguments'   => array( 'id' => 'int', 'slug' => 'string' ),
-						),
-						'list-chapters'   => array(
-							'description' => __( 'List all chapters and story arcs in hierarchy with page counts and menu order.', 'emcp-tools' ),
-							'arguments'   => array( 'parent' => 'int (optional)' ),
-						),
-						'list-characters' => array(
-							'description' => __( 'List all comic characters with post counts.', 'emcp-tools' ),
-							'arguments'   => array(),
-						),
-						'list-locations'  => array(
-							'description' => __( 'List all comic locations.', 'emcp-tools' ),
-							'arguments'   => array(),
-						),
-						'get-settings'    => array(
-							'description' => __( 'Get Comic Easel plugin configuration settings and active post type slug.', 'emcp-tools' ),
-							'arguments'   => array(),
-						),
-					),
+				return $this->catalog(
+					'emcp-tools/comic-read',
+					__( 'Read Comic Easel webcomics, multi-image strips, source tracking, chapters, and navigation.', 'emcp-tools' ),
+					EMCP_Tools_Comic_Read_Operations::op_schema()
 				);
 
 			default:
@@ -267,43 +314,10 @@ class EMCP_Tools_Comic_Easel_Integration {
 				return EMCP_Tools_Comic_Write_Operations::set_source( $in );
 
 			case '':
-				return array(
-					'tool'        => 'emcp-tools/comic-write',
-					'description' => __( 'Create, update, or delete Comic Easel webcomics, multi-image strips, source metadata, and chapters.', 'emcp-tools' ),
-					'operations'  => array(
-						'create-comic'     => array(
-							'description' => __( 'Create a comic post with featured image, multi-image strip (comic-html-below), source tracking, and chapters.', 'emcp-tools' ),
-							'arguments'   => array( 'title' => 'string (required)', 'content' => 'string', 'featured_media_url' => 'string', 'featured_media_id' => 'int', 'additional_images' => 'array of IDs or URLs', 'source_tweet_id' => 'string', 'source_url' => 'string', 'chapters' => 'array', 'hovertext' => 'string', 'transcript' => 'string' ),
-						),
-						'update-comic'     => array(
-							'description' => __( 'Update comic post details, images, additional_images (append or replace), source tracking, or metadata.', 'emcp-tools' ),
-							'arguments'   => array( 'id' => 'int (required)', 'title' => 'string', 'additional_images' => 'array', 'append_images' => 'bool', 'source_tweet_id' => 'string', 'source_url' => 'string' ),
-						),
-						'delete-comic'     => array(
-							'description' => __( 'Trash or permanently delete a comic post (requires confirm: true).', 'emcp-tools' ),
-							'arguments'   => array( 'id' => 'int (required)', 'force' => 'bool (optional)', 'confirm' => 'bool (required: true)' ),
-						),
-						'create-chapter'   => array(
-							'description' => __( 'Create a chapter / story arc term with optional parent and menu order.', 'emcp-tools' ),
-							'arguments'   => array( 'name' => 'string (required)', 'slug' => 'string', 'parent' => 'int', 'description' => 'string', 'menu_order' => 'int' ),
-						),
-						'update-chapter'   => array(
-							'description' => __( 'Update chapter term name, slug, parent, description, or menu order.', 'emcp-tools' ),
-							'arguments'   => array( 'id' => 'int (required)', 'name' => 'string', 'menu_order' => 'int' ),
-						),
-						'delete-chapter'   => array(
-							'description' => __( 'Delete a chapter term (requires confirm: true).', 'emcp-tools' ),
-							'arguments'   => array( 'id' => 'int (required)', 'confirm' => 'bool (required: true)' ),
-						),
-						'create-character' => array(
-							'description' => __( 'Create a character term.', 'emcp-tools' ),
-							'arguments'   => array( 'name' => 'string (required)', 'description' => 'string' ),
-						),
-						'set-source'       => array(
-							'description' => __( 'Quick helper to attach source_tweet_id and source_url to an existing comic post.', 'emcp-tools' ),
-							'arguments'   => array( 'id' => 'int (required)', 'source_tweet_id' => 'string', 'source_url' => 'string' ),
-						),
-					),
+				return $this->catalog(
+					'emcp-tools/comic-write',
+					__( 'Create, update, or delete Comic Easel webcomics, multi-image strips, source metadata, and chapters.', 'emcp-tools' ),
+					EMCP_Tools_Comic_Write_Operations::op_schema()
 				);
 
 			default:

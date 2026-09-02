@@ -516,6 +516,97 @@ class EMCP_Tools_Comic_Read_Operations {
 		);
 	}
 
+	/**
+	 * Single source of truth for the read dispatcher's per-operation argument schema.
+	 *
+	 * The integration class derives the tool `operation` enum, the discovery catalog,
+	 * and (indirectly) the tool description from this map, so the documented contract
+	 * can never drift from the fields these executors actually read.
+	 *
+	 * @return array{description:string,example:array,schema:array} keyed by operation name.
+	 */
+	public static function op_schema(): array {
+		return array(
+			'get-comic'       => array(
+				'description' => __( 'Get full comic details: featured image (page 1), multi-image strip (pages 2..N), source metadata, taxonomies, author, and First/Previous/Next/Latest navigation.', 'emcp-tools' ),
+				'example'     => array( 'id' => 123 ),
+				'schema'      => array(
+					'type'       => 'object',
+					'properties' => array(
+						'id'   => array( 'type' => 'integer', 'description' => __( 'Comic post ID.', 'emcp-tools' ) ),
+						'slug' => array( 'type' => 'string', 'description' => __( 'Comic URL slug.', 'emcp-tools' ) ),
+					),
+				),
+			),
+			'list-comics'     => array(
+				'description' => __( 'List comics with filtering by chapter, character, location, tag, status, and free-text search, in chronological story order.', 'emcp-tools' ),
+				'example'     => array( 'status' => 'publish', 'per_page' => 20, 'order' => 'ASC' ),
+				'schema'      => array(
+					'type'       => 'object',
+					'properties' => array(
+						'page'      => array( 'type' => 'integer', 'default' => 1, 'description' => __( 'Page number (1-based).', 'emcp-tools' ) ),
+						'per_page'  => array( 'type' => 'integer', 'default' => 20, 'description' => __( 'Results per page (1-100).', 'emcp-tools' ) ),
+						'status'    => array( 'type' => 'string', 'default' => 'publish', 'description' => __( 'Post status filter; "any" returns every status.', 'emcp-tools' ) ),
+						'order'     => array( 'type' => 'string', 'enum' => array( 'ASC', 'DESC' ), 'default' => 'ASC', 'description' => __( 'Chronological direction (ASC = story order).', 'emcp-tools' ) ),
+						'orderby'   => array( 'type' => 'string', 'default' => 'date', 'description' => __( 'Sort field (e.g. date, modified, title, ID).', 'emcp-tools' ) ),
+						'search'    => array( 'type' => 'string', 'description' => __( 'Free-text search on title/content.', 'emcp-tools' ) ),
+						'chapter'   => array( 'type' => array( 'integer', 'string' ), 'description' => __( 'Filter by chapter: term ID or slug.', 'emcp-tools' ) ),
+						'character' => array( 'type' => array( 'integer', 'string' ), 'description' => __( 'Filter by character: term ID or slug.', 'emcp-tools' ) ),
+						'location'  => array( 'type' => array( 'integer', 'string' ), 'description' => __( 'Filter by location: term ID or slug.', 'emcp-tools' ) ),
+						'tag'       => array( 'type' => array( 'integer', 'string' ), 'description' => __( 'Filter by tag: term ID or slug.', 'emcp-tools' ) ),
+					),
+				),
+			),
+			'find-by-source'  => array(
+				'description' => __( 'Find an existing comic by source_tweet_id or source_url — the idempotency check scrapers / n8n run before create-comic. Supply at least one of the two.', 'emcp-tools' ),
+				'example'     => array( 'source_tweet_id' => '1829012345678901234' ),
+				'schema'      => array(
+					'type'       => 'object',
+					'properties' => array(
+						'source_tweet_id' => array( 'type' => 'string', 'description' => __( 'Original X/Twitter status ID to match.', 'emcp-tools' ) ),
+						'source_url'      => array( 'type' => 'string', 'format' => 'uri', 'description' => __( 'Original X/Twitter status URL to match.', 'emcp-tools' ) ),
+					),
+				),
+			),
+			'get-navigation'  => array(
+				'description' => __( 'Get First/Previous/Next/Latest and In-Chapter navigation links for a comic. Supply id or slug.', 'emcp-tools' ),
+				'example'     => array( 'id' => 123 ),
+				'schema'      => array(
+					'type'       => 'object',
+					'properties' => array(
+						'id'   => array( 'type' => 'integer', 'description' => __( 'Comic post ID.', 'emcp-tools' ) ),
+						'slug' => array( 'type' => 'string', 'description' => __( 'Comic URL slug.', 'emcp-tools' ) ),
+					),
+				),
+			),
+			'list-chapters'   => array(
+				'description' => __( 'List all chapters / story arcs in hierarchy, with page counts and menu order.', 'emcp-tools' ),
+				'example'     => array(),
+				'schema'      => array(
+					'type'       => 'object',
+					'properties' => array(
+						'parent' => array( 'type' => 'integer', 'description' => __( 'Only list children of this chapter term ID.', 'emcp-tools' ) ),
+					),
+				),
+			),
+			'list-characters' => array(
+				'description' => __( 'List all comic characters with post counts.', 'emcp-tools' ),
+				'example'     => array(),
+				'schema'      => array( 'type' => 'object', 'properties' => array() ),
+			),
+			'list-locations'  => array(
+				'description' => __( 'List all comic locations.', 'emcp-tools' ),
+				'example'     => array(),
+				'schema'      => array( 'type' => 'object', 'properties' => array() ),
+			),
+			'get-settings'    => array(
+				'description' => __( 'Get Comic Easel plugin configuration and the active comic post-type slug.', 'emcp-tools' ),
+				'example'     => array(),
+				'schema'      => array( 'type' => 'object', 'properties' => array() ),
+			),
+		);
+	}
+
 	// ── Private helpers ──────────────────────────────────────────────────
 
 	/**

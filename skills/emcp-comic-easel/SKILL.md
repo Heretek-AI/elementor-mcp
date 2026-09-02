@@ -42,7 +42,8 @@ When importing comic strips from external feeds or archives:
    - Assign post author directly via `author` or `author_id` (e.g. User ID `147`).
    - Assign the chapter term (e.g. `["dyriuck_kaos-archive"]`).
 5. **Draft Moderation**:
-   - Default imported strips to `"status": "draft"` for editorial review.
+   - Imported strips queue for editorial review as drafts — always pass `"status": "draft"` explicitly. The tool's own default is `"publish"`, so never rely on it for imports.
+   - Before the first `comic-write` call, call it with no `operation` to fetch each operation's JSON schema and an example — the schema documents every accepted argument (status/date/author/images/source), so don't guess. `comic-read` and `comic-write` both support this discovery call.
 
 ### 3. Dispatcher Tools
 

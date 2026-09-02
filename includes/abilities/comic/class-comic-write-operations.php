@@ -41,7 +41,31 @@ class EMCP_Tools_Comic_Write_Operations {
 		);
 
 		if ( ! empty( $args['date'] ) ) {
-			$post_data['post_date'] = sanitize_text_field( (string) $args['date'] );
+			$ts = is_numeric( $args['date'] ) ? (int) $args['date'] : strtotime( (string) $args['date'] );
+			if ( $ts ) {
+				$post_data['post_date']     = function_exists( 'get_date_from_gmt' ) ? get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $ts ) ) : gmdate( 'Y-m-d H:i:s', $ts );
+				$post_data['post_date_gmt'] = gmdate( 'Y-m-d H:i:s', $ts );
+				$post_data['edit_date']     = true;
+			} else {
+				$post_data['post_date'] = sanitize_text_field( (string) $args['date'] );
+				$post_data['edit_date'] = true;
+			}
+		}
+
+		if ( ! empty( $args['author_id'] ) ) {
+			$post_data['post_author'] = absint( $args['author_id'] );
+		} elseif ( ! empty( $args['author'] ) ) {
+			if ( is_numeric( $args['author'] ) ) {
+				$post_data['post_author'] = absint( $args['author'] );
+			} elseif ( is_string( $args['author'] ) && function_exists( 'get_user_by' ) ) {
+				$user = get_user_by( 'login', $args['author'] );
+				if ( ! $user ) {
+					$user = get_user_by( 'slug', $args['author'] );
+				}
+				if ( $user instanceof \WP_User ) {
+					$post_data['post_author'] = $user->ID;
+				}
+			}
 		}
 
 		$post_id = wp_insert_post( $post_data, true );
@@ -177,7 +201,31 @@ class EMCP_Tools_Comic_Write_Operations {
 			$post_data['post_status'] = sanitize_key( (string) $args['status'] );
 		}
 		if ( isset( $args['date'] ) ) {
-			$post_data['post_date'] = sanitize_text_field( (string) $args['date'] );
+			$ts = is_numeric( $args['date'] ) ? (int) $args['date'] : strtotime( (string) $args['date'] );
+			if ( $ts ) {
+				$post_data['post_date']     = function_exists( 'get_date_from_gmt' ) ? get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $ts ) ) : gmdate( 'Y-m-d H:i:s', $ts );
+				$post_data['post_date_gmt'] = gmdate( 'Y-m-d H:i:s', $ts );
+				$post_data['edit_date']     = true;
+			} else {
+				$post_data['post_date'] = sanitize_text_field( (string) $args['date'] );
+				$post_data['edit_date'] = true;
+			}
+		}
+
+		if ( ! empty( $args['author_id'] ) ) {
+			$post_data['post_author'] = absint( $args['author_id'] );
+		} elseif ( ! empty( $args['author'] ) ) {
+			if ( is_numeric( $args['author'] ) ) {
+				$post_data['post_author'] = absint( $args['author'] );
+			} elseif ( is_string( $args['author'] ) && function_exists( 'get_user_by' ) ) {
+				$user = get_user_by( 'login', $args['author'] );
+				if ( ! $user ) {
+					$user = get_user_by( 'slug', $args['author'] );
+				}
+				if ( $user instanceof \WP_User ) {
+					$post_data['post_author'] = $user->ID;
+				}
+			}
 		}
 
 		if ( count( $post_data ) > 1 ) {

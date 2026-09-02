@@ -713,7 +713,17 @@ class EMCP_Tools_Content_Abilities {
 		if ( ! empty( $input['slug'] ) )                    { $postarr['post_name'] = sanitize_title( $input['slug'] ); }
 		if ( isset( $input['parent'] ) )                    { $postarr['post_parent'] = absint( $input['parent'] ); }
 		if ( isset( $input['menu_order'] ) )                { $postarr['menu_order'] = (int) $input['menu_order']; }
-		if ( ! empty( $input['date'] ) )                    { $postarr['post_date'] = sanitize_text_field( $input['date'] ); }
+		if ( ! empty( $input['date'] ) ) {
+			$ts = is_numeric( $input['date'] ) ? (int) $input['date'] : strtotime( (string) $input['date'] );
+			if ( $ts ) {
+				$postarr['post_date']     = function_exists( 'get_date_from_gmt' ) ? get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $ts ) ) : gmdate( 'Y-m-d H:i:s', $ts );
+				$postarr['post_date_gmt'] = gmdate( 'Y-m-d H:i:s', $ts );
+				$postarr['edit_date']     = true;
+			} else {
+				$postarr['post_date'] = sanitize_text_field( $input['date'] );
+				$postarr['edit_date'] = true;
+			}
+		}
 		if ( ! empty( $input['comment_status'] ) )          { $postarr['comment_status'] = ( 'open' === $input['comment_status'] ) ? 'open' : 'closed'; }
 
 		if ( ! empty( $input['status'] ) ) {

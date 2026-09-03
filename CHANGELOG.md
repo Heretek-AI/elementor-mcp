@@ -2,6 +2,11 @@
 
 All notable changes to MCP Tools for Elementor are documented in this file.
 
+## [3.16.1]
+
+### Fixed
+- **AI Chat settings card: form no longer stretched to ~1700 px.** Pull-the-card-flush pass on `.elementor-mcp-ai-chat`, belt-and-braces `form` / `.form-table` height + display resets under `.elementor-mcp-admin`. The wp-admin/css/common.css `form { display:flex; flex-direction:column }` combined with the shell's `min-height: calc(100vh - 32px)` was the underlying stretch; the resets neutralize it on any EMCP admin page without touching non-admin pages.
+
 ## [3.16.0]
 
 Backup, Restore & Migrate stop being placeholders and become real, honest tooling.

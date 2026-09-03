@@ -263,12 +263,18 @@ class EMCP_Tools_Migration_Engine {
 	 * @return array|null Job payload (state done/error/…), null when still pending after the bound.
 	 */
 	public static function poll_job( string $endpoint, string $secret, string $job_id ) {
-		$job = null;
-		for ( $i = 0; $i < 30; $i++ ) {
+		$job      = null;
+		$deadline = microtime( true ) + 60;
+		do {
+			$remaining = $deadline - microtime( true );
+			if ( $remaining <= 1 ) {
+				break;
+			}
+			$timeout  = max( 1, (int) min( 30, $remaining ) );
 			$response = wp_remote_get(
 				$endpoint . '/job/' . rawurlencode( $job_id ),
 				array(
-					'timeout' => 30,
+					'timeout' => $timeout,
 					'headers' => array( 'X-EMCP-Signature' => hash_hmac( 'sha256', 'job|' . $job_id, $secret ) ),
 				)
 			);
@@ -281,8 +287,11 @@ class EMCP_Tools_Migration_Engine {
 					}
 				}
 			}
-			sleep( 2 ); // phpcs:ignore WordPress.PHP -- poll cadence for a remote batch job.
-		}
+			// Pace requests while the deadline allows.
+			if ( $deadline - microtime( true ) > 2 ) {
+				sleep( 2 ); // phpcs:ignore WordPress.PHP -- poll cadence for a remote batch job.
+			}
+		} while ( microtime( true ) < $deadline );
 		return $job;
 	}
 
@@ -320,8 +329,10 @@ class EMCP_Tools_Migration_Engine {
 
 		$archive = basename( $path );
 
-		// Without polling, report the handed-out job id and let the caller poll.
-		if ( empty( $opts['poll'] ) ) {
+		// Poll by default so push callers learn the true destination state; pass
+		// poll => false to hand back the job id without waiting.
+		$poll = array_key_exists( 'poll', $opts ) ? (bool) $opts['poll'] : true;
+		if ( ! $poll ) {
 			return array(
 				'success' => true,
 				'job_id'  => $job_id,
@@ -332,7 +343,7 @@ class EMCP_Tools_Migration_Engine {
 		}
 
 		// Poll the job until it settles (the connector restores inline, so this
-		// normally returns on the first poll; bounded at ~60 s).
+		// normally returns on the first poll); poll_job() enforces a ~60 s cap.
 		$job = self::poll_job( $endpoint, $secret, $job_id );
 
 		$state = ( $job && isset( $job['state'] ) ) ? $job['state'] : 'unknown';

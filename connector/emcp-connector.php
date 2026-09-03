@@ -72,8 +72,11 @@ function emcp_connector_verify( string $canonical, string $signature ): bool {
  *   packet      -> 'packet|' . sha256 . '|' . transfer_id . '|' . index
  *   finalize    -> 'finalize|' . sha256 . '|' . transfer_id
  *   job         -> 'job|' . job_id
- *   pair/issue  -> 'pair|issue|'
- *   verify      -> 'verify|'
+ *   pair/issue  -> 'pair|issue|' . ts . '|' . nonce
+ *   verify      -> 'verify|' . ts . '|' . nonce
+ * The pair/issue + verify routes bind each signature to a per-request timestamp
+ * and single-use nonce so a captured signature cannot be replayed (see
+ * emcp_connector_nonce_fresh()).
  */
 function emcp_connector_canonical( WP_REST_Request $request ): string {
 	$params   = $request->get_json_params();
@@ -93,18 +96,69 @@ function emcp_connector_canonical( WP_REST_Request $request ): string {
 		return 'job|' . (string) $request['id'];
 	}
 	if ( false !== strpos( $route, '/pair/issue' ) ) {
-		return 'pair|issue|';
+		return 'pair|issue|' . (string) $request->get_param( 'ts' ) . '|' . (string) $request->get_param( 'nonce' );
 	}
 	if ( false !== strpos( $route, '/verify' ) ) {
-		return 'verify|';
+		return 'verify|' . (string) $request->get_param( 'ts' ) . '|' . (string) $request->get_param( 'nonce' );
 	}
 	return '';
 }
 
-/** Validate the X-EMCP-Signature header against the route canonical. */
+/**
+ * Validate the X-EMCP-Signature header against the route canonical. The
+ * pair/issue + verify routes additionally require a fresh, single-use
+ * ts/nonce so their (constant-shaped) signatures cannot be replayed.
+ */
 function emcp_connector_authed( WP_REST_Request $request ) {
 	$signature = isset( $_SERVER['HTTP_X_EMCP_SIGNATURE'] ) ? (string) $_SERVER['HTTP_X_EMCP_SIGNATURE'] : '';
-	return emcp_connector_verify( emcp_connector_canonical( $request ), $signature );
+	if ( ! emcp_connector_verify( emcp_connector_canonical( $request ), $signature ) ) {
+		return false;
+	}
+	$route = $request->get_route();
+	if ( false !== strpos( $route, '/pair/issue' ) || false !== strpos( $route, '/verify' ) ) {
+		return emcp_connector_nonce_fresh( (string) $request->get_param( 'ts' ), (string) $request->get_param( 'nonce' ) );
+	}
+	return true;
+}
+
+/**
+ * Freshness + single-use gate for the pair/issue + verify signatures.
+ *
+ * Accepts a ts within +-300 s of server time and a nonce (>= 16 chars) that has
+ * not been seen before; records the nonce (hashed, 1 h expiry, capped) so a
+ * captured signature can never be replayed.
+ *
+ * @param string $ts    Unix timestamp (seconds) the caller signed.
+ * @param string $nonce Caller-chosen single-use nonce.
+ * @return bool
+ */
+function emcp_connector_nonce_fresh( string $ts, string $nonce ): bool {
+	if ( '' === $ts || '' === $nonce || strlen( $nonce ) < 16 ) {
+		return false;
+	}
+	$now = time();
+	if ( abs( (int) $ts - $now ) > 300 ) {
+		return false;
+	}
+	$key  = hash( 'sha256', $ts . '|' . $nonce );
+	$used = get_option( 'emcp_connector_nonces', array() );
+	if ( ! is_array( $used ) ) {
+		$used = array();
+	}
+	$used = array_values( array_filter( $used, static function ( $e ) use ( $now ) {
+		return is_array( $e ) && ( (int) ( $e['exp'] ?? 0 ) > $now );
+	} ) );
+	foreach ( $used as $e ) {
+		if ( is_array( $e ) && hash_equals( (string) $e['h'], $key ) ) {
+			return false;
+		}
+	}
+	$used[] = array( 'h' => $key, 'exp' => $now + 3600 );
+	if ( count( $used ) > 500 ) {
+		$used = array_slice( $used, -500 );
+	}
+	update_option( 'emcp_connector_nonces', $used, false );
+	return true;
 }
 
 /**
@@ -208,14 +262,22 @@ function emcp_connector_consume_pair_code( string $code ) {
 	return emcp_connector_secret();
 }
 
-/** HTTPS (or loopback) gate for the secret-carrying exchange route. */
+/**
+ * HTTPS (or loopback) gate for the secret-carrying exchange route.
+ *
+ * Loopback is decided from server-side state — the site's configured home_url()
+ * host, then $_SERVER['SERVER_ADDR'] — never the client-supplied Host header.
+ */
 function emcp_connector_pair_exchange_allowed(): bool {
 	if ( is_ssl() ) {
 		return true;
 	}
-	$host = isset( $_SERVER['HTTP_HOST'] ) ? strtolower( (string) $_SERVER['HTTP_HOST'] ) : '';
-	$host = preg_replace( '/:\d+$/', '', (string) $host );
-	return in_array( $host, array( 'localhost', '127.0.0.1', '::1', '[::1]' ), true );
+	$home = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+	if ( in_array( $home, array( 'localhost', '127.0.0.1', '::1' ), true ) ) {
+		return true;
+	}
+	$addr = isset( $_SERVER['SERVER_ADDR'] ) ? trim( (string) $_SERVER['SERVER_ADDR'], '[]' ) : '';
+	return in_array( $addr, array( '127.0.0.1', '::1' ), true );
 }
 
 /** POST /pair/issue (HMAC) — issue a single-use code (for scripting). */
@@ -811,6 +873,15 @@ function emcp_connector_restore_archive( string $archive ): array {
  * @param array       $stats    In/out restore stats.
  */
 function emcp_connector_restore_db( ZipArchive $zip, array $manifest, string $work, array &$stats ): void {
+	// Cross-prefix guard: dumps write literal table names, so an archive from a
+	// different DB prefix would import foreign-prefixed tables here.
+	if ( ! empty( $manifest['db_prefix'] ) ) {
+		global $wpdb;
+		if ( (string) $manifest['db_prefix'] !== (string) $wpdb->prefix ) {
+			$stats['errors'][] = 'prefix_mismatch';
+			return;
+		}
+	}
 	$src = $zip->getStream( 'database.sql' );
 	if ( false === $src ) {
 		// No database.sql in the archive — a files-only (or DB-scoped-out) sync.
@@ -878,7 +949,10 @@ add_action( 'admin_post_emcp_connector_admin', function () {
 		if ( defined( 'EMCP_CONNECTOR_SECRET' ) && EMCP_CONNECTOR_SECRET ) {
 			set_transient( 'emcp_connector_admin_notice', array( 'type' => 'error', 'message' => 'The secret is defined by EMCP_CONNECTOR_SECRET in wp-config.php and cannot be changed here.' ), 60 );
 		} else {
-			$secret = isset( $_POST['secret'] ) ? sanitize_text_field( wp_unslash( $_POST['secret'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification -- check_admin_referer above.
+			// Store the secret verbatim (wp_unslash only): it is used byte-for-byte
+			// for HMAC and returned unchanged by pairing, so sanitize_text_field()
+			// must not rewrite whitespace or special characters.
+			$secret = isset( $_POST['secret'] ) ? (string) wp_unslash( $_POST['secret'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification -- check_admin_referer above, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- verbatim secret.
 			update_option( 'emcp_connector_secret', $secret, false );
 			set_transient( 'emcp_connector_admin_notice', array( 'type' => 'success', 'message' => 'Connector secret saved.' ), 60 );
 		}

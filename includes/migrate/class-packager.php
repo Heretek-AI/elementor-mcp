@@ -212,6 +212,9 @@ class EMCP_Tools_Packager {
 				'partial'   => ! empty( $db_stats['partial'] ),
 			);
 			$manifest['database_sha256'] = hash_file( 'sha256', $tmp_sql );
+			// Source DB prefix so a restore can refuse cleanly when it differs
+			// from the destination (imports write literal table names).
+			$manifest['db_prefix'] = self::site_db_prefix();
 		}
 		$manifest['files']      = count( $file_entries );
 		$manifest['file_roots'] = $file_entries;
@@ -362,11 +365,21 @@ class EMCP_Tools_Packager {
 			if ( ! $file->isFile() ) {
 				continue;
 			}
-			$zip_name = self::zip_relative_name( wp_normalize_path( $file->getPathname() ), $content_dir );
+			$local = wp_normalize_path( $file->getPathname() );
+			// Resolve symlinks and refuse anything that escapes wp-content — a
+			// scoped root could otherwise exfiltrate a linked target outside it.
+			$real = realpath( $local ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+			if ( false === $real ) {
+				continue;
+			}
+			if ( 0 !== strpos( wp_normalize_path( $real ), $content_dir . '/' ) ) {
+				continue;
+			}
+			$zip_name = self::zip_relative_name( $local, $content_dir );
 			if ( '' === $zip_name ) {
 				continue; // Outside wp-content — never bundled.
 			}
-			if ( ! $zip->addFile( $file->getPathname(), $zip_name ) ) {
+			if ( ! $zip->addFile( $local, $zip_name ) ) {
 				return false; // Propagate failure so create_archive cannot report a complete bundle.
 			}
 			$count++;
@@ -471,5 +484,15 @@ class EMCP_Tools_Packager {
 			return (string) $wpdb->db_version();
 		}
 		return '';
+	}
+
+	/**
+	 * The site's DB table prefix (recorded in the manifest for cross-site guards).
+	 *
+	 * @return string
+	 */
+	private static function site_db_prefix(): string {
+		global $wpdb;
+		return ( isset( $wpdb ) && isset( $wpdb->prefix ) ) ? (string) $wpdb->prefix : '';
 	}
 }

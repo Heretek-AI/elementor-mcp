@@ -312,6 +312,7 @@ $emcp_roots   = class_exists( 'EMCP_Tools_Sync_Engine' ) ? EMCP_Tools_Sync_Engin
 						<p>
 							<label for="emcp_push_target"><?php esc_html_e( 'Destination:', 'emcp-tools' ); ?></label>
 							<select name="target_id" id="emcp_push_target">
+								<option value=""><?php esc_html_e( '— none (use the advanced fields below) —', 'emcp-tools' ); ?></option>
 								<?php foreach ( $emcp_targets as $emcp_t ) : ?>
 									<option value="<?php echo (int) $emcp_t['id']; ?>"><?php echo esc_html( $emcp_t['label'] . ' — ' . $emcp_t['target_url'] ); ?></option>
 								<?php endforeach; ?>
@@ -328,17 +329,21 @@ $emcp_roots   = class_exists( 'EMCP_Tools_Sync_Engine' ) ? EMCP_Tools_Sync_Engin
 						</p>
 						<p>
 							<label for="emcp_push_archive"><?php esc_html_e( 'Archive source:', 'emcp-tools' ); ?></label><br>
-							<label><input type="radio" name="archive_source" value="build" checked> <?php esc_html_e( 'Build a fresh full archive', 'emcp-tools' ); ?></label>
-							<label style="margin-left:10px"><input type="checkbox" name="include_files" value="1"> <?php esc_html_e( '…with site files', 'emcp-tools' ); ?></label>
+							<span class="emcp-push-build">
+								<label><input type="radio" name="archive_source" value="build" checked> <?php esc_html_e( 'Build a fresh full archive', 'emcp-tools' ); ?></label>
+								<label style="margin-left:10px"><input type="checkbox" name="include_files" value="1"> <?php esc_html_e( '…with site files', 'emcp-tools' ); ?></label>
+							</span>
 							<br>
 							<?php if ( ! empty( $emcp_backups ) ) : ?>
-								<label><input type="radio" name="archive_source" value="existing"> <?php esc_html_e( 'Use an existing archive:', 'emcp-tools' ); ?></label>
-								<label for="emcp_push_archive_select" class="screen-reader-text"><?php esc_html_e( 'Choose an archive', 'emcp-tools' ); ?></label>
-								<select name="archive" id="emcp_push_archive_select">
-									<?php foreach ( $emcp_backups as $emcp_b ) : ?>
-										<option value="<?php echo esc_attr( $emcp_b['filename'] ); ?>"><?php echo esc_html( $emcp_b['filename'] . ' (' . $emcp_b['size'] . ')' ); ?></option>
-									<?php endforeach; ?>
-								</select>
+								<span class="emcp-push-existing">
+									<label><input type="radio" name="archive_source" value="existing"> <?php esc_html_e( 'Use an existing archive:', 'emcp-tools' ); ?></label>
+									<label for="emcp_push_archive_select" class="screen-reader-text"><?php esc_html_e( 'Choose an archive', 'emcp-tools' ); ?></label>
+									<select name="archive" id="emcp_push_archive_select">
+										<?php foreach ( $emcp_backups as $emcp_b ) : ?>
+											<option value="<?php echo esc_attr( $emcp_b['filename'] ); ?>"><?php echo esc_html( $emcp_b['filename'] . ' (' . $emcp_b['size'] . ')' ); ?></option>
+										<?php endforeach; ?>
+									</select>
+								</span>
 							<?php endif; ?>
 						</p>
 						<p>

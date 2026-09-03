@@ -108,6 +108,11 @@ class EMCP_Tools_Migrate_Targets {
 			return new WP_Error( 'duplicate_target', __( 'A paired target for this URL already exists.', 'emcp-tools' ) );
 		}
 
+		$cipher = self::encrypt( $secret );
+		if ( '' === $cipher ) {
+			return new WP_Error( 'encrypt_failed', __( 'Could not encrypt the shared secret — the target was not stored.', 'emcp-tools' ) );
+		}
+
 		$now = function_exists( 'current_time' ) ? current_time( 'mysql' ) : gmdate( 'Y-m-d H:i:s' );
 		global $wpdb;
 		$inserted = $wpdb->insert(
@@ -116,7 +121,7 @@ class EMCP_Tools_Migrate_Targets {
 				'label'             => $label,
 				'target_url'        => $target_url,
 				'endpoint'          => self::normalize_endpoint( $target_url ),
-				'secret_cipher'     => self::encrypt( $secret ),
+				'secret_cipher'     => $cipher,
 				'site_url'          => sanitize_text_field( (string) ( $data['site_url'] ?? '' ) ),
 				'connector_version' => sanitize_text_field( (string) ( $data['connector_version'] ?? '' ) ),
 				'confirmed_at'      => $now,
@@ -316,16 +321,23 @@ class EMCP_Tools_Migrate_Targets {
 	 * Prove a secret signs on the destination (signed GET /verify). Shared by
 	 * pairing (redeem_pairing_code) and the admin Verify-target action.
 	 *
+	 * The signature binds a fresh per-request timestamp + nonce (connector 1.2.0
+	 * replay protection) — canonical `verify|<ts>|<nonce>`, mirrored byte-identically
+	 * by the connector's emcp_connector_canonical().
+	 *
 	 * @param string $endpoint Connector REST base.
 	 * @param string $secret   Connector secret.
 	 * @return bool
 	 */
 	public static function verify_endpoint( string $endpoint, string $secret ): bool {
-		$response = wp_remote_get(
-			$endpoint . '/verify',
+		$ts        = time();
+		$nonce     = bin2hex( random_bytes( 12 ) );
+		$canonical = 'verify|' . $ts . '|' . $nonce;
+		$response  = wp_remote_get(
+			add_query_arg( array( 'ts' => $ts, 'nonce' => $nonce ), $endpoint . '/verify' ),
 			array(
 				'timeout' => 30,
-				'headers' => array( 'X-EMCP-Signature' => hash_hmac( 'sha256', 'verify|', $secret ) ),
+				'headers' => array( 'X-EMCP-Signature' => hash_hmac( 'sha256', $canonical, $secret ) ),
 			)
 		);
 		if ( is_wp_error( $response ) ) {
@@ -389,6 +401,9 @@ class EMCP_Tools_Migrate_Targets {
 		$key    = hash( 'sha256', ( defined( 'AUTH_KEY' ) ? AUTH_KEY : '' ) . ( defined( 'SECURE_AUTH_KEY' ) ? SECURE_AUTH_KEY : '' ), true );
 		$iv     = openssl_random_pseudo_bytes( 16 );
 		$cipher = openssl_encrypt( $plain, 'AES-256-CBC', $key, 0, $iv );
+		if ( false === $cipher ) {
+			return ''; // Never persist a bare-IV blob that decrypt() would reject.
+		}
 		return base64_encode( $iv . $cipher ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 	}
 

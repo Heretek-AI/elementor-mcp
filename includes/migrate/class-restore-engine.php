@@ -67,6 +67,15 @@ class EMCP_Tools_Restore_Engine {
         if ( isset( $manifest['format_version'] ) && (int) $manifest['format_version'] > EMCP_Tools_Packager::FORMAT_VERSION ) {
             return new WP_Error( 'newer_format', __( 'This archive uses a newer format than this plugin can restore.', 'emcp-tools' ) );
         }
+        // Cross-prefix guard: dumps write literal table names, so restoring an
+        // archive built on a different DB prefix onto this site would import
+        // foreign-prefixed tables and break search-replace. Refuse cleanly.
+        if ( ! empty( $manifest['db_prefix'] ) ) {
+            global $wpdb;
+            if ( isset( $wpdb ) && (string) $manifest['db_prefix'] !== (string) $wpdb->prefix ) {
+                return new WP_Error( 'prefix_mismatch', __( 'This archive was created on a site with a different database table prefix and cannot be restored here.', 'emcp-tools' ) );
+            }
+        }
 
         if ( function_exists( 'set_time_limit' ) ) {
             set_time_limit( 0 ); // phpcs:ignore WordPress.PHP -- restore is an admin-authorized batch op.

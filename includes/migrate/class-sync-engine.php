@@ -354,10 +354,10 @@ class EMCP_Tools_Sync_Engine {
 			return 'none';
 		}
 		$map = array();
-		foreach ( $files as $token ) {
+		foreach ( $files as $key => $token ) {
 			$abs = self::file_root_path( (string) $token );
 			if ( '' !== $abs ) {
-				$map[ is_int( $token ) ? self::root_label( $abs ) : (string) $token ] = $abs;
+				$map[ is_int( $key ) ? self::root_label( $abs ) : (string) $token ] = $abs;
 			}
 		}
 		return $map;

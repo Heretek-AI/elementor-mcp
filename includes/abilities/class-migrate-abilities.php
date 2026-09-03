@@ -96,10 +96,20 @@ class EMCP_Tools_Migrate_Abilities {
 						'secret_key' => array( 'type' => 'string', 'description' => __( 'Shared secret (must match EMCP_CONNECTOR_SECRET on the destination).', 'emcp-tools' ) ),
 						'scope'      => array(
 							'type'        => 'object',
-							'description' => __( 'What to sync. Omit for a full site. tables: [] syncs the whole DB; a list syncs only those tables; "none" skips the DB. file_roots: [] syncs all files; a list of uploads/plugins/themes (or a wp-content-relative path) syncs only those roots; "none" skips files.', 'emcp-tools' ),
+							'description' => __( 'What to sync. Omit the whole scope for a full site. Each of tables / file_roots is "all", "none", or a list — an empty list maps to "none". tables lists DB tables; file_roots lists uploads/plugins/themes (or a wp-content-relative path).', 'emcp-tools' ),
 							'properties'  => array(
-								'tables'     => array( 'type' => 'array', 'items' => array( 'type' => 'string' ) ),
-								'file_roots' => array( 'type' => 'array', 'items' => array( 'type' => 'string' ) ),
+								'tables'     => array(
+									'oneOf' => array(
+										array( 'type' => 'array', 'items' => array( 'type' => 'string' ) ),
+										array( 'type' => 'string', 'enum' => array( 'all', 'none' ) ),
+									),
+								),
+								'file_roots' => array(
+									'oneOf' => array(
+										array( 'type' => 'array', 'items' => array( 'type' => 'string' ) ),
+										array( 'type' => 'string', 'enum' => array( 'all', 'none' ) ),
+									),
+								),
 							),
 						),
 						'confirm'    => array( 'type' => 'boolean', 'description' => __( 'Overwrites the selected tables/files on the destination — must be true.', 'emcp-tools' ) ),

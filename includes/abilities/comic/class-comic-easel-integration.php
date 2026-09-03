@@ -64,7 +64,7 @@ class EMCP_Tools_Comic_Easel_Integration {
 				'label'               => __( 'Comic Easel Read', 'emcp-tools' ),
 				'description'         => sprintf(
 					/* translators: %1$s: comma-separated operation names */
-					__( 'Read Comic Easel webcomics, multi-image strips (comic-html-below), source tracking (source_tweet_id, source_url), chapters, characters, and chronological navigation. Discovery: call with NO operation to receive each operation\'s JSON schema and an example, then call again with { operation, arguments }. Read operations: %1$s.', 'emcp-tools' ),
+					__( 'Read Comic Easel webcomics, multi-image strips (comic-html-below), source tracking (source_tweet_id, source_url), chapters, characters, and chronological navigation. Pass the `operation` you want plus its `arguments`. If you omit `operation`, the tool returns its full operations catalog (a large response); prefer fetching a single schema via `emcp-tools-list-skills` / `emcp-tools-get-skill` and reusing it. Read operations: %1$s.', 'emcp-tools' ),
 					implode( ', ', $read_names )
 				),
 				'category'            => 'emcp-tools',
@@ -74,7 +74,7 @@ class EMCP_Tools_Comic_Easel_Integration {
 						'operation' => array(
 							'type'        => 'string',
 							'enum'        => $read_names,
-							'description' => __( 'The read operation to run. Omit to list operations.', 'emcp-tools' ),
+							'description' => __( 'The read operation to run.', 'emcp-tools' ),
 						),
 						'arguments' => array(
 							'type'        => 'object',
@@ -98,7 +98,7 @@ class EMCP_Tools_Comic_Easel_Integration {
 				'label'               => __( 'Comic Easel Write', 'emcp-tools' ),
 				'description'         => sprintf(
 					/* translators: %1$s: comma-separated operation names */
-					__( 'Create, update, or delete Comic Easel webcomics, multi-image strips (comic-html-below), source tracking (source_tweet_id, source_url), chapters, and characters. Discovery: call with NO operation to receive each operation\'s JSON schema and an example, then call again with { operation, arguments }. Write operations: %1$s. create-comic: status defaults to "publish" (pass "draft" to queue for review); backdate with date (ISO 8601 / Y-m-d H:i:s / unix timestamp); page 1 via featured_media_id/featured_media_url, pages 2..N via additional_images (attachment IDs or URLs); author via author_id or author (login/slug).', 'emcp-tools' ),
+					__( 'Create, update, or delete Comic Easel webcomics, multi-image strips (comic-html-below), source tracking (source_tweet_id, source_url), chapters, and characters. Pass the `operation` you want plus its `arguments`. If you omit `operation`, the tool returns its full operations catalog (a large response); prefer fetching a single schema via `emcp-tools-list-skills` / `emcp-tools-get-skill` and reusing it. Write operations: %1$s. create-comic: status defaults to "publish" (pass "draft" to queue for review); backdate with date (ISO 8601 / Y-m-d H:i:s / unix timestamp); page 1 via featured_media_id/featured_media_url, pages 2..N via additional_images (attachment IDs or URLs); author via author_id or author (login/slug).', 'emcp-tools' ),
 					implode( ', ', $write_names )
 				),
 				'category'            => 'emcp-tools',
@@ -108,7 +108,7 @@ class EMCP_Tools_Comic_Easel_Integration {
 						'operation' => array(
 							'type'        => 'string',
 							'enum'        => $write_names,
-							'description' => __( 'The write operation to run. Omit to list operations.', 'emcp-tools' ),
+							'description' => __( 'The write operation to run.', 'emcp-tools' ),
 						),
 						'arguments' => array(
 							'type'        => 'object',

@@ -189,6 +189,26 @@ class EMCP_Tools_Schema_Compat {
 			}
 		}
 
+		// Flatten `type: [a, b, …]` (union) to a single non-null type. The WordPress
+		// Abilities API input validator on WP 7.1 rejects array-typed `items.type`
+		// with a generic "input[X] is not of type array" error before the executor
+		// runs. Picking the first non-null entry is the documented "lossy" way to
+		// express the union without losing the schema altogether. Callers that need
+		// both types should coerce at the executor (see `set-post-terms`).
+		if ( isset( $schema['type'] ) && is_array( $schema['type'] ) ) {
+			$flattened = null;
+			foreach ( $schema['type'] as $candidate ) {
+				if ( is_string( $candidate ) && 'null' !== $candidate ) {
+					$flattened = $candidate;
+					break;
+				}
+			}
+			if ( null === $flattened ) {
+				$flattened = 'string';
+			}
+			$schema['type'] = $flattened;
+		}
+
 		if ( isset( $schema['properties'] ) && is_array( $schema['properties'] ) ) {
 			if ( empty( $schema['properties'] ) ) {
 				$schema['properties'] = new \stdClass();

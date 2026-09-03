@@ -1053,7 +1053,7 @@ class EMCP_Tools_Content_Abilities {
 					'properties' => array(
 						'post_id'        => array( 'type' => 'integer', 'description' => __( 'The post ID.', 'emcp-tools' ) ),
 						'taxonomy'       => array( 'type' => 'string', 'description' => __( 'Taxonomy name (e.g. category, post_tag).', 'emcp-tools' ) ),
-						'terms'          => array( 'type' => 'array', 'items' => array( 'type' => array( 'integer', 'string' ) ), 'description' => __( 'Term IDs or names.', 'emcp-tools' ) ),
+						'terms'          => array( 'type' => 'array', 'items' => array( 'type' => 'string' ), 'description' => __( 'Term IDs (as strings) or names. Numeric strings are coerced to IDs in the executor.', 'emcp-tools' ) ),
 						'mode'           => array( 'type' => 'string', 'enum' => array( 'replace', 'append', 'remove' ), 'description' => __( 'Default: replace.', 'emcp-tools' ) ),
 						'create_missing' => array( 'type' => 'boolean', 'description' => __( 'Create term names that do not exist. Default: true.', 'emcp-tools' ) ),
 					),
@@ -1090,7 +1090,23 @@ class EMCP_Tools_Content_Abilities {
 		$mode  = in_array( $mode, array( 'replace', 'append', 'remove' ), true ) ? $mode : 'replace';
 		$terms = array_values( (array) ( $input['terms'] ?? array() ) );
 
+		// Normalise incoming items: accept IDs and names; if a numeric string is
+		// supplied, cast to int so the no-create-missing path treats it as an ID
+		// (matches the existing `is_numeric` branch below for create_missing=false).
+		// Without this, the create-missing path would try to create a term whose
+		// name is `"461"`, which wp_insert_term rejects as a bad name.
 		$create_missing = ! isset( $input['create_missing'] ) || (bool) $input['create_missing'];
+		if ( 'remove' !== $mode && $create_missing ) {
+			$coerced = array();
+			foreach ( $terms as $term ) {
+				if ( is_numeric( $term ) ) {
+					$coerced[] = (int) $term;
+				} else {
+					$coerced[] = (string) $term;
+				}
+			}
+			$terms = $coerced;
+		}
 
 		// When not auto-creating, resolve names to existing term IDs and drop
 		// any name that doesn't exist (numeric IDs pass through untouched).

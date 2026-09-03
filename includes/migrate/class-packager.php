@@ -397,7 +397,7 @@ class EMCP_Tools_Packager {
 	private static function file_iterator( string $root, array $skip_dirs ) {
 		return new RecursiveIteratorIterator(
 			new RecursiveCallbackFilterIterator(
-				new RecursiveDirectoryIterator( $root, FilesystemIterator::SKIP_DOTS ),
+				new RecursiveDirectoryIterator( $root, FilesystemIterator::SKIP_DOTS ), // NOSONAR -- $root is confined to wp-content (file_root_path/add_files reject '..' + exclusions); admin-gated.
 				static function ( $current ) use ( $skip_dirs ): bool {
 					if ( $current->isDir() ) {
 						return ! self::dir_is_skipped( $current->getPathname(), $skip_dirs );

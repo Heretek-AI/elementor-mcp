@@ -140,12 +140,23 @@ class EMCP_Tools_Migration_Engine {
 	 * @return true|\WP_Error
 	 */
 	public static function push_packets( string $path, string $endpoint, string $secret, string $transfer_id, array $opts = array() ) {
+		// Only archives this site's own backups dir may be streamed. Packager
+		// already enforces this via archive_path()/create_archive(); the guard is
+		// defense-in-depth so push_packets can never read an arbitrary path.
+		if ( ! class_exists( 'EMCP_Tools_Packager' ) ) {
+			return new WP_Error( 'engine_unavailable', __( 'The packager engine is not available.', 'emcp-tools' ) );
+		}
+		$backup_dir = rtrim( wp_normalize_path( EMCP_Tools_Packager::backup_dir() ), '/' ) . '/';
+		if ( 0 !== strpos( wp_normalize_path( $path ), $backup_dir ) || ! is_file( $path ) ) {
+			return new WP_Error( 'invalid_archive', __( 'Only archives inside the backups directory can be pushed.', 'emcp-tools' ) );
+		}
+
 		$chunk_size = self::CHUNK_SIZE;
-		$total      = self::packet_count( filesize( $path ) );
+		$total      = self::packet_count( filesize( $path ) ); // NOSONAR -- $path is guarded to the backups dir above.
 		$start      = max( 0, (int) ( $opts['resume_offset'] ?? 0 ) );
 		$on_packet  = isset( $opts['on_packet'] ) && is_callable( $opts['on_packet'] ) ? $opts['on_packet'] : null;
 
-		$handle = fopen( $path, 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+		$handle = fopen( $path, 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- NOSONAR -- $path guarded above.
 		if ( false === $handle ) {
 			return new WP_Error( 'read_failed', __( 'Could not read the archive for upload.', 'emcp-tools' ) );
 		}
@@ -229,7 +240,10 @@ class EMCP_Tools_Migration_Engine {
 	 * @return string|\WP_Error The destination job id.
 	 */
 	public static function finalize( string $path, string $endpoint, string $secret, string $transfer_id ) {
-		$whole_sha = hash_file( 'sha256', $path );
+		if ( 0 !== strpos( wp_normalize_path( $path ), rtrim( wp_normalize_path( EMCP_Tools_Packager::backup_dir() ), '/' ) . '/' ) ) {
+			return new WP_Error( 'invalid_archive', __( 'Only archives inside the backups directory can be pushed.', 'emcp-tools' ) );
+		}
+		$whole_sha = hash_file( 'sha256', $path ); // NOSONAR -- $path guarded to the backups dir above.
 		$canonical = 'finalize|' . $whole_sha . '|' . $transfer_id;
 		$response  = wp_remote_post(
 			$endpoint . '/finalize',

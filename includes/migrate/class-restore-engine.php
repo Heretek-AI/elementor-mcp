@@ -161,14 +161,21 @@ class EMCP_Tools_Restore_Engine {
         // Statement errors are reported under $stats['db'] but are NOT fatal: a
         // partial import still gets the URL rewrite below.
 
-        // URL rewrite (source → this site) when the URLs differ.
+        // URL rewrite (source → this site) when the URLs differ. For a scoped
+        // (selective-DB) archive, rewrite only the archived tables — a selective
+        // restore replaces exactly those tables, so destination-native tables
+        // must not be walked.
         if ( $sr_on && class_exists( 'EMCP_Tools_Serialized_Search_Replace' ) ) {
             $old_url = isset( $manifest['site_url'] ) ? (string) $manifest['site_url'] : '';
             if ( '' !== $old_url && $old_url !== $dest_url ) {
                 global $wpdb;
                 $engine = 'EMCP_Tools_Serialized_Search_Replace';
-                $total  = 0;
-                foreach ( $engine::data_tables( $wpdb ) as $table ) {
+                $tables = $engine::data_tables( $wpdb );
+                if ( isset( $manifest['scope']['db'] ) && is_array( $manifest['scope']['db'] ) ) {
+                    $tables = array_values( array_intersect( $tables, array_map( 'strval', $manifest['scope']['db'] ) ) );
+                }
+                $total = 0;
+                foreach ( $tables as $table ) {
                     $r = $engine::walk_table( $wpdb, $table, $old_url, $dest_url );
                     $total += (int) $r['affected'];
                 }

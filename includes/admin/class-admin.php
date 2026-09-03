@@ -1293,7 +1293,7 @@ class EMCP_Tools_Admin {
 	 *
 	 * @since 1.8.0
 	 */
-	const DEFAULTS_VERSION = 36;
+	const DEFAULTS_VERSION = 37;
 
 	/**
 	 * SEO/A11y Pro MCP tool slugs that ship disabled-by-default (v2 defaults).
@@ -1566,6 +1566,7 @@ class EMCP_Tools_Admin {
 			'emcp-tools/list-backups',
 			'emcp-tools/migrate-site',
 			'emcp-tools/sync-to-live',
+			'emcp-tools/url-search-replace',
 		);
 	}
 
@@ -1934,6 +1935,12 @@ class EMCP_Tools_Admin {
 			$add[] = 'emcp-tools/delete-variable';
 			$add[] = 'emcp-tools/restore-variable';
 			$add[] = 'emcp-tools/batch-variables';
+		}
+
+		// v37 — url-search-replace rewrites rows across the database; ship it
+		// disabled-by-default beside the other destructive migrate writes.
+		if ( $applied < 37 ) {
+			$add[] = 'emcp-tools/url-search-replace';
 		}
 
 		$merged = array_values( array_unique( array_merge( $existing, $add ) ) );
@@ -4933,7 +4940,12 @@ class EMCP_Tools_Admin {
 					),
 					'emcp-tools/sync-to-live'  => array(
 						'label'       => __( 'Sync to Live', 'emcp-tools' ),
-						'description' => __( 'Runs a serialized-safe URL search-and-replace across the database (options, posts, postmeta incl. _elementor_data, comments, term/usermeta, and other prefixed tables). Requires confirm:true. Disabled by default.', 'emcp-tools' ),
+						'description' => __( 'Pushes a scope of this site (full, or selected tables and/or file roots) to a live destination running the EMCP connector 1.2.0+ and waits for the scoped restore. Destructive on the destination; requires confirm:true. Disabled by default.', 'emcp-tools' ),
+						'badges'      => array( 'destructive' ),
+					),
+					'emcp-tools/url-search-replace' => array(
+						'label'       => __( 'URL Search & Replace', 'emcp-tools' ),
+						'description' => __( 'Runs a serialized-safe URL search-and-replace across this site\'s database (options, posts, postmeta incl. _elementor_data, comments, term/usermeta, and other prefixed tables). Requires confirm:true. Disabled by default.', 'emcp-tools' ),
 						'badges'      => array( 'destructive' ),
 					),
 				),

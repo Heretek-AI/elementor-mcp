@@ -33,8 +33,10 @@ final class EMCP_Tools_Pro_Loader {
 		// Backup / Migrate / Sync (Pro).
 		'includes/migrate/class-db-exporter.php',
 		'includes/migrate/class-db-importer.php',
+		'includes/migrate/class-serialized-search-replace.php',
 		'includes/migrate/class-search-replace.php',
 		'includes/migrate/class-packager.php',
+		'includes/migrate/class-restore-engine.php',
 		// Forms integrations (Pro adapters; the base + CF7 are free-tree).
 		// Elementor addon widget packs (discovery + curation only; placement
 		// stays on the generic add-free-widget tool).

@@ -1566,9 +1566,6 @@ class EMCP_Tools_Admin {
 			'emcp-tools/list-backups',
 			'emcp-tools/migrate-site',
 			'emcp-tools/sync-to-live',
-			'emcp-tools/list-syncable-changes',
-			'emcp-tools/sync-content-item',
-			'emcp-tools/discard-sync-change',
 		);
 	}
 
@@ -1920,12 +1917,6 @@ class EMCP_Tools_Admin {
 		if ( $applied < 33 ) {
 			$add[] = 'emcp-tools/migrate-site';
 			$add[] = 'emcp-tools/sync-to-live';
-		}
-
-		// v34 — the content-sync push tool overwrites an item on the live site, so
-		// it ships disabled-by-default. The list + discard reads stay enabled.
-		if ( $applied < 34 ) {
-			$add[] = 'emcp-tools/sync-content-item';
 		}
 
 		// v35 — BeTheme write disabled-by-default, matching the other theme write
@@ -4937,28 +4928,13 @@ class EMCP_Tools_Admin {
 					),
 					'emcp-tools/migrate-site'  => array(
 						'label'       => __( 'Migrate Site to Live', 'emcp-tools' ),
-						'description' => __( 'Pushes this whole site to a paired live target and restores it there. Destructive on the destination; requires confirm. Disabled by default.', 'emcp-tools' ),
+						'description' => __( 'Pushes this site (as a .emcp archive) to a remote EMCP connector and restores it there. Destructive on the destination; requires confirm:true. Disabled by default.', 'emcp-tools' ),
 						'badges'      => array( 'destructive' ),
 					),
 					'emcp-tools/sync-to-live'  => array(
 						'label'       => __( 'Sync to Live', 'emcp-tools' ),
-						'description' => __( 'Pushes a full or selective scope (chosen tables/files) to a paired live target. Destructive for the pushed scope; requires confirm. Disabled by default.', 'emcp-tools' ),
+						'description' => __( 'Runs a serialized-safe URL search-and-replace across the database (options, posts, postmeta incl. _elementor_data, comments, term/usermeta, and other prefixed tables). Requires confirm:true. Disabled by default.', 'emcp-tools' ),
 						'badges'      => array( 'destructive' ),
-					),
-					'emcp-tools/list-syncable-changes' => array(
-						'label'       => __( 'List Syncable Changes', 'emcp-tools' ),
-						'description' => __( 'Lists pages/posts/CPTs changed locally since they were last synced to a paired live target. Read-only.', 'emcp-tools' ),
-						'badges'      => array( 'read-only' ),
-					),
-					'emcp-tools/sync-content-item' => array(
-						'label'       => __( 'Sync Content Item to Live', 'emcp-tools' ),
-						'description' => __( 'Pushes one page/post/CPT (content + fields + attached media) to a paired live target, upserting it and remapping media. Overwrites only that item; requires confirm. Disabled by default.', 'emcp-tools' ),
-						'badges'      => array( 'destructive' ),
-					),
-					'emcp-tools/discard-sync-change' => array(
-						'label'       => __( 'Discard Sync Change', 'emcp-tools' ),
-						'description' => __( 'Dismisses an item from the changes-to-sync list until it changes again. Local only.', 'emcp-tools' ),
-						'badges'      => array(),
 					),
 				),
 			),

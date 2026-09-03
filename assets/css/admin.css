@@ -5191,6 +5191,28 @@ body:has(.elementor-mcp-admin) #wpfooter a:hover {
 	margin-top: 0;
 }
 
+/* Belt-and-braces reset: stop any ancestor from stretching the form, no
+ * matter which stylesheet is doing the stretch. WP 7.1 sometimes inherits a
+ * form { display: flex; flex-direction: column; } from a core admin stylesheet
+ * which combined with the parent's min-height: calc(100vh - 32px) makes the
+ * inline form resolve to ~1700px on a tall page. Anchor the form to its
+ * content height (min-height:0) and prefer flex-start alignment in
+ * column-stretching ancestors, and ask the wrap to behave like inline-flow
+ * rather than a flex item when it ends up as one. */
+.elementor-mcp-admin form,
+.elementor-mcp-admin .elementor-mcp-ai-chat > form {
+	min-height: 0 !important;
+	height: auto !important;
+	max-height: none;
+	display: block;
+}
+
+/* Some WP core admin stylesheets (notably common.css in 6.9/7.x) apply
+ * `form { min-height: 100vh }`-style rules for accessibility on long pages.
+ * The !important above neutralizes that on every form inside an EMCP admin
+ * page, not only the AI Chat settings form, because the same admin shell
+ * wrapping it is the source of the stretch. */
+
 /* =========================================================================
  * WordPress Postboxes — Dark Metal Cards
  * ========================================================================= */

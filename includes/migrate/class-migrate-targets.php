@@ -313,13 +313,14 @@ class EMCP_Tools_Migrate_Targets {
 	}
 
 	/**
-	 * Prove a secret signs on the destination (signed GET /verify).
+	 * Prove a secret signs on the destination (signed GET /verify). Shared by
+	 * pairing (redeem_pairing_code) and the admin Verify-target action.
 	 *
 	 * @param string $endpoint Connector REST base.
 	 * @param string $secret   Connector secret.
 	 * @return bool
 	 */
-	private static function verify_endpoint( string $endpoint, string $secret ): bool {
+	public static function verify_endpoint( string $endpoint, string $secret ): bool {
 		$response = wp_remote_get(
 			$endpoint . '/verify',
 			array(

@@ -306,34 +306,19 @@ class EMCP_Tools_Migrate_Module extends EMCP_Tools_Module {
 
 	/** Prove a stored target's secret still signs on the destination. */
 	private function admin_verify_target( int $id ): void {
-		if ( ! class_exists( 'EMCP_Tools_Migrate_Targets' ) ) {
-			$this->set_notice( 'error', __( 'The paired-targets store is not available.', 'emcp-tools' ) );
-			return;
-		}
 		$target = EMCP_Tools_Migrate_Targets::get( $id );
 		if ( ! $target ) {
 			$this->set_notice( 'error', __( 'Paired target not found.', 'emcp-tools' ) );
 			return;
 		}
 		$secret = EMCP_Tools_Migrate_Targets::get_secret( $id );
-		$response = wp_remote_get(
-			$target['endpoint'] . '/verify',
-			array(
-				'timeout' => 20,
-				'headers' => array( 'X-EMCP-Signature' => hash_hmac( 'sha256', 'verify|', $secret ) ),
-			)
-		);
-		if ( is_wp_error( $response ) ) {
-			$this->set_notice( 'error', sprintf( /* translators: %s: error message. */ __( 'Verification request failed: %s', 'emcp-tools' ), $response->get_error_message() ) );
-			return;
-		}
-		$code = (int) wp_remote_retrieve_response_code( $response );
-		if ( $code < 200 || $code >= 300 ) {
-			$this->set_notice( 'error', sprintf( /* translators: %d: HTTP status. */ __( 'Destination rejected the stored secret (HTTP %d). Re-pair the target.', 'emcp-tools' ), $code ) );
+		if ( EMCP_Tools_Migrate_Targets::verify_endpoint( (string) $target['endpoint'], $secret ) ) {
+			/* translators: %s: target label. */
+			$this->set_notice( 'success', sprintf( __( 'Target "%s" verified.', 'emcp-tools' ), $target['label'] ) );
 			return;
 		}
 		/* translators: %s: target label. */
-		$this->set_notice( 'success', sprintf( __( 'Target "%s" verified.', 'emcp-tools' ), $target['label'] ) );
+		$this->set_notice( 'error', sprintf( __( 'Target "%s" could not be verified — the destination rejected the stored secret (or is unreachable). Re-pair the target.', 'emcp-tools' ), $target['label'] ) );
 	}
 
 	/** Push a full archive to a destination (fresh build or an existing one). */
@@ -352,26 +337,19 @@ class EMCP_Tools_Migrate_Module extends EMCP_Tools_Module {
 			return;
 		}
 
-		$path           = '';
 		$archive_source = isset( $_POST['archive_source'] ) ? sanitize_key( (string) $_POST['archive_source'] ) : 'build';
+		$path_opts      = array( 'include_files' => ! empty( $_POST['include_files'] ) );
 		if ( 'existing' === $archive_source ) {
-			$archive = sanitize_file_name( (string) ( $_POST['archive'] ?? '' ) );
-			if ( '' === $archive ) {
+			$path_opts['backup_id'] = sanitize_file_name( (string) ( $_POST['archive'] ?? '' ) );
+			if ( '' === $path_opts['backup_id'] ) {
 				$this->set_notice( 'error', __( 'Pick an existing archive to push.', 'emcp-tools' ) );
 				return;
 			}
-			$path = EMCP_Tools_Packager::archive_path( $archive );
-			if ( '' === $path ) {
-				$this->set_notice( 'error', __( 'The selected archive does not exist.', 'emcp-tools' ) );
-				return;
-			}
-		} else {
-			$include_files = ! empty( $_POST['include_files'] );
-			$path          = EMCP_Tools_Packager::create_archive( '', array( 'include_files' => $include_files ) );
-			if ( ! $path ) {
-				$this->set_notice( 'error', __( 'Could not build the archive to push.', 'emcp-tools' ) );
-				return;
-			}
+		}
+		$path = EMCP_Tools_Migration_Engine::archive_for_push( $path_opts );
+		if ( is_wp_error( $path ) ) {
+			$this->set_notice( 'error', $path->get_error_message() );
+			return;
 		}
 
 		self::run_blocking();

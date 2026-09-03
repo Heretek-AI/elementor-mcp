@@ -80,6 +80,34 @@ class EMCP_Tools_Migration_Engine {
 	}
 
 	/**
+	 * Build a fresh full archive for a push, or reuse an existing one (backup_id).
+	 * Shared by the MCP migrate tool and the admin Push tab so both use the same
+	 * build-or-reuse logic.
+	 *
+	 * @param array $opts { backup_id?:string, include_files?:bool }.
+	 * @return string|\WP_Error Absolute archive path.
+	 */
+	public static function archive_for_push( array $opts ) {
+		if ( ! class_exists( 'EMCP_Tools_Packager' ) ) {
+			return new WP_Error( 'engine_unavailable', __( 'The packager engine is not available.', 'emcp-tools' ) );
+		}
+		$backup_id = sanitize_file_name( (string) ( $opts['backup_id'] ?? '' ) );
+		if ( '' !== $backup_id ) {
+			$path = EMCP_Tools_Packager::archive_path( $backup_id );
+			if ( '' === $path ) {
+				return new WP_Error( 'backup_missing', __( 'backup_id does not match an existing archive.', 'emcp-tools' ) );
+			}
+			return $path;
+		}
+		$include_files = ! empty( $opts['include_files'] );
+		$path          = EMCP_Tools_Packager::create_archive( '', array( 'include_files' => $include_files ) );
+		if ( ! $path ) {
+			return new WP_Error( 'create_failed', __( 'Could not build the site archive before pushing.', 'emcp-tools' ) );
+		}
+		return $path;
+	}
+
+	/**
 	 * Fresh transfer id for a push.
 	 *
 	 * @return string

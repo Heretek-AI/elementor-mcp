@@ -222,20 +222,10 @@ class EMCP_Tools_Migrate_Abilities {
 			return $dest;
 		}
 
-		// Build or reuse an archive.
-		$path = '';
-		$backup_id = sanitize_file_name( (string) ( $args['backup_id'] ?? '' ) );
-		if ( '' !== $backup_id ) {
-			$path = EMCP_Tools_Packager::archive_path( $backup_id );
-			if ( '' === $path ) {
-				return new WP_Error( 'backup_missing', __( 'backup_id does not match an existing archive.', 'emcp-tools' ) );
-			}
-		} else {
-			$include_files = ! empty( $args['include_files'] );
-			$path          = EMCP_Tools_Packager::create_archive( '', array( 'include_files' => $include_files ) );
-			if ( ! $path ) {
-				return new WP_Error( 'create_failed', __( 'Could not build the site archive before pushing.', 'emcp-tools' ) );
-			}
+		// Build or reuse an archive (shared build-or-reuse helper).
+		$path = EMCP_Tools_Migration_Engine::archive_for_push( $args );
+		if ( is_wp_error( $path ) ) {
+			return $path;
 		}
 
 		$result = EMCP_Tools_Migration_Engine::push_archive( array(

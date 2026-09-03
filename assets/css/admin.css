@@ -85,14 +85,56 @@
 }
 
 /* =========================================================================
- * Page Layout & Header
+ * Page Layout & Shell (Heretek Obsidian Void Canvas)
  * ========================================================================= */
 
+body.emcp-admin-page,
+body.emcp-theme-dark,
+body:has(.elementor-mcp-admin) {
+	background: #09090b !important;
+	color: #f1f1f5 !important;
+}
+
+body.emcp-admin-page #wpwrap,
+body.emcp-admin-page #wpcontent,
+body.emcp-admin-page #wpbody,
+body.emcp-admin-page #wpbody-content,
+body:has(.elementor-mcp-admin) #wpwrap,
+body:has(.elementor-mcp-admin) #wpcontent,
+body:has(.elementor-mcp-admin) #wpbody,
+body:has(.elementor-mcp-admin) #wpbody-content {
+	background: #09090b !important;
+	color: #f1f1f5 !important;
+}
+
+body.emcp-admin-page #wpbody-content,
+body:has(.elementor-mcp-admin) #wpbody-content {
+	padding-top: 0 !important;
+	padding-bottom: 40px !important;
+	float: left;
+	width: 100%;
+}
+
+/* Reset WordPress core .wrap so EMCP docks flush to #wpadminbar and viewport */
+body.emcp-admin-page .wrap.elementor-mcp-admin,
+body.emcp-theme-dark .wrap.elementor-mcp-admin,
+body:has(.elementor-mcp-admin) .wrap.elementor-mcp-admin,
+.wrap.elementor-mcp-admin,
 .elementor-mcp-admin {
-	/* Full-width admin page so the app-bar header can bleed edge-to-edge. */
+	margin: 0 !important;
+	padding: 0 !important;
+	background: #09090b !important;
+	min-height: calc(100vh - 32px);
+	box-sizing: border-box;
 	max-width: none;
-	margin-right: 20px;
 	color: var(--mcp-gray-800);
+}
+
+.elementor-mcp-admin hr.wp-header-end {
+	display: none !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	border: none !important;
 }
 
 /* Heretek Scrollbar - Dark Steel Track & Blood Thumb */
@@ -415,12 +457,12 @@
  * ========================================================================= */
 
 .elementor-mcp-admin .tab-content {
-	margin-top: 0;
+	margin: 0 24px 40px 24px;
 	padding: 24px;
 	background: var(--mcp-white);
 	border: 1px solid var(--mcp-gray-200);
-	border-top: none;
 	border-radius: var(--mcp-radius-lg);
+	box-sizing: border-box;
 }
 
 /* =========================================================================
@@ -1498,15 +1540,15 @@
 .elementor-mcp-low-mode-card {
 	border: 1px solid var(--mcp-gray-200);
 	border-radius: var(--mcp-radius-md, 8px);
-	background: #fff;
+	background: var(--mcp-white);
 	padding: 14px 18px;
 	margin: 0 0 20px;
 	transition: all var(--mcp-transition);
 }
 
 .elementor-mcp-low-mode-card:has(input[type="checkbox"]:checked) {
-	border-color: var(--mcp-primary, #4f46e5);
-	background: rgba(79, 70, 229, 0.04);
+	border-color: var(--mcp-primary);
+	background: rgba(220, 38, 38, 0.08);
 }
 
 .elementor-mcp-low-mode-toggle {
@@ -1713,22 +1755,22 @@
 	gap: 6px;
 	padding: 6px 14px;
 	border: 1px solid var(--mcp-gray-200);
-	background: #fff;
+	background: var(--mcp-white);
 	border-radius: 999px;
 	font-size: 13px;
-	color: var(--mcp-gray-700, #374151);
+	color: var(--mcp-gray-800);
 	cursor: pointer;
 	transition: background-color var(--mcp-transition), border-color var(--mcp-transition), color var(--mcp-transition);
 }
 
 .elementor-mcp-pro-filter:hover {
-	border-color: var(--mcp-primary, #4f46e5);
-	color: var(--mcp-primary, #4f46e5);
+	border-color: var(--mcp-primary);
+	color: #ffffff;
 }
 
 .elementor-mcp-pro-filter.is-active {
-	background: var(--mcp-primary, #4f46e5);
-	border-color: var(--mcp-primary, #4f46e5);
+	background: var(--mcp-primary);
+	border-color: var(--mcp-primary);
 	color: #fff;
 }
 
@@ -1848,13 +1890,13 @@
 .elementor-mcp-skills-pack {
 	margin: 0;
 	padding: 6px 12px;
-	background: #fff;
+	background: var(--mcp-white);
 	border: 1px solid var(--mcp-gray-200);
 	border-radius: 999px;
 	font-size: 13px;
 	font-weight: 500;
 	line-height: 1.3;
-	color: var(--mcp-gray-700, #374151);
+	color: var(--mcp-gray-800);
 }
 
 .elementor-mcp-skills-guides {
@@ -1866,7 +1908,7 @@
 .elementor-mcp-skills-guide {
 	border: 1px solid var(--mcp-gray-200);
 	border-radius: var(--mcp-radius-md, 8px);
-	background: #fff;
+	background: var(--mcp-white);
 	overflow: hidden;
 }
 
@@ -1877,7 +1919,7 @@
 	align-items: center;
 	gap: 12px;
 	font-size: 14px;
-	color: var(--mcp-gray-700, #374151);
+	color: var(--mcp-gray-800);
 	list-style: none;
 	position: relative;
 	padding-right: 40px;
@@ -2115,7 +2157,7 @@
 	flex-direction: column;
 	border: 1px solid var(--mcp-gray-200);
 	border-radius: var(--mcp-radius-md, 8px);
-	background: #fff;
+	background: var(--mcp-white);
 	overflow: hidden;
 	transition: border-color var(--mcp-transition);
 }
@@ -2668,7 +2710,7 @@
 	flex-direction: column;
 	border: 1px solid var(--mcp-gray-200);
 	border-radius: var(--mcp-radius-md, 8px);
-	background: #fff;
+	background: var(--mcp-white);
 	overflow: hidden;
 	transition: border-color var(--mcp-transition);
 }
@@ -2802,12 +2844,14 @@
 
 .elementor-mcp-brand-kit-modal__dialog {
 	position: relative;
-	background: #fff;
+	background: var(--mcp-white);
+	border: 1px solid var(--mcp-gray-200);
 	border-radius: var(--mcp-radius-md, 8px);
-	box-shadow: var(--mcp-shadow-lg);
+	box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
 	width: 460px;
 	max-width: calc(100vw - 40px);
 	padding: 24px;
+	color: var(--mcp-gray-800);
 }
 
 .elementor-mcp-brand-kit-modal__title {
@@ -3282,19 +3326,19 @@
 	align-items: center;
 	gap: 8px;
 	padding: 16px 12px;
-	background: #fff;
-	border: 1px solid var( --mcp-gray-300, #d1d5db );
+	background: var(--mcp-white);
+	border: 1px solid var(--mcp-gray-200);
 	border-radius: 8px;
 	cursor: pointer;
 	transition: border-color .15s, box-shadow .15s;
 }
-.elementor-mcp-client-card:hover { border-color: var( --mcp-primary, #6366f1 ); }
+.elementor-mcp-client-card:hover { border-color: var(--mcp-primary); }
 .elementor-mcp-client-card.is-selected {
-	border-color: var( --mcp-primary, #6366f1 );
-	box-shadow: 0 0 0 1px var( --mcp-primary, #6366f1 ) inset;
+	border-color: var(--mcp-primary);
+	box-shadow: 0 0 0 1px var(--mcp-primary) inset;
 }
-.elementor-mcp-client-card .dashicons { font-size: 28px; width: 28px; height: 28px; color: var( --mcp-gray-600, #4b5563 ); }
-.elementor-mcp-client-card.is-selected .dashicons { color: var( --mcp-primary, #6366f1 ); }
+.elementor-mcp-client-card .dashicons { font-size: 28px; width: 28px; height: 28px; color: var(--mcp-gray-500); }
+.elementor-mcp-client-card.is-selected .dashicons { color: var(--mcp-primary); }
 .elementor-mcp-client-card-logo { width: 32px; height: 32px; object-fit: contain; display: block; }
 
 /* Context page */
@@ -3468,7 +3512,7 @@ body.emcp-modal-open { overflow: hidden; }
 /* Full-width admin header (app bar + tab nav + Help dropdown) ---------------- */
 .elementor-mcp-admin > h1 { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
 
-.emcp-appbar { display: flex; align-items: stretch; justify-content: space-between; gap: 16px; flex-wrap: wrap; background: rgba(13, 13, 17, 0.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid rgba(220, 38, 38, 0.35); padding: 10px 20px 10px 20px; margin: 0 -20px 0 -22px; border-top: 1px solid var(--mcp-gray-200); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); }
+.emcp-appbar { display: flex; align-items: stretch; justify-content: space-between; gap: 16px; flex-wrap: wrap; background: rgba(13, 13, 17, 0.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: none; border-bottom: 1px solid rgba(220, 38, 38, 0.35); padding: 10px 24px; margin: 0; width: 100%; box-sizing: border-box; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); }
 .emcp-appbar-brand { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 15px 0; width: 40%;}
 .emcp-appbar-logo { width: 34px; height: 34px; border-radius: 6px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(220, 38, 38, 0.6)); transition: filter 0.3s ease; }
 .emcp-appbar-logo:hover { filter: drop-shadow(0 0 14px rgba(220, 38, 38, 0.95)); }
@@ -3537,7 +3581,7 @@ body.emcp-modal-open { overflow: hidden; }
 .emcp-appbar-upgrade:hover { background: var(--mcp-primary-hover); border-color: var(--mcp-primary-hover); color: #fff; box-shadow: 0 0 16px rgba(220, 38, 38, 0.6); }
 .emcp-appbar-upgrade .dashicons { font-size: 15px; width: 15px; height: 15px; }
 
-.emcp-appnav { display: flex; align-items: stretch; gap: 0px; background: #0c0c10; border-bottom: 1px solid var(--mcp-gray-200); padding: 0 14px; overflow-x: auto; overflow-y: hidden; margin: 0; }
+.emcp-appnav { display: flex; align-items: stretch; gap: 0px; background: #0c0c10; border-bottom: 1px solid var(--mcp-gray-200); padding: 0 24px; overflow-x: auto; overflow-y: hidden; margin: 0; box-sizing: border-box; }
 .emcp-appnav-item { display: inline-flex; align-items: center; gap: 7px; padding: 14px 16px; margin-bottom: -1px; white-space: nowrap; color: var(--mcp-gray-500); text-decoration: none; font-size: 14px; font-weight: 600; border-bottom: 2px solid transparent; flex: 1; justify-content: center; text-align: center; border-right: 1px solid var(--mcp-gray-200); transition: all 0.2s; }
 .emcp-appnav-item:hover { color: #fff; background: rgba(220, 38, 38, 0.08); }
 .emcp-appnav-item.is-active { color: #fff; border-bottom-color: var(--mcp-primary); background: rgba(220, 38, 38, 0.12); text-shadow: 0 0 8px rgba(220, 38, 38, 0.5); }
@@ -3605,9 +3649,7 @@ body.emcp-modal-open { overflow: hidden; }
 .emcp-appnav { cursor: grab; }
 .emcp-appnav.is-dragging { cursor: grabbing; user-select: none; }
 .emcp-appnav.is-dragging .emcp-appnav-item { cursor: grabbing; }
-/* Header nav overflow arrows (small desktops). Wrapper carries the full-bleed;
-   arrows overlay the edges and only show when the tabs overflow. */
-.emcp-appnav-wrap { position: relative; margin: 0 -20px 20px -22px; }
+.emcp-appnav-wrap { position: relative; margin: 0 0 24px 0; width: 100%; box-sizing: border-box; }
 .emcp-appnav-arrow { position: absolute; top: 0; bottom: 0; width: 44px; display: flex; align-items: center; justify-content: center; padding: 0; border: none; border-bottom: 1px solid var(--mcp-gray-200); background: var(--mcp-white); color: var(--mcp-gray-600, #50575e); cursor: pointer; z-index: 3; }
 .emcp-appnav-arrow[hidden] { display: none !important; }
 .emcp-appnav-arrow:hover { color: var(--mcp-primary); }
@@ -3638,6 +3680,8 @@ body.emcp-modal-open { overflow: hidden; }
 	background: transparent;
 	border: none;
 	padding: 0;
+	margin: 0 24px 40px 24px;
+	box-sizing: border-box;
 }
 
 .emcp-dash {
@@ -4352,16 +4396,22 @@ body.emcp-modal-open { overflow: hidden; }
 .emcp-history__filters li a {
 	display: inline-block;
 	padding: 4px 12px;
-	border: 1px solid #c3c4c7;
+	border: 1px solid var(--mcp-gray-200);
 	border-radius: 4px;
-	background: #fff;
-	color: #2c3338;
+	background: var(--mcp-white);
+	color: var(--mcp-gray-800);
 	text-decoration: none;
 	font-size: 12px;
+	transition: all 0.2s;
+}
+.emcp-history__filters li a:hover {
+	border-color: var(--mcp-primary);
+	color: #fff;
+	background: rgba(220, 38, 38, 0.1);
 }
 .emcp-history__filters li.is-active a {
-	background: #2271b1;
-	border-color: #2271b1;
+	background: var(--mcp-primary);
+	border-color: var(--mcp-primary);
 	color: #fff;
 }
 .emcp-history__table { margin-top: 8px; }
@@ -4426,26 +4476,26 @@ body.emcp-modal-open { overflow: hidden; }
 	display: block;
 	position: relative;
 	padding: 18px 20px;
-	border: 2px solid var(--mcp-line, #e2e4ea);
+	border: 1px solid var(--mcp-gray-200);
 	border-radius: 12px;
 	cursor: pointer;
-	background: #fff;
+	background: var(--mcp-white);
 	transition: border-color .15s ease, box-shadow .15s ease;
 }
-.emcp-auth-card:hover { border-color: #c7cbe0; }
+.emcp-auth-card:hover { border-color: var(--mcp-primary); }
 .emcp-auth-card:has(input:checked) {
-	border-color: #4f46e5;
-	box-shadow: 0 0 0 1px #4f46e5 inset;
+	border-color: var(--mcp-primary);
+	box-shadow: 0 0 0 1px var(--mcp-primary) inset, 0 0 12px rgba(220, 38, 38, 0.25);
 }
 .emcp-auth-card.is-disabled { opacity: .55; cursor: not-allowed; }
-.emcp-auth-card.is-disabled:hover { border-color: var(--mcp-line, #e2e4ea); }
+.emcp-auth-card.is-disabled:hover { border-color: var(--mcp-gray-200); }
 .emcp-auth-card input { position: absolute; opacity: 0; pointer-events: none; }
 .emcp-auth-card__title {
 	display: flex; align-items: center; gap: 10px;
-	font-size: 15px; font-weight: 600; color: #1e1f2b; margin-bottom: 6px;
+	font-size: 15px; font-weight: 600; color: #ffffff; margin-bottom: 6px;
 }
-.emcp-auth-card__desc { display: block; font-size: 13px; color: #64677a; line-height: 1.5; }
-.emcp-auth-card__note { display: block; margin-top: 8px; font-size: 12.5px; color: #9497a8; }
+.emcp-auth-card__desc { display: block; font-size: 13px; color: var(--mcp-gray-500); line-height: 1.5; }
+.emcp-auth-card__note { display: block; margin-top: 8px; font-size: 12.5px; color: var(--mcp-gray-400); }
 .emcp-auth-badge {
 	font-size: 11px; font-weight: 600; color: #16794a;
 	background: #dff3e6; border-radius: 999px; padding: 2px 9px;
@@ -4662,23 +4712,23 @@ body[data-emcp-auth="app-password"] [data-authfor="oauth"] { display: none; }
  * Turns the "Import a bundle" and "Cloud Library" <details> into eye-catching
  * cards instead of plain disclosure-triangle text. Flat colors, no gradients.
  * ---------------------------------------------------------------------- */
-.emcp-sb-disclosure { margin: 16px 0; border: 1px solid #dcdce1; border-radius: 10px; background: #fff; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
-.emcp-sb-disclosure > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 15px 18px; font-size: 15px; font-weight: 600; color: #1d2327; background: #f6f7f9; transition: background .15s ease, color .15s ease; }
+.emcp-sb-disclosure { margin: 16px 0; border: 1px solid var(--mcp-gray-200); border-radius: 10px; background: var(--mcp-white); overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,.3); }
+.emcp-sb-disclosure > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 15px 18px; font-size: 15px; font-weight: 600; color: var(--mcp-gray-800); background: #16161d; transition: background .15s ease, color .15s ease; }
 .emcp-sb-disclosure > summary::-webkit-details-marker { display: none; }
-.emcp-sb-disclosure > summary::after { content: "\f347"; font-family: dashicons; margin-left: auto; font-size: 18px; line-height: 1; color: #787c82; transition: transform .15s ease; }
+.emcp-sb-disclosure > summary::after { content: "\f347"; font-family: dashicons; margin-left: auto; font-size: 18px; line-height: 1; color: var(--mcp-gray-500); transition: transform .15s ease; }
 .emcp-sb-disclosure[open] > summary::after { transform: rotate(180deg); }
-.emcp-sb-disclosure > summary:hover { background: #eef0f3; }
-.emcp-sb-disclosure > summary:focus-visible { outline: 2px solid #2271b1; outline-offset: -2px; }
-.emcp-sb-disclosure > summary .dashicons { font-size: 20px; width: 20px; height: 20px; color: #50575e; flex: 0 0 auto; }
+.emcp-sb-disclosure > summary:hover { background: #1c1c25; color: #fff; }
+.emcp-sb-disclosure > summary:focus-visible { outline: 2px solid var(--mcp-primary); outline-offset: -2px; }
+.emcp-sb-disclosure > summary .dashicons { font-size: 20px; width: 20px; height: 20px; color: var(--mcp-gray-500); flex: 0 0 auto; }
 .emcp-sb-disclosure > *:not(summary) { padding: 4px 18px 16px; }
 
-/* Cloud Library — accent variant (the cross-site highlight). */
-.emcp-sb-disclosure--cloud { border-color: #cbb6ef; }
-.emcp-sb-disclosure--cloud > summary { background: #f4eefc; color: #4a1f8f; }
-.emcp-sb-disclosure--cloud > summary:hover { background: #ece2fb; }
-.emcp-sb-disclosure--cloud > summary .dashicons-cloud { color: #6a11cb; }
-.emcp-sb-disclosure--cloud > summary::after { color: #6a11cb; }
-.emcp-sb-disclosure__badge { margin-left: 6px; font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: #6a11cb; background: #fff; border: 1px solid #cbb6ef; border-radius: 999px; padding: 2px 9px; }
+/* Cloud Library — accent variant */
+.emcp-sb-disclosure--cloud { border-color: rgba(220, 38, 38, 0.4); }
+.emcp-sb-disclosure--cloud > summary { background: rgba(220, 38, 38, 0.12); color: #fecaca; }
+.emcp-sb-disclosure--cloud > summary:hover { background: rgba(220, 38, 38, 0.18); }
+.emcp-sb-disclosure--cloud > summary .dashicons-cloud { color: var(--mcp-primary); }
+.emcp-sb-disclosure--cloud > summary::after { color: var(--mcp-primary); }
+.emcp-sb-disclosure__badge { margin-left: 6px; font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--mcp-primary); background: rgba(220, 38, 38, 0.15); border: 1px solid rgba(220, 38, 38, 0.35); border-radius: 999px; padding: 2px 9px; }
 
 /* "Save all to Cloud" bulk button — plugin-branded (indigo), not WP blue. */
 .button.emcp-sb-save-all { background: var(--mcp-primary); border-color: var(--mcp-primary); color: var(--mcp-white); font-weight: 600; }
@@ -4843,8 +4893,9 @@ body[data-emcp-auth="app-password"] [data-authfor="oauth"] { display: none; }
 	margin-top: 4px;
 	padding: 2px 6px;
 	font-size: 11px;
-	color: #50575e;
-	background: #f6f7f7;
+	color: var(--mcp-gray-400);
+	background: #14141a;
+	border: 1px solid var(--mcp-gray-200);
 	border-radius: 4px;
 	word-break: break-all;
 }
@@ -4855,4 +4906,79 @@ body[data-emcp-auth="app-password"] [data-authfor="oauth"] { display: none; }
 
 .emcp-oauth-clients__actions .button {
 	margin-right: 4px;
+}
+
+/* =========================================================================
+ * WordPress Admin Notices & Footer (Heretek Dark Metal)
+ * ========================================================================= */
+
+body.emcp-admin-page .notice,
+body.emcp-admin-page div.updated,
+body.emcp-admin-page div.error,
+body.emcp-theme-dark .notice,
+body.emcp-theme-dark div.updated,
+body.emcp-theme-dark div.error,
+.elementor-mcp-admin .notice,
+.elementor-mcp-admin div.updated,
+.elementor-mcp-admin div.error {
+	background: #121217 !important;
+	color: #f1f1f5 !important;
+	border: 1px solid #1f1f27 !important;
+	border-left-width: 4px !important;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+	margin: 16px 24px !important;
+	border-radius: 4px;
+}
+
+body.emcp-admin-page .notice-success,
+body.emcp-theme-dark .notice-success,
+.elementor-mcp-admin .notice-success,
+.elementor-mcp-admin div.updated {
+	border-left-color: #10b981 !important;
+}
+
+body.emcp-admin-page .notice-error,
+body.emcp-theme-dark .notice-error,
+.elementor-mcp-admin .notice-error,
+.elementor-mcp-admin div.error {
+	border-left-color: #dc2626 !important;
+}
+
+body.emcp-admin-page .notice-warning,
+body.emcp-theme-dark .notice-warning,
+.elementor-mcp-admin .notice-warning {
+	border-left-color: #f59e0b !important;
+}
+
+body.emcp-admin-page .notice-info,
+body.emcp-theme-dark .notice-info,
+.elementor-mcp-admin .notice-info {
+	border-left-color: #dc2626 !important;
+}
+
+body.emcp-admin-page .notice p,
+body.emcp-theme-dark .notice p,
+.elementor-mcp-admin .notice p {
+	color: #f1f1f5 !important;
+}
+
+/* Footer obsidian dark theme */
+body.emcp-admin-page #wpfooter,
+body.emcp-theme-dark #wpfooter,
+body:has(.elementor-mcp-admin) #wpfooter {
+	background: #09090b !important;
+	color: #6b6b7a !important;
+	border-top: 1px solid #1f1f27 !important;
+}
+
+body.emcp-admin-page #wpfooter a,
+body.emcp-theme-dark #wpfooter a,
+body:has(.elementor-mcp-admin) #wpfooter a {
+	color: #9898a6 !important;
+}
+
+body.emcp-admin-page #wpfooter a:hover,
+body.emcp-theme-dark #wpfooter a:hover,
+body:has(.elementor-mcp-admin) #wpfooter a:hover {
+	color: #dc2626 !important;
 }

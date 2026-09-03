@@ -278,6 +278,7 @@ class EMCP_Tools_Admin {
 	 */
 	public function init(): void {
 		add_action( 'admin_menu', array( $this, 'add_settings_page' ) );
+		add_filter( 'admin_body_class', array( $this, 'filter_admin_body_class' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_init', array( $this, 'maybe_apply_default_disabled_tools' ) );
 		add_action( 'admin_init', array( $this, 'maybe_check_updates' ) );
@@ -2342,6 +2343,21 @@ class EMCP_Tools_Admin {
 			return array();
 		}
 		return array_values( array_intersect( $all_tools, array_map( 'sanitize_text_field', $input ) ) );
+	}
+
+	/**
+	 * Append dark theme canvas body classes on EMCP admin screens.
+	 *
+	 * @since 3.2.0
+	 * @param string $classes Space-separated list of CSS classes for the body.
+	 * @return string
+	 */
+	public function filter_admin_body_class( string $classes ): string {
+		$screen = get_current_screen();
+		if ( $screen && in_array( $screen->id, $this->hook_suffixes, true ) ) {
+			$classes .= ' emcp-admin-page emcp-theme-dark ';
+		}
+		return $classes;
 	}
 
 	/**

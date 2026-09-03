@@ -16,6 +16,7 @@ class EMCP_Tools_Migrate_Abilities {
 			'emcp-tools/list-backups',
 			'emcp-tools/migrate-site',
 			'emcp-tools/sync-to-live',
+			'emcp-tools/url-search-replace',
 		);
 	}
 
@@ -60,11 +61,12 @@ class EMCP_Tools_Migrate_Abilities {
 			'emcp-tools/migrate-site',
 			array(
 				'label'               => __( 'Migrate Site', 'emcp-tools' ),
-				'description'         => __( 'Push this site (as a .emcp archive) to a remote target running the EMCP connector. Streams the archive in HMAC-signed 2 MB packets over the connector REST API and waits for the destination restore. direction is always "push" in this build.', 'emcp-tools' ),
+				'description'         => __( 'Push this site (as a .emcp archive) to a remote destination running the EMCP connector. Streams the archive in HMAC-signed 2 MB packets over the connector REST API and waits for the destination restore. Address a paired target with target_id, or pass remote_url + secret_key for a one-off push. direction is always "push" in this build.', 'emcp-tools' ),
 				'category'            => 'emcp-tools',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
+						'target_id'     => array( 'type' => 'integer', 'description' => __( 'ID of a paired destination (from the Backup & Migrate admin). Takes precedence over remote_url.', 'emcp-tools' ) ),
 						'remote_url'    => array( 'type' => 'string', 'description' => __( 'Destination site URL (the connector is installed there).', 'emcp-tools' ) ),
 						'secret_key'    => array( 'type' => 'string', 'description' => __( 'Shared secret (must match EMCP_CONNECTOR_SECRET on the destination).', 'emcp-tools' ) ),
 						'direction'     => array( 'type' => 'string', 'enum' => array( 'push', 'pull' ), 'description' => __( '"push" uploads to the connector; "pull" reaches execute and returns a clear unsupported error.', 'emcp-tools' ) ),
@@ -72,7 +74,7 @@ class EMCP_Tools_Migrate_Abilities {
 						'include_files' => array( 'type' => 'boolean', 'description' => __( 'Bundle site files when building a fresh backup (default false).', 'emcp-tools' ) ),
 						'confirm'       => array( 'type' => 'boolean', 'description' => __( 'Restoring over the destination replaces its database — must be true.', 'emcp-tools' ) ),
 					),
-					'required'   => array( 'remote_url', 'secret_key' ),
+					'required'   => array( 'confirm' ),
 				),
 				'output_schema'       => array( 'type' => 'object' ),
 				'permission_callback' => array( $this, 'check_permission' ),
@@ -84,35 +86,83 @@ class EMCP_Tools_Migrate_Abilities {
 			'emcp-tools/sync-to-live',
 			array(
 				'label'               => __( 'Sync to Live', 'emcp-tools' ),
-				'description'         => __( 'Execute serialized search and replace across the database for URL changes { old_url, new_url, confirm: true }.', 'emcp-tools' ),
+				'description'         => __( 'Push a scope of this site (full, or selected tables and/or file roots) to a live destination running the EMCP connector 1.2.0+, and wait for the scoped restore. The destination imports only the archived tables/files and rewrites URLs only over those tables. Address a paired target with target_id, or pass remote_url + secret_key.', 'emcp-tools' ),
 				'category'            => 'emcp-tools',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'old_url' => array( 'type' => 'string' ),
-						'new_url' => array( 'type' => 'string' ),
-						'confirm' => array( 'type' => 'boolean' ),
+						'target_id'  => array( 'type' => 'integer', 'description' => __( 'ID of a paired destination (from the Backup & Migrate admin). Takes precedence over remote_url.', 'emcp-tools' ) ),
+						'remote_url' => array( 'type' => 'string', 'description' => __( 'Destination site URL (the connector is installed there).', 'emcp-tools' ) ),
+						'secret_key' => array( 'type' => 'string', 'description' => __( 'Shared secret (must match EMCP_CONNECTOR_SECRET on the destination).', 'emcp-tools' ) ),
+						'scope'      => array(
+							'type'        => 'object',
+							'description' => __( 'What to sync. Omit the whole scope for a full site. Each of tables / file_roots is "all", "none", or a list — an empty list maps to "none". tables lists DB tables; file_roots lists uploads/plugins/themes (or a wp-content-relative path).', 'emcp-tools' ),
+							'properties'  => array(
+								'tables'     => array(
+									'oneOf' => array(
+										array( 'type' => 'array', 'items' => array( 'type' => 'string' ) ),
+										array( 'type' => 'string', 'enum' => array( 'all', 'none' ) ),
+									),
+								),
+								'file_roots' => array(
+									'oneOf' => array(
+										array( 'type' => 'array', 'items' => array( 'type' => 'string' ) ),
+										array( 'type' => 'string', 'enum' => array( 'all', 'none' ) ),
+									),
+								),
+							),
+						),
+						'confirm'    => array( 'type' => 'boolean', 'description' => __( 'Overwrites the selected tables/files on the destination — must be true.', 'emcp-tools' ) ),
 					),
-					'required'   => array( 'old_url', 'new_url', 'confirm' ),
+					'required'   => array( 'confirm' ),
 				),
 				'output_schema'       => array( 'type' => 'object' ),
 				'permission_callback' => array( $this, 'check_permission' ),
 				'execute_callback'    => array( $this, 'execute_sync' ),
 			)
 		);
+
+		emcp_tools_register_ability(
+			'emcp-tools/url-search-replace',
+			array(
+				'label'               => __( 'URL Search & Replace', 'emcp-tools' ),
+				'description'         => __( 'Run a serialization-safe URL search-replace across the database (old_url → new_url). Useful after restoring/migrating to rewrite stored URLs in place. Ledger-recorded so the rewrites stay reversible in History.', 'emcp-tools' ),
+				'category'            => 'emcp-tools',
+				'input_schema'        => array(
+					'type'       => 'object',
+					'properties' => array(
+						'old_url' => array( 'type' => 'string', 'description' => __( 'The URL to replace.', 'emcp-tools' ) ),
+						'new_url' => array( 'type' => 'string', 'description' => __( 'The replacement URL.', 'emcp-tools' ) ),
+						'confirm' => array( 'type' => 'boolean', 'description' => __( 'Rewrites rows across the database — must be true.', 'emcp-tools' ) ),
+					),
+					'required'   => array( 'old_url', 'new_url', 'confirm' ),
+				),
+				'output_schema'       => array( 'type' => 'object' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'execute_callback'    => array( $this, 'execute_url_search_replace' ),
+			)
+		);
 	}
 
-	private static function ensure_packager(): void {
-		if ( ! class_exists( 'EMCP_Tools_Packager' ) && class_exists( 'EMCP_Tools_Pro_Loader' ) ) {
-			$packager = EMCP_Tools_Pro_Loader::path( 'includes/migrate/class-packager.php' );
-			if ( '' !== $packager ) {
-				require_once $packager;
+	private static function ensure_engines(): void {
+		if ( ! class_exists( 'EMCP_Tools_Pro_Loader' ) ) {
+			return;
+		}
+		foreach ( array(
+			'includes/migrate/class-packager.php',
+			'includes/migrate/class-migration-engine.php',
+			'includes/migrate/class-migrate-targets.php',
+			'includes/migrate/class-sync-engine.php',
+		) as $rel ) {
+			$file = EMCP_Tools_Pro_Loader::path( $rel );
+			if ( '' !== $file ) {
+				require_once $file;
 			}
 		}
 	}
 
 	public function execute_create_backup( array $args ): array {
-		self::ensure_packager();
+		self::ensure_engines();
 		if ( ! class_exists( 'EMCP_Tools_Packager' ) ) {
 			return array( 'success' => false, 'message' => __( 'Packager engine is not available.', 'emcp-tools' ) );
 		}
@@ -134,7 +184,7 @@ class EMCP_Tools_Migrate_Abilities {
 	}
 
 	public function execute_list_backups(): array {
-		self::ensure_packager();
+		self::ensure_engines();
 		if ( ! class_exists( 'EMCP_Tools_Packager' ) ) {
 			return array( 'backups' => array() );
 		}
@@ -142,27 +192,32 @@ class EMCP_Tools_Migrate_Abilities {
 	}
 
 	/**
+	 * Resolve which destination an action targets (paired target or raw URL +
+	 * secret). Delegates to the shared engine resolver.
+	 *
+	 * @param array $args Tool input.
+	 * @return array{endpoint:string,secret:string,label:string,target_url:string}|WP_Error
+	 */
+	private function resolve_destination( array $args ) {
+		if ( ! class_exists( 'EMCP_Tools_Migration_Engine' ) ) {
+			return new WP_Error( 'engine_unavailable', __( 'The migrate engine is not available.', 'emcp-tools' ) );
+		}
+		return EMCP_Tools_Migration_Engine::destination_from_input( $args );
+	}
+
+	/**
 	 * Push the site to a remote EMCP connector.
 	 *
-	 * Builds (or reuses) a .emcp archive, streams it to the destination in
-	 * signed 2 MB packets, finalizes, and waits for the connector's restore.
-	 *
-	 * @param array $args Tool input (remote_url, secret_key, direction, backup_id, include_files).
+	 * @param array $args Tool input (target_id or remote_url+secret_key, direction, backup_id, include_files, confirm).
 	 * @return array|WP_Error
 	 */
 	public function execute_migrate( array $args ) {
-		self::ensure_packager();
-		if ( ! class_exists( 'EMCP_Tools_Packager' ) ) {
-			return new WP_Error( 'engine_unavailable', __( 'Packager engine is not available.', 'emcp-tools' ) );
+		self::ensure_engines();
+		if ( ! class_exists( 'EMCP_Tools_Packager' ) || ! class_exists( 'EMCP_Tools_Migration_Engine' ) ) {
+			return new WP_Error( 'engine_unavailable', __( 'The migrate engine is not available.', 'emcp-tools' ) );
 		}
-
-		$remote = trim( (string) ( $args['remote_url'] ?? '' ) );
-		if ( '' === $remote || ! wp_http_validate_url( $remote ) ) {
-			return new WP_Error( 'invalid_remote', __( 'A valid http(s) remote_url is required.', 'emcp-tools' ) );
-		}
-		$secret = (string) ( $args['secret_key'] ?? '' );
-		if ( '' === $secret ) {
-			return new WP_Error( 'secret_required', __( 'secret_key is required (must match EMCP_CONNECTOR_SECRET on the destination).', 'emcp-tools' ) );
+		if ( empty( $args['confirm'] ) || true !== $args['confirm'] ) {
+			return new WP_Error( 'confirm_required', __( 'migrate-site overwrites the destination — provide confirm:true.', 'emcp-tools' ) );
 		}
 		$direction = strtolower( (string) ( $args['direction'] ?? 'push' ) );
 		if ( 'pull' === $direction ) {
@@ -171,214 +226,76 @@ class EMCP_Tools_Migrate_Abilities {
 		if ( 'push' !== $direction ) {
 			return new WP_Error( 'invalid_direction', __( 'direction must be "push".', 'emcp-tools' ) );
 		}
-		if ( empty( $args['confirm'] ) || true !== $args['confirm'] ) {
-			return new WP_Error( 'confirm_required', __( 'migrate-site overwrites the destination — provide confirm:true.', 'emcp-tools' ) );
+
+		$dest = $this->resolve_destination( $args );
+		if ( is_wp_error( $dest ) ) {
+			return $dest;
 		}
 
-		// Build or reuse an archive.
-		$path = '';
-		$backup_id = sanitize_file_name( (string) ( $args['backup_id'] ?? '' ) );
-		if ( '' !== $backup_id ) {
-			$path = EMCP_Tools_Packager::archive_path( $backup_id );
-			if ( '' === $path ) {
-				return new WP_Error( 'backup_missing', __( 'backup_id does not match an existing archive.', 'emcp-tools' ) );
-			}
-		} else {
-			$include_files = ! empty( $args['include_files'] );
-			$path          = EMCP_Tools_Packager::create_archive( '', array( 'include_files' => $include_files ) );
-			if ( ! $path ) {
-				return new WP_Error( 'create_failed', __( 'Could not build the site archive before pushing.', 'emcp-tools' ) );
-			}
+		// Build or reuse an archive (shared build-or-reuse helper).
+		$path = EMCP_Tools_Migration_Engine::archive_for_push( $args );
+		if ( is_wp_error( $path ) ) {
+			return $path;
 		}
 
-		$endpoint    = untrailingslashit( $remote ) . '/wp-json/emcp-connector/v1';
-		$transfer_id = 'emcp-' . wp_generate_password( 12, false );
-
-		$pushed = self::push_archive_packets( $path, $endpoint, $secret, $transfer_id );
-		if ( is_wp_error( $pushed ) ) {
-			return $pushed;
-		}
-		$job_id = self::push_finalize( $path, $endpoint, $secret, $transfer_id );
-		if ( is_wp_error( $job_id ) ) {
-			return $job_id;
+		$result = EMCP_Tools_Migration_Engine::push_archive( array(
+			'path'        => $path,
+			'endpoint'    => $dest['endpoint'],
+			'secret'      => $dest['secret'],
+			'transfer_id' => EMCP_Tools_Migration_Engine::transfer_id(),
+		) );
+		if ( is_wp_error( $result ) ) {
+			return $result;
 		}
 
-		// Poll the job until it settles (the connector restores inline, so this
-		// normally returns on the first poll; bounded at ~60 s).
-		$job = self::poll_job( $endpoint, $secret, $job_id );
-
-		$state = ( $job && isset( $job['state'] ) ) ? $job['state'] : 'unknown';
-		if ( 'done' !== $state ) {
-			$code = ( 'error' === $state ) ? 'restore_failed' : 'restore_pending';
-			$msg  = ( 'error' === $state )
-				? __( 'Destination reported an error during restore.', 'emcp-tools' )
-				/* translators: %s: destination job state. */
-				: sprintf( __( 'Destination restore is not finished (state: %s). Re-run migrate-site or poll the returned job.', 'emcp-tools' ), $state );
-			return new WP_Error( $code, $msg, array( 'job_id' => $job_id, 'job' => $job ) );
-		}
-
-		return array(
-			'success'    => true,
-			'message'    => __( 'Archive pushed and restored on the destination.', 'emcp-tools' ),
-			'remote_url' => untrailingslashit( $remote ),
-			'job_id'     => $job_id,
-			'state'      => $state,
-			'archive'    => basename( $path ),
-			'job'        => $job,
-		);
+		$result['message']    = __( 'Archive pushed and restored on the destination.', 'emcp-tools' );
+		$result['remote_url'] = $dest['target_url'];
+		return $result;
 	}
 
 	/**
-	 * Stream an archive to the connector as signed 2 MB packets.
+	 * Push a scoped archive (full or selective) to a live destination.
 	 *
-	 * @param string $path        Archive path.
-	 * @param string $endpoint    Connector REST base.
-	 * @param string $secret      Shared secret.
-	 * @param string $transfer_id Transfer id for this push.
-	 * @return true|\WP_Error
+	 * @param array $args Tool input (target_id or remote_url+secret_key, scope, confirm).
+	 * @return array|WP_Error
 	 */
-	private function push_archive_packets( string $path, string $endpoint, string $secret, string $transfer_id ) {
-		$chunk_size = 2 * 1024 * 1024; // 2 MB.
-		$total      = (int) ceil( filesize( $path ) / $chunk_size );
-
-		$handle = fopen( $path, 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions
-		if ( false === $handle ) {
-			return new WP_Error( 'read_failed', __( 'Could not read the archive for upload.', 'emcp-tools' ) );
-		}
-		$index = 0;
-		while ( ! feof( $handle ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions
-			$data = fread( $handle, $chunk_size ); // phpcs:ignore WordPress.WP.AlternativeFunctions
-			if ( '' === $data || false === $data ) {
-				if ( feof( $handle ) ) {
-					break;
-				}
-				fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions
-				return new WP_Error( 'read_failed', __( 'Failed while reading the archive.', 'emcp-tools' ) );
-			}
-			$chunk_sha = hash( 'sha256', $data );
-			$canonical = 'packet|' . $chunk_sha . '|' . $transfer_id . '|' . $index;
-			$response  = wp_remote_post(
-				$endpoint . '/packet',
-				array(
-					'timeout' => 120,
-					'headers' => array(
-						'Content-Type'     => 'application/json',
-						'X-EMCP-Signature' => hash_hmac( 'sha256', $canonical, $secret ),
-					),
-					'body'    => wp_json_encode( array(
-						'transfer_id' => $transfer_id,
-						'index'       => $index,
-						'total'       => $total,
-						'data_b64'    => base64_encode( $data ),
-						'sha256'      => $chunk_sha,
-					) ),
-				)
-			);
-			$error = $this->packet_error( $response, $index );
-			if ( is_wp_error( $error ) ) {
-				fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions
-				return $error;
-			}
-			$index++;
-		}
-		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions
-		return true;
-	}
-
-	/**
-	 * Normalize a packet upload response into a WP_Error, or null when accepted.
-	 *
-	 * @param mixed $response wp_remote_post result.
-	 * @param int   $index    Packet index (for resume reporting).
-	 * @return \WP_Error|null
-	 */
-	private function packet_error( $response, int $index ) {
-		if ( is_wp_error( $response ) ) {
-			return new WP_Error(
-				'packet_failed',
-				sprintf( /* translators: 1: error message. */ __( 'Upload failed at packet %1$d: %2$s', 'emcp-tools' ), $index, $response->get_error_message() ),
-				array( 'resume_offset' => $index )
-			);
-		}
-		$code  = (int) wp_remote_retrieve_response_code( $response );
-		$rbody = json_decode( (string) wp_remote_retrieve_body( $response ), true );
-		if ( $code < 200 || $code >= 300 || ! is_array( $rbody ) || ! empty( $rbody['code'] ) ) {
-			$msg = is_array( $rbody ) && isset( $rbody['message'] ) ? (string) $rbody['message'] : sprintf( 'HTTP %d', $code );
-			return new WP_Error( 'packet_rejected', sprintf( /* translators: 1: packet index, 2: message. */ __( 'Destination rejected packet %1$d: %2$s', 'emcp-tools' ), $index, $msg ), array( 'resume_offset' => $index ) );
-		}
-		return null;
-	}
-
-	/**
-	 * Ask the connector to assemble + verify the transfer and start the restore.
-	 *
-	 * @param string $path        Archive path (for its sha256).
-	 * @param string $endpoint    Connector REST base.
-	 * @param string $secret      Shared secret.
-	 * @param string $transfer_id Transfer id just pushed.
-	 * @return string|\WP_Error The destination job id.
-	 */
-	private function push_finalize( string $path, string $endpoint, string $secret, string $transfer_id ) {
-		$whole_sha = hash_file( 'sha256', $path );
-		$canonical = 'finalize|' . $whole_sha . '|' . $transfer_id;
-		$response  = wp_remote_post(
-			$endpoint . '/finalize',
-			array(
-				'timeout'  => 300,
-				'headers'  => array(
-					'Content-Type'     => 'application/json',
-					'X-EMCP-Signature' => hash_hmac( 'sha256', $canonical, $secret ),
-				),
-				'body'     => wp_json_encode( array( 'transfer_id' => $transfer_id, 'sha256' => $whole_sha ) ),
-			)
-		);
-		if ( is_wp_error( $response ) ) {
-			return new WP_Error( 'finalize_failed', $response->get_error_message() );
-		}
-		$code  = (int) wp_remote_retrieve_response_code( $response );
-		$rbody = json_decode( (string) wp_remote_retrieve_body( $response ), true );
-		if ( $code < 200 || $code >= 300 || ! is_array( $rbody ) || empty( $rbody['job_id'] ) ) {
-			$msg = is_array( $rbody ) && isset( $rbody['message'] ) ? (string) $rbody['message'] : sprintf( 'HTTP %d', $code );
-			return new WP_Error( 'finalize_rejected', sprintf( /* translators: %s: message. */ __( 'Destination restore did not start: %s', 'emcp-tools' ), $msg ) );
-		}
-		return (string) $rbody['job_id'];
-	}
-
-	/**
-	 * Poll a connector job until it settles.
-	 *
-	 * @param string $endpoint Connector REST base.
-	 * @param string $secret   Shared secret.
-	 * @param string $job_id   Destination job id.
-	 * @return array|null Job payload (state done/error/…), null when still pending after the bound.
-	 */
-	private function poll_job( string $endpoint, string $secret, string $job_id ) {
-		$job = null;
-		for ( $i = 0; $i < 30; $i++ ) {
-			$response = wp_remote_get(
-				$endpoint . '/job/' . rawurlencode( $job_id ),
-				array(
-					'timeout' => 30,
-					'headers' => array( 'X-EMCP-Signature' => hash_hmac( 'sha256', 'job|' . $job_id, $secret ) ),
-				)
-			);
-			if ( ! is_wp_error( $response ) ) {
-				$body = json_decode( (string) wp_remote_retrieve_body( $response ), true );
-				if ( is_array( $body ) && isset( $body['state'] ) ) {
-					$job = $body;
-					if ( 'done' === $body['state'] || 'error' === $body['state'] ) {
-						break;
-					}
-				}
-			}
-			sleep( 2 ); // phpcs:ignore WordPress.PHP -- poll cadence for a remote batch job.
-		}
-		return $job;
-	}
-
 	public function execute_sync( array $args ) {
+		self::ensure_engines();
+		if ( ! class_exists( 'EMCP_Tools_Sync_Engine' ) || ! class_exists( 'EMCP_Tools_Migration_Engine' ) ) {
+			return new WP_Error( 'engine_unavailable', __( 'The sync engine is not available.', 'emcp-tools' ) );
+		}
+
+		$dest = $this->resolve_destination( $args );
+		if ( is_wp_error( $dest ) ) {
+			return $dest;
+		}
+		$opts = array(
+			'confirm'  => ! empty( $args['confirm'] ),
+			'endpoint' => $dest['endpoint'],
+			'secret'   => $dest['secret'],
+			'poll'     => true,
+		);
+		if ( isset( $args['scope'] ) && is_array( $args['scope'] ) ) {
+			$opts['scope'] = $args['scope'];
+		}
+
+		$result = EMCP_Tools_Sync_Engine::sync_to_target( $opts );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		$result['message'] = __( 'Scoped archive pushed and restored on the destination.', 'emcp-tools' );
+		return $result;
+	}
+
+	/**
+	 * Local serialized-safe URL search-replace across the database.
+	 *
+	 * @param array $args Tool input (old_url, new_url, confirm).
+	 * @return array|WP_Error
+	 */
+	public function execute_url_search_replace( array $args ) {
 		if ( empty( $args['confirm'] ) || true !== $args['confirm'] ) {
-			return new WP_Error( 'confirm_required', __( 'Must provide confirm: true to run URL sync.', 'emcp-tools' ) );
+			return new WP_Error( 'confirm_required', __( 'Must provide confirm: true to run URL search-replace.', 'emcp-tools' ) );
 		}
 		if ( ! class_exists( 'EMCP_Tools_Serialized_Search_Replace' ) ) {
 			return new WP_Error( 'engine_unavailable', __( 'The search-replace engine is not available.', 'emcp-tools' ) );
@@ -406,28 +323,8 @@ class EMCP_Tools_Migrate_Abilities {
 				if ( $r['partial'] ) {
 					$partial = true;
 				}
-				if ( $ledger && '' !== $r['pk'] && ! empty( $r['before_rows'] ) ) {
-					EMCP_Tools_Change_Recorder::record_db( array(
-						'domain'   => 'database',
-						'action'   => 'search-replace',
-						'target'   => $table,
-						'summary'  => sprintf(
-							/* translators: 1: old URL, 2: new URL, 3: affected row count, 4: table name. */
-							__( 'URL search-replace (%1$s → %2$s) updated %3$d row(s) in %4$s', 'emcp-tools' ),
-							$old,
-							$new,
-							$r['affected'],
-							$table
-						),
-						'rollback' => array(
-							'type'        => 'db-before-image',
-							'op'          => 'update',
-							'table'       => $table,
-							'key_cols'    => array( $r['pk'] ),
-							'before_rows' => $r['before_rows'],
-							'partial'     => ( $r['partial'] || count( $r['before_rows'] ) >= $before_cap ),
-						),
-					) );
+				if ( $ledger ) {
+					$this->record_url_replace( $table, $r, $old, $new );
 				}
 			}
 		}
@@ -439,5 +336,40 @@ class EMCP_Tools_Migrate_Abilities {
 			'per_table'        => $per_table,
 			'partial'          => $partial,
 		);
+	}
+
+	/**
+	 * Record one table's search-replace as a reversible ledger entry.
+	 *
+	 * @param string $table Table name.
+	 * @param array  $r     walk_table() result (affected/pk/before_rows/partial).
+	 * @param string $old   Old URL.
+	 * @param string $new   New URL.
+	 */
+	private function record_url_replace( string $table, array $r, string $old, string $new ): void {
+		if ( '' === (string) $r['pk'] || empty( $r['before_rows'] ) ) {
+			return;
+		}
+		EMCP_Tools_Change_Recorder::record_db( array(
+			'domain'   => 'database',
+			'action'   => 'search-replace',
+			'target'   => $table,
+			'summary'  => sprintf(
+				/* translators: 1: old URL, 2: new URL, 3: affected row count, 4: table name. */
+				__( 'URL search-replace (%1$s → %2$s) updated %3$d row(s) in %4$s', 'emcp-tools' ),
+				$old,
+				$new,
+				$r['affected'],
+				$table
+			),
+			'rollback' => array(
+				'type'        => 'db-before-image',
+				'op'          => 'update',
+				'table'       => $table,
+				'key_cols'    => array( $r['pk'] ),
+				'before_rows' => $r['before_rows'],
+				'partial'     => ( ! empty( $r['partial'] ) || count( $r['before_rows'] ) >= 200 ),
+			),
+		) );
 	}
 }

@@ -4,8 +4,8 @@
 # NOTE (Heretek fork): the Pro overlay is merged into includes/ and gated by the
 # `.emcp-pro` marker, so these paths are the "unlocked" tier's file inventory.
 # Entries that never made it into this tree (editor-window.js / editor-*.js /
-# editor.css, ai-chat-panel*.php, migrate.js/css, emcp-prompts-v1.zip, tools/)
-# have been dropped so the list reflects what actually ships.
+# editor.css, ai-chat-panel*.php, emcp-prompts-v1.zip, tools/) have been dropped
+# so the list reflects what actually ships.
 includes/abilities/class-seo-abilities.php
 includes/abilities/class-a11y-abilities.php
 includes/abilities/class-skill-abilities.php
@@ -77,4 +77,5 @@ includes/modules/class-migrate-module.php
 includes/admin/views/page-migrate.php
 includes/migrate
 includes/abilities/class-migrate-abilities.php
+assets/js/migrate.js
 connector

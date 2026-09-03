@@ -2,20 +2,32 @@
 /**
  * Plugin Name: EMCP Tools Connector
  * Description: Standalone bridge for receiving .emcp site backups pushed from EMCP Tools ("migrate-site"). Zero dependency on the EMCP plugin; runs on a bare WordPress install at the destination. Protects every endpoint with an HMAC-SHA256 signature keyed by the shared secret.
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: Heretek AI
  * License: GPL-2.0-or-later
  *
  * The shared secret is the constant EMCP_CONNECTOR_SECRET (wp-config.php) or,
  * when that is absent, the option `emcp_connector_secret` — the site operator
  * sets one of them and shares it with the source (the `secret_key` argument of
- * emcp-tools/migrate-site). With no secret configured the write endpoints refuse
- * (the source gets a clear "not configured" error instead of a silent 404).
+ * emcp-tools/migrate-site, or a stored paired target). With no secret
+ * configured the write endpoints refuse (the source gets a clear "not
+ * configured" error instead of a silent 404).
  *
  * Push protocol (HMAC over canonical strings, all JSON):
- *   POST /wp-json/emcp-connector/v1/packet    { transfer_id, index, total, data_b64, sha256 }
- *   POST /wp-json/emcp-connector/v1/finalize  { transfer_id, sha256 }
+ *   POST /wp-json/emcp-connector/v1/packet        { transfer_id, index, total, data_b64, sha256 }
+ *   POST /wp-json/emcp-connector/v1/finalize      { transfer_id, sha256 }
  *   GET  /wp-json/emcp-connector/v1/job/<id>
+ *   GET  /wp-json/emcp-connector/v1/status
+ *
+ * Pairing (1.2.0) — lets a source store this site as a paired target without
+ * exchanging the raw secret out-of-band:
+ *   POST /wp-json/emcp-connector/v1/pair/issue    (HMAC)  -> { code, ttl_seconds, expires_at }
+ *   POST /wp-json/emcp-connector/v1/pair/exchange (open)  { code } -> { secret, site, version, capabilities }
+ *   GET  /wp-json/emcp-connector/v1/verify        (HMAC)  -> { verified, site, version, capabilities }
+ * The issue route is HMAC-gated (the operator scripting it already knows the
+ * secret); the exchange route is intentionally open so a brand-new source can
+ * redeem a single-use code without knowing the secret. HTTPS is required for
+ * the exchange unless the host is loopback (localhost dev).
  *
  * @package EMCP_Connector
  */
@@ -57,9 +69,14 @@ function emcp_connector_verify( string $canonical, string $signature ): bool {
  * the raw body. Data integrity is carried by the sha256 fields, which are
  * themselves part of the signed canonical. Canonical shapes (must match the
  * source exactly):
- *   packet   -> 'packet|' . sha256 . '|' . transfer_id . '|' . index
- *   finalize -> 'finalize|' . sha256 . '|' . transfer_id
- *   job      -> 'job|' . job_id
+ *   packet      -> 'packet|' . sha256 . '|' . transfer_id . '|' . index
+ *   finalize    -> 'finalize|' . sha256 . '|' . transfer_id
+ *   job         -> 'job|' . job_id
+ *   pair/issue  -> 'pair|issue|' . ts . '|' . nonce
+ *   verify      -> 'verify|' . ts . '|' . nonce
+ * The pair/issue + verify routes bind each signature to a per-request timestamp
+ * and single-use nonce so a captured signature cannot be replayed (see
+ * emcp_connector_nonce_fresh()).
  */
 function emcp_connector_canonical( WP_REST_Request $request ): string {
 	$params   = $request->get_json_params();
@@ -78,13 +95,70 @@ function emcp_connector_canonical( WP_REST_Request $request ): string {
 	if ( false !== strpos( $route, '/job/' ) ) {
 		return 'job|' . (string) $request['id'];
 	}
+	if ( false !== strpos( $route, '/pair/issue' ) ) {
+		return 'pair|issue|' . (string) $request->get_param( 'ts' ) . '|' . (string) $request->get_param( 'nonce' );
+	}
+	if ( false !== strpos( $route, '/verify' ) ) {
+		return 'verify|' . (string) $request->get_param( 'ts' ) . '|' . (string) $request->get_param( 'nonce' );
+	}
 	return '';
 }
 
-/** Validate the X-EMCP-Signature header against the route canonical. */
+/**
+ * Validate the X-EMCP-Signature header against the route canonical. The
+ * pair/issue + verify routes additionally require a fresh, single-use
+ * ts/nonce so their (constant-shaped) signatures cannot be replayed.
+ */
 function emcp_connector_authed( WP_REST_Request $request ) {
 	$signature = isset( $_SERVER['HTTP_X_EMCP_SIGNATURE'] ) ? (string) $_SERVER['HTTP_X_EMCP_SIGNATURE'] : '';
-	return emcp_connector_verify( emcp_connector_canonical( $request ), $signature );
+	if ( ! emcp_connector_verify( emcp_connector_canonical( $request ), $signature ) ) {
+		return false;
+	}
+	$route = $request->get_route();
+	if ( false !== strpos( $route, '/pair/issue' ) || false !== strpos( $route, '/verify' ) ) {
+		return emcp_connector_nonce_fresh( (string) $request->get_param( 'ts' ), (string) $request->get_param( 'nonce' ) );
+	}
+	return true;
+}
+
+/**
+ * Freshness + single-use gate for the pair/issue + verify signatures.
+ *
+ * Accepts a ts within +-300 s of server time and a nonce (>= 16 chars) that has
+ * not been seen before; records the nonce (hashed, 1 h expiry, capped) so a
+ * captured signature can never be replayed.
+ *
+ * @param string $ts    Unix timestamp (seconds) the caller signed.
+ * @param string $nonce Caller-chosen single-use nonce.
+ * @return bool
+ */
+function emcp_connector_nonce_fresh( string $ts, string $nonce ): bool {
+	if ( '' === $ts || '' === $nonce || strlen( $nonce ) < 16 ) {
+		return false;
+	}
+	$now = time();
+	if ( abs( (int) $ts - $now ) > 300 ) {
+		return false;
+	}
+	$key  = hash( 'sha256', $ts . '|' . $nonce );
+	$used = get_option( 'emcp_connector_nonces', array() );
+	if ( ! is_array( $used ) ) {
+		$used = array();
+	}
+	$used = array_values( array_filter( $used, static function ( $e ) use ( $now ) {
+		return is_array( $e ) && ( (int) ( $e['exp'] ?? 0 ) > $now );
+	} ) );
+	foreach ( $used as $e ) {
+		if ( is_array( $e ) && hash_equals( (string) $e['h'], $key ) ) {
+			return false;
+		}
+	}
+	$used[] = array( 'h' => $key, 'exp' => $now + 3600 );
+	if ( count( $used ) > 500 ) {
+		$used = array_slice( $used, -500 );
+	}
+	update_option( 'emcp_connector_nonces', $used, false );
+	return true;
 }
 
 /**
@@ -119,6 +193,134 @@ function emcp_connector_chunk_count( string $transfer_id ): int {
 	return $files ? count( $files ) : 0;
 }
 
+/** Current connector version. */
+function emcp_connector_version(): string {
+	return '1.2.0';
+}
+
+/** Connector capabilities reported by /status and pairing. */
+function emcp_connector_capabilities(): array {
+	return array( 'packet', 'restore', 'pair', 'scope-restore' );
+}
+
+/** The stored single-use pairing-code record, or null when none is pending. */
+function emcp_connector_pair_code(): ?array {
+	$rec = get_option( 'emcp_connector_pair_code' );
+	return is_array( $rec ) ? $rec : null;
+}
+
+/**
+ * Issue a fresh single-use pairing code (15-minute TTL). Replaces any pending
+ * code. Returns array{code, ttl_seconds, expires_at} or a WP_Error when no
+ * secret is configured (there is nothing to pair against).
+ */
+function emcp_connector_issue_pair_code() {
+	if ( '' === emcp_connector_secret() ) {
+		return new WP_Error( 'not_configured', 'No connector secret configured to pair against', array( 'status' => 403 ) );
+	}
+	$code = 'EMCP-PAIR-' . bin2hex( random_bytes( 16 ) );
+	update_option( 'emcp_connector_pair_code', array(
+		'hash'     => hash( 'sha256', $code ),
+		'expiry'   => time() + 900,
+		'used'     => false,
+		'failures' => 0,
+	), false );
+	return array(
+		'code'        => $code,
+		'ttl_seconds' => 900,
+		'expires_at'  => gmdate( 'Y-m-d\TH:i:s\Z', time() + 900 ),
+	);
+}
+
+/**
+ * Redeem a single-use pairing code for the configured secret. Marks the code
+ * used on success; counts failures and invalidates the code after 5.
+ *
+ * @param string $code The code from /pair/issue or the admin page.
+ * @return string|\WP_Error The connector secret.
+ */
+function emcp_connector_consume_pair_code( string $code ) {
+	$rec = emcp_connector_pair_code();
+	if ( ! $rec || empty( $rec['hash'] ) ) {
+		return new WP_Error( 'code_invalid', 'No pairing code is pending on this destination', array( 'status' => 403 ) );
+	}
+	if ( (int) ( $rec['expiry'] ?? 0 ) < time() || ! empty( $rec['used'] ) ) {
+		delete_option( 'emcp_connector_pair_code' );
+		return new WP_Error( 'code_invalid', 'Pairing code expired or already used', array( 'status' => 403 ) );
+	}
+	if ( ! hash_equals( (string) $rec['hash'], hash( 'sha256', $code ) ) ) {
+		$failures = (int) ( $rec['failures'] ?? 0 ) + 1;
+		if ( $failures >= 5 ) {
+			delete_option( 'emcp_connector_pair_code' );
+			return new WP_Error( 'code_invalid', 'Too many failed pairing attempts', array( 'status' => 403 ) );
+		}
+		$rec['failures'] = $failures;
+		update_option( 'emcp_connector_pair_code', $rec, false );
+		return new WP_Error( 'code_invalid', 'Invalid pairing code', array( 'status' => 403 ) );
+	}
+	delete_option( 'emcp_connector_pair_code' );
+	return emcp_connector_secret();
+}
+
+/**
+ * HTTPS (or loopback) gate for the secret-carrying exchange route.
+ *
+ * Loopback is decided from server-side state — the site's configured home_url()
+ * host, then $_SERVER['SERVER_ADDR'] — never the client-supplied Host header.
+ */
+function emcp_connector_pair_exchange_allowed(): bool {
+	if ( is_ssl() ) {
+		return true;
+	}
+	$home = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+	if ( in_array( $home, array( 'localhost', '127.0.0.1', '::1' ), true ) ) {
+		return true;
+	}
+	$addr = isset( $_SERVER['SERVER_ADDR'] ) ? trim( (string) $_SERVER['SERVER_ADDR'], '[]' ) : '';
+	return in_array( $addr, array( '127.0.0.1', '::1' ), true );
+}
+
+/** POST /pair/issue (HMAC) — issue a single-use code (for scripting). */
+function emcp_connector_handle_pair_issue() {
+	$issued = emcp_connector_issue_pair_code();
+	if ( is_wp_error( $issued ) ) {
+		return $issued;
+	}
+	return rest_ensure_response( $issued );
+}
+
+/** POST /pair/exchange (open) — redeem a code for the secret, HTTPS-gated. */
+function emcp_connector_handle_pair_exchange( WP_REST_Request $request ) {
+	if ( '' === emcp_connector_secret() ) {
+		return new WP_Error( 'not_configured', 'No connector secret configured on this destination', array( 'status' => 403 ) );
+	}
+	if ( ! emcp_connector_pair_exchange_allowed() ) {
+		return new WP_Error( 'https_required', 'Pairing exchange must run over HTTPS (or a loopback host)', array( 'status' => 403 ) );
+	}
+	$body   = $request->get_json_params();
+	$code   = isset( $body['code'] ) ? (string) $body['code'] : '';
+	$secret = emcp_connector_consume_pair_code( $code );
+	if ( is_wp_error( $secret ) ) {
+		return $secret;
+	}
+	return rest_ensure_response( array(
+		'secret'       => $secret,
+		'site'         => home_url(),
+		'version'      => emcp_connector_version(),
+		'capabilities' => emcp_connector_capabilities(),
+	) );
+}
+
+/** GET /verify (HMAC) — prove a stored secret signs on this destination. */
+function emcp_connector_handle_verify() {
+	return rest_ensure_response( array(
+		'verified'     => true,
+		'site'         => home_url(),
+		'version'      => emcp_connector_version(),
+		'capabilities' => emcp_connector_capabilities(),
+	) );
+}
+
 add_action( 'rest_api_init', function () {
 	$namespace = 'emcp-connector/v1';
 
@@ -128,9 +330,9 @@ add_action( 'rest_api_init', function () {
 			return rest_ensure_response( array(
 				'active'       => true,
 				'site'         => home_url(),
-				'version'      => '1.1.0',
+				'version'      => emcp_connector_version(),
 				'configured'   => ( '' !== emcp_connector_secret() ),
-				'capabilities' => array( 'packet', 'restore' ),
+				'capabilities' => emcp_connector_capabilities(),
 			) );
 		},
 		'permission_callback' => '__return_true',
@@ -151,6 +353,24 @@ add_action( 'rest_api_init', function () {
 	register_rest_route( $namespace, '/job/(?P<id>[a-zA-Z0-9_-]+)', array(
 		'methods'             => 'GET',
 		'callback'            => 'emcp_connector_handle_job',
+		'permission_callback' => 'emcp_connector_authed',
+	) );
+
+	register_rest_route( $namespace, '/pair/issue', array(
+		'methods'             => 'POST',
+		'callback'            => 'emcp_connector_handle_pair_issue',
+		'permission_callback' => 'emcp_connector_authed',
+	) );
+
+	register_rest_route( $namespace, '/pair/exchange', array(
+		'methods'             => 'POST',
+		'callback'            => 'emcp_connector_handle_pair_exchange',
+		'permission_callback' => '__return_true',
+	) );
+
+	register_rest_route( $namespace, '/verify', array(
+		'methods'             => 'GET',
+		'callback'            => 'emcp_connector_handle_verify',
 		'permission_callback' => 'emcp_connector_authed',
 	) );
 } );
@@ -400,17 +620,18 @@ function emcp_connector_replace_value( $value, string $search, string $replace )
 /**
  * Search-replace URL across the destination's data tables.
  *
- * @param string $old_url Source URL.
- * @param string $new_url Destination URL.
+ * @param string        $old_url Source URL.
+ * @param string        $new_url Destination URL.
+ * @param string[]|null $only    Optional table allowlist (archived tables).
  * @return int Rows rewritten.
  */
-function emcp_connector_search_replace( string $old_url, string $new_url ): array {
+function emcp_connector_search_replace( string $old_url, string $new_url, ?array $only = null ): array {
 	if ( '' === $old_url || $old_url === $new_url ) {
 		return array( 'rows' => 0, 'partial' => false );
 	}
 	global $wpdb;
 	$result  = array( 'rows' => 0, 'partial' => false );
-	foreach ( emcp_connector_data_tables() as $table ) {
+	foreach ( emcp_connector_data_tables( $only ) as $table ) {
 		$pks = $wpdb->get_results( "SHOW KEYS FROM `{$table}` WHERE Key_name = 'PRIMARY'" ); // phpcs:ignore WordPress.DB
 		if ( count( $pks ) !== 1 ) {
 			continue; // Composite/no-PK tables are skipped — rows can't be addressed safely.
@@ -429,11 +650,13 @@ function emcp_connector_search_replace( string $old_url, string $new_url ): arra
 
 /**
  * Text-bearing tables the search-replace walks (all prefixed tables minus
- * operational ones whose values are paths/session data).
+ * operational ones whose values are paths/session data). Pass $only to restrict
+ * the walk to an allowlist (the tables actually imported from a scoped archive).
  *
+ * @param string[]|null $only Optional table allowlist.
  * @return string[] Table names.
  */
-function emcp_connector_data_tables(): array {
+function emcp_connector_data_tables( ?array $only = null ): array {
 	global $wpdb;
 	$exclude = array(
 		$wpdb->prefix . 'emcp_connector_transfers',
@@ -453,6 +676,10 @@ function emcp_connector_data_tables(): array {
 		if ( 0 === strpos( $table, $wpdb->prefix ) && ! in_array( $table, $exclude, true ) && ! in_array( $table, $tables, true ) ) {
 			$tables[] = $table;
 		}
+	}
+	if ( is_array( $only ) && $only ) {
+		$only   = array_map( 'strval', $only );
+		$tables = array_values( array_intersect( $tables, $only ) );
 	}
 	return $tables;
 }
@@ -608,11 +835,17 @@ function emcp_connector_restore_archive( string $archive ): array {
 	// 1) DB (verify hash, then import).
 	emcp_connector_restore_db( $zip, $manifest, $work, $stats );
 
-	// 2) URL search-replace (source -> this destination). Runs whenever the DB
-	// was imported (fatal errors empty), even after a partial import that had
-	// statement errors — those are reported under $stats['db'], not fatal.
-	if ( empty( $stats['errors'] ) && ! empty( $manifest['site_url'] ) ) {
-		$sr = emcp_connector_search_replace( (string) $manifest['site_url'], $dest_url );
+	// 2) URL search-replace (source -> this destination). Runs only when a DB
+	// dump was actually in the archive and imported ($did_db), even after a
+	// partial import that had statement errors — those are reported under
+	// $stats['db'], not fatal. For a scoped (selective-DB) archive, rewrite only
+	// the archived tables, never destination-native ones.
+	if ( empty( $stats['errors'] ) && isset( $stats['db'] ) && ! empty( $manifest['site_url'] ) ) {
+		$scope_db = null;
+		if ( isset( $manifest['scope']['db'] ) && is_array( $manifest['scope']['db'] ) ) {
+			$scope_db = array_map( 'strval', $manifest['scope']['db'] );
+		}
+		$sr = emcp_connector_search_replace( (string) $manifest['site_url'], $dest_url, $scope_db );
 		if ( $sr['rows'] > 0 ) {
 			$stats['search_replace'] = array(
 				'rows'    => $sr['rows'],
@@ -640,9 +873,23 @@ function emcp_connector_restore_archive( string $archive ): array {
  * @param array       $stats    In/out restore stats.
  */
 function emcp_connector_restore_db( ZipArchive $zip, array $manifest, string $work, array &$stats ): void {
+	// Cross-prefix guard: dumps write literal table names, so an archive from a
+	// different DB prefix would import foreign-prefixed tables here.
+	if ( ! empty( $manifest['db_prefix'] ) ) {
+		global $wpdb;
+		if ( (string) $manifest['db_prefix'] !== (string) $wpdb->prefix ) {
+			$stats['errors'][] = 'prefix_mismatch';
+			return;
+		}
+	}
 	$src = $zip->getStream( 'database.sql' );
 	if ( false === $src ) {
-		$stats['errors'][] = 'db_stream_failed';
+		// No database.sql in the archive — a files-only (or DB-scoped-out) sync.
+		// Absence of a DB is not an error; search-replace is gated on $stats['db']
+		// below. A manifest that CLAIMS a dump but cannot stream one is truncation.
+		if ( ! empty( $manifest['database_sha256'] ) ) {
+			$stats['errors'][] = 'db_stream_failed';
+		}
 		return;
 	}
 	$db_file = $work . '/database.sql';
@@ -668,4 +915,108 @@ function emcp_connector_restore_db( ZipArchive $zip, array $manifest, string $wo
 		return;
 	}
 	$stats['db'] = emcp_connector_import( $db_file );
+}
+
+// ---------------------------------------------------------------------------
+// Minimal admin page: configure the option secret + issue pairing codes.
+// ---------------------------------------------------------------------------
+
+add_action( 'admin_menu', function () {
+	add_options_page(
+		'EMCP Connector',
+		'EMCP Connector',
+		'manage_options',
+		'emcp-connector',
+		'emcp_connector_admin_page'
+	);
+} );
+
+add_action( 'admin_post_emcp_connector_admin', function () {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( esc_html__( 'Not permitted', 'emcp-connector' ) );
+	}
+	check_admin_referer( 'emcp_connector_admin' );
+	$action = isset( $_POST['connector_action'] ) ? sanitize_key( wp_unslash( $_POST['connector_action'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification -- check_admin_referer above.
+	if ( 'issue_code' === $action ) {
+		$issued = emcp_connector_issue_pair_code();
+		if ( is_wp_error( $issued ) ) {
+			set_transient( 'emcp_connector_admin_notice', array( 'type' => 'error', 'message' => $issued->get_error_message() ), 60 );
+		} else {
+			/* translators: %s: the pairing code. */
+			set_transient( 'emcp_connector_admin_notice', array( 'type' => 'success', 'message' => sprintf( 'Pairing code issued (single use, 15 minutes): %s', $issued['code'] ) ), 60 );
+		}
+	} elseif ( 'save_secret' === $action ) {
+		if ( defined( 'EMCP_CONNECTOR_SECRET' ) && EMCP_CONNECTOR_SECRET ) {
+			set_transient( 'emcp_connector_admin_notice', array( 'type' => 'error', 'message' => 'The secret is defined by EMCP_CONNECTOR_SECRET in wp-config.php and cannot be changed here.' ), 60 );
+		} else {
+			// Store the secret verbatim (wp_unslash only): it is used byte-for-byte
+			// for HMAC and returned unchanged by pairing, so sanitize_text_field()
+			// must not rewrite whitespace or special characters.
+			$secret = isset( $_POST['secret'] ) ? (string) wp_unslash( $_POST['secret'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification -- check_admin_referer above, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- verbatim secret.
+			update_option( 'emcp_connector_secret', $secret, false );
+			set_transient( 'emcp_connector_admin_notice', array( 'type' => 'success', 'message' => 'Connector secret saved.' ), 60 );
+		}
+	}
+	wp_safe_redirect( admin_url( 'options-general.php?page=emcp-connector' ) );
+	exit;
+} );
+
+/** Render the connector admin page. */
+function emcp_connector_admin_page(): void {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	$notice = get_transient( 'emcp_connector_admin_notice' );
+	if ( is_array( $notice ) ) {
+		delete_transient( 'emcp_connector_admin_notice' );
+	}
+	$secret_defined = defined( 'EMCP_CONNECTOR_SECRET' ) && EMCP_CONNECTOR_SECRET;
+	$configured     = '' !== emcp_connector_secret();
+	?>
+	<div class="wrap">
+		<h1><?php esc_html_e( 'EMCP Tools Connector', 'emcp-connector' ); ?></h1>
+		<?php if ( is_array( $notice ) ) : ?>
+			<div class="notice notice-<?php echo 'error' === $notice['type'] ? 'error' : 'success'; ?> is-dismissible">
+				<p><?php echo esc_html( $notice['message'] ); ?></p>
+			</div>
+		<?php endif; ?>
+		<p><?php echo esc_html( 'Version ' . emcp_connector_version() . '. This site receives .emcp backups pushed from an EMCP Tools source.' ); ?></p>
+
+		<div class="card" style="max-width: 640px;">
+			<h2><?php esc_html_e( 'Secret', 'emcp-connector' ); ?></h2>
+			<?php if ( $configured ) : ?>
+				<p><strong><?php esc_html_e( 'Configured', 'emcp-connector' ); ?></strong>
+					<?php echo $secret_defined ? esc_html__( '(from wp-config.php)', 'emcp-connector' ) : esc_html__( '(stored option)', 'emcp-connector' ); ?>
+				</p>
+			<?php else : ?>
+				<p><strong style="color:#b32d2e"><?php esc_html_e( 'Not configured', 'emcp-connector' ); ?></strong>
+					<?php esc_html_e( '— pushes are refused until a secret is set.', 'emcp-connector' ); ?>
+				</p>
+			<?php endif; ?>
+			<?php if ( ! $secret_defined ) : ?>
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+					<?php wp_nonce_field( 'emcp_connector_admin' ); ?>
+					<input type="hidden" name="action" value="emcp_connector_admin" />
+					<input type="hidden" name="connector_action" value="save_secret" />
+					<p>
+						<label for="emcp_connector_secret"><?php esc_html_e( 'Shared secret', 'emcp-connector' ); ?></label><br>
+						<input type="password" name="secret" id="emcp_connector_secret" class="regular-text" autocomplete="off" />
+					</p>
+					<?php submit_button( __( 'Save secret', 'emcp-connector' ), 'secondary', 'submit', false ); ?>
+				</form>
+			<?php endif; ?>
+		</div>
+
+		<div class="card" style="max-width: 640px;">
+			<h2><?php esc_html_e( 'Pair a source', 'emcp-connector' ); ?></h2>
+			<p><?php esc_html_e( 'Generate a single-use pairing code (valid 15 minutes) and send it to the source operator out-of-band. The source exchanges it for the shared secret once, over HTTPS.', 'emcp-connector' ); ?></p>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<?php wp_nonce_field( 'emcp_connector_admin' ); ?>
+				<input type="hidden" name="action" value="emcp_connector_admin" />
+				<input type="hidden" name="connector_action" value="issue_code" />
+				<?php submit_button( __( 'Generate pairing code', 'emcp-connector' ), 'primary', 'submit', false, $configured ? array() : array( 'disabled' => 'disabled' ) ); ?>
+			</form>
+		</div>
+	</div>
+	<?php
 }

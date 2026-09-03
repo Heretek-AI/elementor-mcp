@@ -78,9 +78,20 @@ class EMCP_Tools_Packager {
 	/**
 	 * Create a .emcp archive: DB dump + manifest, plus optional site files.
 	 *
+	 * Scope (back-compat: omitting every scope option keeps the current full
+	 * behaviour — full DB dump + optional full file set — and readers treat an
+	 * archive without a `scope` manifest key as full).
+	 *
 	 * @param string $name Optional archive name ('.emcp' appended if missing).
 	 * @param array  $opts {
-	 *     @type bool $include_files Include uploads/plugins/themes (default false).
+	 *     @type string|array  $kind         'backup' (default) or 'sync' (tag only).
+	 *     @type string|array  $db           'all' (default), 'none', or an array of
+	 *                                       table names to dump (empty array = 'none').
+	 *     @type bool          $include_files Include uploads/plugins/themes (legacy;
+	 *                                        equivalent to file_roots = 'all').
+	 *     @type string|array  $file_roots    'all' | 'none' | an array of absolute dirs
+	 *                                        (or a token => absolute-dir map) to bundle
+	 *                                        under files/.
 	 * }
 	 * @return string|false Absolute archive path, or false on failure.
 	 */
@@ -88,13 +99,57 @@ class EMCP_Tools_Packager {
 		if ( ! class_exists( 'ZipArchive' ) ) {
 			return false;
 		}
-		$include_files = ! empty( $opts['include_files'] );
+
+		$kind = ( 'sync' === ( $opts['kind'] ?? '' ) ) ? 'sync' : 'backup';
+
+		// DB scope: 'all' | 'none' | table allowlist.
+		$tables   = null; // null = full dump.
+		$scope_db = 'all';
+		if ( array_key_exists( 'db', $opts ) ) {
+			$db = $opts['db'];
+			if ( is_array( $db ) ) {
+				$tables = array_values( array_unique( array_filter( array_map( 'strval', $db ) ) ) );
+				if ( $tables ) {
+					$scope_db = $tables;
+				} else {
+					$tables   = null; // No tables chosen — treated as none.
+					$scope_db = 'none';
+				}
+			} elseif ( 'none' === $db ) {
+				$scope_db = 'none';
+			}
+		}
+
+		// File scope: 'all' | 'none' | token => absolute-dir map.
+		$file_roots = null; // null = no files.
+		if ( array_key_exists( 'file_roots', $opts ) ) {
+			$file_roots = $opts['file_roots'];
+		} elseif ( ! empty( $opts['include_files'] ) ) {
+			$file_roots = 'all'; // Legacy flag ≈ full file set.
+		}
+
+		$want_files = false;
+		$scope_files = 'none';
+		$roots_map   = array();
+		if ( 'all' === $file_roots ) {
+			$want_files = true;
+			$scope_files = 'all';
+		} elseif ( is_array( $file_roots ) && $file_roots ) {
+			$want_files = true;
+			foreach ( $file_roots as $key => $path ) {
+				if ( ! is_string( $path ) || '' === $path ) {
+					continue;
+				}
+				$roots_map[ is_int( $key ) ? self::root_key( $path ) : (string) $key ] = $path;
+			}
+			$scope_files = array_keys( $roots_map );
+		}
 
 		$dir  = self::backup_dir();
 		$name = sanitize_file_name( $name );
 		if ( '' === $name ) {
 			// Random suffix so the filename is not date-guessable on the web.
-			$name = 'backup-' . gmdate( 'Y-m-d-His' ) . '-' . wp_generate_password( 6, false );
+			$name = ( 'sync' === $kind ? 'sync-' : 'backup-' ) . gmdate( 'Y-m-d-His' ) . '-' . wp_generate_password( 6, false );
 		}
 		if ( self::EXT !== substr( $name, -5 ) ) {
 			$name .= self::EXT;
@@ -102,52 +157,76 @@ class EMCP_Tools_Packager {
 		$zip_file = $dir . '/' . $name;
 		$tmp_sql  = $dir . '/.tmp-' . wp_generate_password( 8, false ) . '.sql';
 
-		$db_stats = EMCP_Tools_DB_Exporter::export_to_file( $tmp_sql );
-		if ( false === $db_stats || ! is_file( $tmp_sql ) ) {
-			@unlink( $tmp_sql ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- local temp cleanup.
-			return false;
+		$has_db   = ( 'none' !== $scope_db );
+		$db_stats = null;
+		if ( $has_db ) {
+			$db_stats = is_array( $tables )
+				? EMCP_Tools_DB_Exporter::export_to_file( $tmp_sql, $tables )
+				: EMCP_Tools_DB_Exporter::export_to_file( $tmp_sql );
+			if ( false === $db_stats || ! is_file( $tmp_sql ) ) {
+				@unlink( $tmp_sql ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- local temp cleanup.
+				return false;
+			}
 		}
 
 		$zip = new ZipArchive();
 		if ( true !== $zip->open( $zip_file, ZipArchive::CREATE | ZipArchive::OVERWRITE ) ) {
-			@unlink( $tmp_sql ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+			if ( $has_db ) {
+				@unlink( $tmp_sql ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+			}
 			return false;
 		}
 
-		$ok = ( true === $zip->addFile( $tmp_sql, 'database.sql' ) );
+		$ok = true;
+		if ( $has_db ) {
+			$ok = ( true === $zip->addFile( $tmp_sql, 'database.sql' ) );
+		}
 
 		$file_entries = array();
-		if ( $ok && $include_files ) {
-			$file_entries = self::add_files( $zip );
+		if ( $ok && $want_files ) {
+			$file_entries = self::add_files( $zip, $roots_map );
 			$ok           = is_array( $file_entries ); // add_files returns false on a failed addFile.
 		}
 
 		$manifest = array(
-			'emcp'            => true,
-			'format_version'  => self::FORMAT_VERSION,
-			'version'         => defined( 'EMCP_TOOLS_VERSION' ) ? EMCP_TOOLS_VERSION : '0',
-			'created_at'      => gmdate( 'c' ),
-			'site_url'        => home_url(),
-			'siteurl_option'  => get_option( 'siteurl', home_url() ),
-			'php'             => PHP_VERSION,
-			'wp'              => isset( $GLOBALS['wp_version'] ) ? $GLOBALS['wp_version'] : '',
-			'db'              => self::db_version(),
-			'db_stats'        => array(
+			'emcp'           => true,
+			'format_version' => self::FORMAT_VERSION,
+			'version'        => defined( 'EMCP_TOOLS_VERSION' ) ? EMCP_TOOLS_VERSION : '0',
+			'kind'           => $kind,
+			'scope'          => array(
+				'db'    => $scope_db,
+				'files' => $scope_files,
+			),
+			'created_at'     => gmdate( 'c' ),
+			'site_url'       => home_url(),
+			'siteurl_option' => get_option( 'siteurl', home_url() ),
+			'php'            => PHP_VERSION,
+			'wp'             => isset( $GLOBALS['wp_version'] ) ? $GLOBALS['wp_version'] : '',
+			'db'             => self::db_version(),
+		);
+		if ( $has_db ) {
+			$manifest['db_stats'] = array(
 				'tables'    => isset( $db_stats['tables'] ) ? $db_stats['tables'] : 0,
 				'rows'      => isset( $db_stats['rows'] ) ? $db_stats['rows'] : 0,
 				'per_table' => isset( $db_stats['per_table'] ) ? $db_stats['per_table'] : array(),
 				'partial'   => ! empty( $db_stats['partial'] ),
-			),
-			'database_sha256' => hash_file( 'sha256', $tmp_sql ),
-			'files'           => count( $file_entries ),
-			'file_roots'      => $file_entries,
-		);
+			);
+			$manifest['database_sha256'] = hash_file( 'sha256', $tmp_sql );
+			// Source DB prefix so a restore can refuse cleanly when it differs
+			// from the destination (imports write literal table names).
+			$manifest['db_prefix'] = self::site_db_prefix();
+		}
+		$manifest['files']      = count( $file_entries );
+		$manifest['file_roots'] = $file_entries;
+
 		if ( $ok ) {
 			$ok = ( false !== $zip->addFromString( 'manifest.json', wp_json_encode( $manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) ) );
 		}
 		$closed = $zip->close();
 
-		@unlink( $tmp_sql ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+		if ( $has_db ) {
+			@unlink( $tmp_sql ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+		}
 		if ( ! $ok || true !== $closed ) {
 			@unlink( $zip_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- remove the partial archive.
 			return false;
@@ -222,57 +301,90 @@ class EMCP_Tools_Packager {
 	}
 
 	/**
-	 * Add site files (uploads/plugins/themes) to the open archive under files/.
+	 * Add site files to the open archive under files/.
 	 *
-	 * Paths are normalized before the WP_CONTENT_DIR prefix is stripped (a
-	 * Windows host writes backslash paths from RecursiveDirectoryIterator, which
-	 * would defeat the prefix match otherwise). Never descends into the plugin
-	 * itself, the backups dir, the sandbox, or caches.
+	 * With no roots given (or an empty map) the canonical three roots are walked
+	 * (uploads/plugins/themes — the legacy full set). A keyed token => absolute-dir
+	 * map limits the walk to exactly those roots (selective sync). Paths are
+	 * normalized before the WP_CONTENT_DIR prefix is stripped (a Windows host
+	 * writes backslash paths from RecursiveDirectoryIterator, which would defeat
+	 * the prefix match otherwise). Never descends into the plugin itself, the
+	 * backups dir, the sandbox, or caches.
 	 *
-	 * @param \ZipArchive $zip Open archive.
+	 * @param \ZipArchive $zip   Open archive.
+	 * @param array       $roots Token => absolute dir map (empty = the three roots).
 	 * @return string[]|false Root → file-count map, or false when an addFile fails.
 	 */
-	private static function add_files( ZipArchive $zip ) {
+	private static function add_files( ZipArchive $zip, array $roots = array() ) {
 		$content_dir = wp_normalize_path( ( defined( 'WP_CONTENT_DIR' ) ? WP_CONTENT_DIR : ABSPATH . 'wp-content' ) );
-		$roots       = array(
-			'uploads'  => self::uploads_basedir(),
-			'plugins'  => wp_normalize_path( defined( 'WP_PLUGIN_DIR' ) ? WP_PLUGIN_DIR : $content_dir . '/plugins' ),
-			'themes'   => wp_normalize_path( get_theme_root() ? get_theme_root() : $content_dir . '/themes' ),
-		);
-		$skip_dirs   = array(
+		if ( empty( $roots ) ) {
+			$roots = array(
+				'uploads' => self::uploads_basedir(),
+				'plugins' => wp_normalize_path( defined( 'WP_PLUGIN_DIR' ) ? WP_PLUGIN_DIR : $content_dir . '/plugins' ),
+				'themes'  => wp_normalize_path( get_theme_root() ? get_theme_root() : $content_dir . '/themes' ),
+			);
+		}
+		$skip_dirs = array(
 			wp_normalize_path( self::backup_dir() ),
 			wp_normalize_path( defined( 'EMCP_TOOLS_DIR' ) ? EMCP_TOOLS_DIR : '' ),
 			$content_dir . '/emcp-sandbox',
 			$content_dir . '/cache',
 			$content_dir . '/uploads/emcp-sandbox',
 		);
-		$added       = array();
+		$added     = array();
 
 		foreach ( $roots as $root_name => $root ) {
-			$root = wp_normalize_path( $root );
-			if ( ! is_dir( $root ) ) {
-				continue;
-			}
-			$count = 0;
-			$it    = self::file_iterator( $root, $skip_dirs );
-			foreach ( $it as $file ) {
-				if ( ! $file->isFile() ) {
-					continue;
-				}
-				$zip_name = self::zip_relative_name( wp_normalize_path( $file->getPathname() ), $content_dir );
-				if ( '' === $zip_name ) {
-					continue; // Outside wp-content — never bundled.
-				}
-				if ( ! $zip->addFile( $file->getPathname(), $zip_name ) ) {
-					return false; // Propagate failure so create_archive cannot report a complete bundle.
-				}
-				$count++;
+			$count = self::add_root_files( $zip, (string) $root, $skip_dirs, $content_dir );
+			if ( false === $count ) {
+				return false; // addFile failed — never report a partial bundle as complete.
 			}
 			if ( $count > 0 ) {
-				$added[ $root_name ] = $count;
+				$added[ (string) $root_name ] = $count;
 			}
 		}
 		return $added;
+	}
+
+	/**
+	 * Walk one root into the archive under files/, pruning the skip directories.
+	 *
+	 * @param \ZipArchive $zip         Open archive.
+	 * @param string      $root        Absolute root directory (normalized later).
+	 * @param string[]    $skip_dirs   Directories never descended into.
+	 * @param string      $content_dir Normalized wp-content path.
+	 * @return int|false Files added, or false when an addFile failed.
+	 */
+	private static function add_root_files( ZipArchive $zip, string $root, array $skip_dirs, string $content_dir ) {
+		$root = wp_normalize_path( $root );
+		if ( ! is_dir( $root ) ) {
+			return 0;
+		}
+		$count = 0;
+		$it    = self::file_iterator( $root, $skip_dirs );
+		foreach ( $it as $file ) {
+			if ( ! $file->isFile() ) {
+				continue;
+			}
+			$local = wp_normalize_path( $file->getPathname() );
+			// Resolve symlinks and refuse anything that escapes wp-content — a
+			// scoped root could otherwise exfiltrate a linked target outside it.
+			$real = realpath( $local ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+			if ( false === $real ) {
+				continue;
+			}
+			if ( 0 !== strpos( wp_normalize_path( $real ), $content_dir . '/' ) ) {
+				continue;
+			}
+			$zip_name = self::zip_relative_name( $local, $content_dir );
+			if ( '' === $zip_name ) {
+				continue; // Outside wp-content — never bundled.
+			}
+			if ( ! $zip->addFile( $local, $zip_name ) ) {
+				return false; // Propagate failure so create_archive cannot report a complete bundle.
+			}
+			$count++;
+		}
+		return $count;
 	}
 
 	/**
@@ -285,7 +397,7 @@ class EMCP_Tools_Packager {
 	private static function file_iterator( string $root, array $skip_dirs ) {
 		return new RecursiveIteratorIterator(
 			new RecursiveCallbackFilterIterator(
-				new RecursiveDirectoryIterator( $root, FilesystemIterator::SKIP_DOTS ),
+				new RecursiveDirectoryIterator( $root, FilesystemIterator::SKIP_DOTS ), // NOSONAR -- $root is confined to wp-content (file_root_path/add_files reject '..' + exclusions); admin-gated.
 				static function ( $current ) use ( $skip_dirs ): bool {
 					if ( $current->isDir() ) {
 						return ! self::dir_is_skipped( $current->getPathname(), $skip_dirs );
@@ -340,6 +452,28 @@ class EMCP_Tools_Packager {
 	}
 
 	/**
+	 * Stable manifest key for an absolute file root: its wp-content-relative path
+	 * with non-alphanumerics collapsed (uploads → 'uploads', plugins/foo → 'plugins-foo').
+	 *
+	 * @param string $abs Normalized absolute directory.
+	 * @return string
+	 */
+	private static function root_key( string $abs ): string {
+		$content_dir = wp_normalize_path( ( defined( 'WP_CONTENT_DIR' ) ? WP_CONTENT_DIR : ABSPATH . 'wp-content' ) );
+		$rel         = $abs;
+		if ( 0 === strpos( $abs, $content_dir . '/' ) ) {
+			$rel = substr( $abs, strlen( $content_dir ) );
+		}
+		$rel = trim( $rel, '/' );
+		if ( '' === $rel ) {
+			return 'content';
+		}
+		$rel = preg_replace( '/[^a-zA-Z0-9]+/', '-', $rel );
+		$rel = trim( (string) $rel, '-' );
+		return '' !== $rel ? $rel : 'root';
+	}
+
+	/**
 	 * MySQL server version via wpdb when available.
 	 *
 	 * @return string
@@ -350,5 +484,15 @@ class EMCP_Tools_Packager {
 			return (string) $wpdb->db_version();
 		}
 		return '';
+	}
+
+	/**
+	 * The site's DB table prefix (recorded in the manifest for cross-site guards).
+	 *
+	 * @return string
+	 */
+	private static function site_db_prefix(): string {
+		global $wpdb;
+		return ( isset( $wpdb ) && isset( $wpdb->prefix ) ) ? (string) $wpdb->prefix : '';
 	}
 }

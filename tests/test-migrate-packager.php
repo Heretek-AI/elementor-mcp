@@ -179,6 +179,9 @@ assert( class_exists( 'EMCP_Tools_DB_Importer' ), 'EMCP_Tools_DB_Importer not fo
 assert( class_exists( 'EMCP_Tools_Search_Replace' ), 'EMCP_Tools_Search_Replace not found!' );
 assert( class_exists( 'EMCP_Tools_Serialized_Search_Replace' ), 'EMCP_Tools_Serialized_Search_Replace not found!' );
 assert( class_exists( 'EMCP_Tools_Restore_Engine' ), 'EMCP_Tools_Restore_Engine not found!' );
+assert( class_exists( 'EMCP_Tools_Migration_Engine' ), 'EMCP_Tools_Migration_Engine not found!' );
+assert( class_exists( 'EMCP_Tools_Migrate_Targets' ), 'EMCP_Tools_Migrate_Targets not found!' );
+assert( class_exists( 'EMCP_Tools_Sync_Engine' ), 'EMCP_Tools_Sync_Engine not found!' );
 echo "PASS: All Migrate engine classes loaded successfully!\n\n";
 
 echo "=== TEST 2: Packager List Archives ===\n";
@@ -313,5 +316,51 @@ assert( $r9['before_rows'] === array(), 'before_cap=0 must not capture before-im
 assert( false === $r9['partial'], 'before_cap=0 must not set partial (no capture is not truncation)' );
 assert( count( $walker->updates ) >= 1, 'walk_table did not update rows' );
 echo "PASS: before_cap=0 captured no before-images and did not claim partial\n\n";
+
+echo "=== TEST 10: Sync scope normalization + traversal-guarded roots ===\n";
+assert( EMCP_Tools_Sync_Engine::normalize_scope( null ) === array( 'db' => 'all', 'files' => 'all' ), 'null scope did not default to full' );
+$empty = EMCP_Tools_Sync_Engine::normalize_scope( array( 'tables' => array(), 'file_roots' => array() ) );
+assert( $empty['db'] === 'none' && $empty['files'] === 'none', 'empty lists did not normalize to none' );
+$selected = EMCP_Tools_Sync_Engine::normalize_scope( array( 'tables' => array( 'b', 'a' ), 'file_roots' => array( 'uploads' ) ) );
+assert( $selected['db'] === array( 'a', 'b' ), 'table list not sorted/deduped' );
+assert( $selected['files'] === array( 'uploads' ), 'file list not preserved' );
+$junk = EMCP_Tools_Sync_Engine::normalize_scope( array( 'db' => 'ALSE', 'files' => 'FILEZ' ) );
+assert( $junk['db'] === 'none' && $junk['files'] === 'none', 'garbage scope did not fail safe to none' );
+assert( EMCP_Tools_Sync_Engine::is_full( EMCP_Tools_Sync_Engine::normalize_scope( null ) ), 'null scope not full' );
+assert( ! EMCP_Tools_Sync_Engine::is_full( $empty ), 'empty scope wrongly full' );
+
+$uploads_root = EMCP_Tools_Sync_Engine::file_root_path( 'uploads' );
+assert( '' !== $uploads_root && is_dir( $uploads_root ), 'uploads root did not resolve to a real dir' );
+assert( '' === EMCP_Tools_Sync_Engine::file_root_path( '../wp-config.php' ), 'traversal not rejected' );
+assert( '' === EMCP_Tools_Sync_Engine::file_root_path( '..' ), 'bare traversal not rejected' );
+echo "PASS: sync scope normalization + root guards verified\n\n";
+
+echo "=== TEST 11: Scoped archive build (files-only + selective-DB) carries scope ===\n";
+$GLOBALS['wpdb'] = new Fake_Wpdb();
+$files_only = EMCP_Tools_Packager::create_archive( 'scope-files-only.emcp', array( 'kind' => 'sync', 'db' => 'none', 'file_roots' => 'none' ) );
+assert( is_string( $files_only ) && is_file( $files_only ), 'files-only archive not created' );
+$mf = EMCP_Tools_Packager::read_manifest( 'scope-files-only.emcp' );
+assert( isset( $mf['scope'] ) && $mf['scope']['db'] === 'none', 'files-only manifest scope.db not none' );
+assert( $mf['scope']['files'] === 'none' && isset( $mf['kind'] ) && $mf['kind'] === 'sync', 'files-only manifest scope.files/kind wrong' );
+$zf = new ZipArchive();
+$zf->open( $files_only );
+assert( false === $zf->getFromName( 'database.sql' ), 'files-only archive still contains database.sql' );
+$zf->close();
+EMCP_Tools_Packager::delete_archive( 'scope-files-only.emcp' );
+
+$db_only = EMCP_Tools_Packager::create_archive( 'scope-db-list.emcp', array( 'kind' => 'sync', 'db' => array( 'wpx' ), 'file_roots' => 'none' ) );
+assert( is_string( $db_only ) && is_file( $db_only ), 'selective-DB archive not created' );
+$md = EMCP_Tools_Packager::read_manifest( 'scope-db-list.emcp' );
+assert( isset( $md['scope']['db'] ) && $md['scope']['db'] === array( 'wpx' ), 'selective-DB manifest scope.db wrong' );
+assert( isset( $md['database_sha256'] ), 'selective-DB archive missing database hash' );
+EMCP_Tools_Packager::delete_archive( 'scope-db-list.emcp' );
+
+$legacy = EMCP_Tools_Packager::create_archive( 'scope-legacy.emcp', array() );
+$ml = EMCP_Tools_Packager::read_manifest( 'scope-legacy.emcp' );
+assert( isset( $ml['scope'] ) && $ml['scope']['db'] === 'all', 'legacy full archive scope.db not all (back-compat broke)' );
+assert( isset( $ml['scope']['files'] ) && $ml['scope']['files'] === 'none', 'legacy (no files) scope.files not none' );
+assert( isset( $ml['kind'] ) && $ml['kind'] === 'backup', 'default kind not backup' );
+EMCP_Tools_Packager::delete_archive( 'scope-legacy.emcp' );
+echo "PASS: scoped archives carry correct scope manifests, files-only has no DB dump\n\n";
 
 echo "ALL MIGRATE & PACKAGER TEST SUITES PASSED 100%!\n";

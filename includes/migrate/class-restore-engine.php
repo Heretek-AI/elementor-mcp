@@ -67,6 +67,15 @@ class EMCP_Tools_Restore_Engine {
         if ( isset( $manifest['format_version'] ) && (int) $manifest['format_version'] > EMCP_Tools_Packager::FORMAT_VERSION ) {
             return new WP_Error( 'newer_format', __( 'This archive uses a newer format than this plugin can restore.', 'emcp-tools' ) );
         }
+        // Cross-prefix guard: dumps write literal table names, so restoring an
+        // archive built on a different DB prefix onto this site would import
+        // foreign-prefixed tables and break search-replace. Refuse cleanly.
+        if ( ! empty( $manifest['db_prefix'] ) ) {
+            global $wpdb;
+            if ( isset( $wpdb ) && (string) $manifest['db_prefix'] !== (string) $wpdb->prefix ) {
+                return new WP_Error( 'prefix_mismatch', __( 'This archive was created on a site with a different database table prefix and cannot be restored here.', 'emcp-tools' ) );
+            }
+        }
 
         if ( function_exists( 'set_time_limit' ) ) {
             set_time_limit( 0 ); // phpcs:ignore WordPress.PHP -- restore is an admin-authorized batch op.
@@ -161,14 +170,21 @@ class EMCP_Tools_Restore_Engine {
         // Statement errors are reported under $stats['db'] but are NOT fatal: a
         // partial import still gets the URL rewrite below.
 
-        // URL rewrite (source → this site) when the URLs differ.
+        // URL rewrite (source → this site) when the URLs differ. For a scoped
+        // (selective-DB) archive, rewrite only the archived tables — a selective
+        // restore replaces exactly those tables, so destination-native tables
+        // must not be walked.
         if ( $sr_on && class_exists( 'EMCP_Tools_Serialized_Search_Replace' ) ) {
             $old_url = isset( $manifest['site_url'] ) ? (string) $manifest['site_url'] : '';
             if ( '' !== $old_url && $old_url !== $dest_url ) {
                 global $wpdb;
                 $engine = 'EMCP_Tools_Serialized_Search_Replace';
-                $total  = 0;
-                foreach ( $engine::data_tables( $wpdb ) as $table ) {
+                $tables = $engine::data_tables( $wpdb );
+                if ( isset( $manifest['scope']['db'] ) && is_array( $manifest['scope']['db'] ) ) {
+                    $tables = array_values( array_intersect( $tables, array_map( 'strval', $manifest['scope']['db'] ) ) );
+                }
+                $total = 0;
+                foreach ( $tables as $table ) {
                     $r = $engine::walk_table( $wpdb, $table, $old_url, $dest_url );
                     $total += (int) $r['affected'];
                 }

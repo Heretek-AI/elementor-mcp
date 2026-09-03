@@ -168,19 +168,19 @@ class EMCP_Tools_Themer_CPT {
 			'404'     => __( '404', 'emcp-tools' ),
 		);
 
-		$purple = '#8b5cf6';
-		$chips  = '';
+		$crimson = '#dc2626';
+		$chips   = '';
 		foreach ( self::TYPES as $type ) {
 			$cap   = self::quota( $type );
 			$used  = self::count_of_type( $type );
 			$full  = $used >= $cap;
 			$label = isset( $labels[ $type ] ) ? $labels[ $type ] : ucfirst( $type );
-			// A chip per type: grey when room remains, purple-outlined when at cap.
+			// A chip per type: grey when room remains, crimson-outlined when at cap.
 			$chips .= sprintf(
 				'<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid %1$s;background:%2$s;color:%3$s;">%4$s <span style="opacity:.8;font-weight:500;">%5$d/%6$d</span></span>',
-				$full ? $purple : '#dcdcde',
-				$full ? '#f5f3ff' : '#fff',
-				$full ? '#6d28d9' : '#3c434a',
+				$full ? $crimson : '#2d2d38',
+				$full ? 'rgba(220, 38, 38, 0.14)' : '#14141a',
+				$full ? '#ef4444' : '#a1a1aa',
 				esc_html( $label ),
 				(int) $used,
 				(int) $cap

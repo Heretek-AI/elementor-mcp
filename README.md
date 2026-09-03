@@ -1,6 +1,6 @@
 <h1 align="center">
-  <img src="assets/img/icon-sm.png" width="72" alt="EMCP Tools logo"><br>
-  Elementor MCP Tools (Unlocked)
+  <img src="assets/img/icon-sm.png" width="72" alt="Heretek AI Elementor MCP logo"><br>
+  Heretek MCP Tools (Unlocked)
 </h1>
 
 <p align="center">
@@ -10,11 +10,11 @@
 
 <div align="center">
 
-[![Version](https://img.shields.io/github/v/release/Heretek-AI/elementor-mcp?label=version&color=blue)](https://github.com/Heretek-AI/elementor-mcp/releases)
+[![Version](https://img.shields.io/github/v/release/Heretek-AI/elementor-mcp?label=version&color=dc2626)](https://github.com/Heretek-AI/elementor-mcp/releases)
 [![License](https://img.shields.io/badge/license-GPL--2.0--or--later-green.svg)](LICENSE)
 [![PHP](https://img.shields.io/badge/PHP-%3E%3D8.1-8892BF.svg)](https://php.net)
 [![WordPress](https://img.shields.io/badge/WordPress-%3E%3D6.9-21759B.svg)](https://wordpress.org)
-[![MCP Tools](https://img.shields.io/badge/MCP_Tools-269_Unlocked-9333ea.svg)](#-all-269-mcp-tools-unlocked)
+[![MCP Tools](https://img.shields.io/badge/MCP_Tools-269_Unlocked-dc2626.svg)](#-all-269-mcp-tools-unlocked)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![GitHub Issues](https://img.shields.io/github/issues/Heretek-AI/elementor-mcp)](https://github.com/Heretek-AI/elementor-mcp/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/Heretek-AI/elementor-mcp?style=social)](https://github.com/Heretek-AI/elementor-mcp)

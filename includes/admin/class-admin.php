@@ -3816,7 +3816,7 @@ class EMCP_Tools_Admin {
 							<?php esc_html_e( 'Upgrade to Pro', 'emcp-tools' ); ?>
 						</a>
 					<?php else : ?>
-						<span class="elementor-mcp-badge elementor-mcp-badge--pro" style="padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 4px; background: #9333ea; color: #fff; margin-right: 8px;">PRO UNLOCKED</span>
+						<span class="elementor-mcp-badge elementor-mcp-badge--pro" style="padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 4px; background: #dc2626; color: #fff; margin-right: 8px; box-shadow: 0 0 8px rgba(220, 38, 38, 0.45); letter-spacing: 0.03em;">HERETEK UNLOCKED</span>
 					<?php endif; ?>
 					<div class="emcp-help-menu">
 						<button type="button" class="emcp-help-toggle" aria-haspopup="true">

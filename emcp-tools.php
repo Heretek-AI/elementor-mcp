@@ -3,7 +3,7 @@
  * Plugin Name:       EMCP Tools Unlocked
  * Plugin URI:        https://github.com/Heretek-AI/elementor-mcp
  * Description:       Community-unlocked enterprise edition of Elementor MCP Tools by Heretek AI. Exposes Elementor & WordPress as MCP tools with all 269 Pro features included free.
- * Version:           3.14.5
+ * Version:           3.15.0
  * Requires at least: 6.9
  * Tested up to:      7.1
  * Requires PHP:      8.1
@@ -161,7 +161,7 @@ if ( EMCP_Tools_Migration::is_legacy_plugin_active() ) {
 }
 
 // Plugin constants.
-define( 'EMCP_TOOLS_VERSION', '3.14.5' );
+define( 'EMCP_TOOLS_VERSION', '3.15.0' );
 define( 'EMCP_TOOLS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'EMCP_TOOLS_URL', plugin_dir_url( __FILE__ ) );
 define( 'EMCP_TOOLS_BASENAME', plugin_basename( __FILE__ ) );

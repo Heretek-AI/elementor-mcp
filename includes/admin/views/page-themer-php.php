@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 ?>
-<div class="wrap emcp-themer-php-wrap">
+<div class="wrap elementor-mcp-admin emcp-themer-php-wrap">
 	<h1><?php esc_html_e( 'EMCP Themer, PHP Templates', 'emcp-tools' ); ?></h1>
 	<p class="description">
 		<?php esc_html_e( 'PHP templates authored via MCP. Review and edit the code, then attach one to a template on its edit screen (Display Conditions box → “Render with PHP template”). A template only runs once attached.', 'emcp-tools' ); ?>

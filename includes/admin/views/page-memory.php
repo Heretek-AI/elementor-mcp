@@ -43,7 +43,7 @@ $approved_items = EMCP_Tools_Memory_Store::query(
 );
 ?>
 
-<div class="wrap elementor-mcp-memory">
+<div class="elementor-mcp-memory">
 	<h2>
 		<?php esc_html_e( 'Project Memory', 'emcp-tools' ); ?>
 		<span class="elementor-mcp-badge elementor-mcp-badge--pro">PRO UNLOCKED</span>

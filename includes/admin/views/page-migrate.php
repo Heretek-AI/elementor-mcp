@@ -38,7 +38,7 @@ if ( isset( $_POST['emcp_create_backup'] ) && check_admin_referer( 'emcp_migrate
 $backups = class_exists( 'EMCP_Tools_Packager' ) ? EMCP_Tools_Packager::list_archives() : array();
 ?>
 
-<div class="wrap elementor-mcp-migrate">
+<div class="elementor-mcp-migrate">
 	<h2>
 		<?php esc_html_e( 'Backup, Sync & Migrate', 'emcp-tools' ); ?>
 		<span class="elementor-mcp-badge elementor-mcp-badge--pro">PRO UNLOCKED</span>

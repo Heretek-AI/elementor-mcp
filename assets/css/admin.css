@@ -31,6 +31,10 @@
  * CSS Custom Properties — Heretek AI (Blood & Steel Theme)
  * ========================================================================= */
 
+:root,
+body.emcp-admin-page,
+body.emcp-theme-dark,
+body:has(.elementor-mcp-admin),
 .elementor-mcp-admin {
 	--mcp-font-heading: "Cinzel", "Geist", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 	--mcp-primary: #dc2626;
@@ -66,22 +70,98 @@
 	--mcp-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Geist on headings + accent text (matches the marketing site); body copy
-   stays on the WP system stack for legibility. */
+/* =========================================================================
+ * Blood & Steel Typography — High Contrast Headings & Labels
+ * ========================================================================= */
+
 .elementor-mcp-admin h1,
 .elementor-mcp-admin h2,
 .elementor-mcp-admin h3,
-.elementor-mcp-admin .emcp-appbar-title,
-.elementor-mcp-admin .elementor-mcp-header-title,
-.elementor-mcp-admin .elementor-mcp-section > h2,
-.elementor-mcp-admin .elementor-mcp-stat-value,
-.elementor-mcp-admin .emcp-dash-section-title,
-.elementor-mcp-admin .emcp-dash-stat-value,
-.elementor-mcp-admin .emcp-dash-card-title,
-.elementor-mcp-admin .emcp-dash-video-title,
-.elementor-mcp-admin .emcp-dash-help-title {
+.elementor-mcp-admin h4,
+.elementor-mcp-admin h5,
+.elementor-mcp-admin h6,
+body.emcp-admin-page h1,
+body.emcp-admin-page h2,
+body.emcp-admin-page h3,
+body.emcp-admin-page h4,
+body.emcp-admin-page h5,
+body.emcp-admin-page h6,
+body:has(.elementor-mcp-admin) h1,
+body:has(.elementor-mcp-admin) h2,
+body:has(.elementor-mcp-admin) h3,
+body:has(.elementor-mcp-admin) h4,
+body:has(.elementor-mcp-admin) h5,
+body:has(.elementor-mcp-admin) h6 {
 	font-family: var(--mcp-font-heading);
 	letter-spacing: -0.01em;
+	color: #ffffff !important;
+}
+
+.elementor-mcp-admin h1,
+body.emcp-admin-page h1,
+body:has(.elementor-mcp-admin) h1 {
+	font-size: 24px;
+	font-weight: 700;
+	color: #ffffff !important;
+}
+
+.elementor-mcp-admin h2,
+body.emcp-admin-page h2,
+body:has(.elementor-mcp-admin) h2 {
+	font-size: 18px;
+	font-weight: 700;
+	color: #ffffff !important;
+}
+
+.elementor-mcp-admin h3,
+body.emcp-admin-page h3,
+body:has(.elementor-mcp-admin) h3 {
+	font-size: 15px;
+	font-weight: 600;
+	color: #f1f1f5 !important;
+}
+
+.elementor-mcp-admin h4,
+body.emcp-admin-page h4,
+body:has(.elementor-mcp-admin) h4 {
+	font-size: 13px;
+	font-weight: 600;
+	color: #e4e4e7 !important;
+}
+
+/* Descriptions, Paragraphs & Labels */
+.elementor-mcp-admin p.description,
+.elementor-mcp-admin .description,
+.elementor-mcp-admin span.description,
+body.emcp-admin-page p.description,
+body.emcp-admin-page .description,
+body:has(.elementor-mcp-admin) p.description,
+body:has(.elementor-mcp-admin) .description {
+	color: #a1a1aa !important;
+	font-size: 13px;
+	line-height: 1.55;
+}
+
+.elementor-mcp-admin label,
+body.emcp-admin-page label,
+body:has(.elementor-mcp-admin) label {
+	color: #ffffff !important;
+}
+
+/* Inline code chips */
+.elementor-mcp-admin code,
+.elementor-mcp-admin kbd,
+body.emcp-admin-page code,
+body.emcp-admin-page kbd,
+body:has(.elementor-mcp-admin) code,
+body:has(.elementor-mcp-admin) kbd {
+	background: #050507 !important;
+	color: #f1f1f5 !important;
+	border: 1px solid var(--mcp-gray-200) !important;
+	border-radius: 4px !important;
+	padding: 2px 6px !important;
+	font-size: 12px !important;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
 }
 
 /* =========================================================================
@@ -5081,4 +5161,251 @@ body:has(.elementor-mcp-admin) #wpfooter a:hover {
 	font-size: 13px;
 	line-height: 1.55;
 	max-width: 720px;
+}
+
+/* =========================================================================
+ * WordPress Postboxes — Dark Metal Cards
+ * ========================================================================= */
+
+.elementor-mcp-admin .postbox,
+body.emcp-admin-page .postbox,
+body:has(.elementor-mcp-admin) .postbox {
+	background: var(--mcp-white) !important;
+	border: 1px solid var(--mcp-gray-200) !important;
+	border-radius: 8px !important;
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
+	color: #dedee6 !important;
+	overflow: hidden !important;
+}
+
+.elementor-mcp-admin .postbox-header,
+body.emcp-admin-page .postbox-header,
+body:has(.elementor-mcp-admin) .postbox-header {
+	background: #16161d !important;
+	border-bottom: 1px solid var(--mcp-gray-200) !important;
+	border-radius: 8px 8px 0 0 !important;
+	padding: 12px 18px !important;
+}
+
+.elementor-mcp-admin .postbox-header h2,
+.elementor-mcp-admin .postbox-header h3,
+.elementor-mcp-admin .postbox-header .hndle,
+body.emcp-admin-page .postbox-header h2,
+body.emcp-admin-page .postbox-header h3,
+body.emcp-admin-page .postbox-header .hndle,
+body:has(.elementor-mcp-admin) .postbox-header h2,
+body:has(.elementor-mcp-admin) .postbox-header h3,
+body:has(.elementor-mcp-admin) .postbox-header .hndle {
+	color: #ffffff !important;
+	font-family: var(--mcp-font-heading) !important;
+	font-weight: 700 !important;
+	font-size: 15px !important;
+	margin: 0 !important;
+}
+
+.elementor-mcp-admin .postbox .inside,
+body.emcp-admin-page .postbox .inside,
+body:has(.elementor-mcp-admin) .postbox .inside {
+	padding: 18px !important;
+	color: #dedee6 !important;
+}
+
+/* =========================================================================
+ * WordPress Tables — Dark Steel Widefat / List Tables
+ * ========================================================================= */
+
+.elementor-mcp-admin table.widefat,
+.elementor-mcp-admin .wp-list-table,
+body.emcp-admin-page table.widefat,
+body.emcp-admin-page .wp-list-table,
+body:has(.elementor-mcp-admin) table.widefat,
+body:has(.elementor-mcp-admin) .wp-list-table {
+	background: var(--mcp-white) !important;
+	border: 1px solid var(--mcp-gray-200) !important;
+	border-radius: 8px !important;
+	overflow: hidden;
+	color: #dedee6 !important;
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+}
+
+.elementor-mcp-admin table.widefat thead th,
+.elementor-mcp-admin table.widefat tfoot th,
+.elementor-mcp-admin .wp-list-table thead th,
+.elementor-mcp-admin .wp-list-table tfoot th,
+body.emcp-admin-page table.widefat thead th,
+body.emcp-admin-page table.widefat tfoot th,
+body.emcp-admin-page .wp-list-table thead th,
+body.emcp-admin-page .wp-list-table tfoot th,
+body:has(.elementor-mcp-admin) table.widefat thead th,
+body:has(.elementor-mcp-admin) table.widefat tfoot th,
+body:has(.elementor-mcp-admin) .wp-list-table thead th,
+body:has(.elementor-mcp-admin) .wp-list-table tfoot th {
+	background: #16161d !important;
+	color: #ffffff !important;
+	border-bottom: 1px solid var(--mcp-gray-200) !important;
+	font-weight: 700 !important;
+	font-size: 12px !important;
+	text-transform: uppercase !important;
+	letter-spacing: 0.05em !important;
+	padding: 12px 14px !important;
+}
+
+.elementor-mcp-admin table.widefat td,
+.elementor-mcp-admin .wp-list-table td,
+body.emcp-admin-page table.widefat td,
+body.emcp-admin-page .wp-list-table td,
+body:has(.elementor-mcp-admin) table.widefat td,
+body:has(.elementor-mcp-admin) .wp-list-table td {
+	color: #dedee6 !important;
+	border-top: 1px solid var(--mcp-gray-200) !important;
+	padding: 12px 14px !important;
+	vertical-align: middle !important;
+}
+
+.elementor-mcp-admin table.widefat.striped > tbody > :nth-child(odd),
+.elementor-mcp-admin .wp-list-table.striped > tbody > :nth-child(odd),
+body.emcp-admin-page table.widefat.striped > tbody > :nth-child(odd),
+body.emcp-admin-page .wp-list-table.striped > tbody > :nth-child(odd),
+body:has(.elementor-mcp-admin) table.widefat.striped > tbody > :nth-child(odd),
+body:has(.elementor-mcp-admin) .wp-list-table.striped > tbody > :nth-child(odd) {
+	background: #14141a !important;
+}
+
+.elementor-mcp-admin table.widefat.striped > tbody > :nth-child(even),
+.elementor-mcp-admin .wp-list-table.striped > tbody > :nth-child(even),
+body.emcp-admin-page table.widefat.striped > tbody > :nth-child(even),
+body.emcp-admin-page .wp-list-table.striped > tbody > :nth-child(even),
+body:has(.elementor-mcp-admin) table.widefat.striped > tbody > :nth-child(even),
+body:has(.elementor-mcp-admin) .wp-list-table.striped > tbody > :nth-child(even) {
+	background: #101015 !important;
+}
+
+.elementor-mcp-admin table.widefat tbody tr:hover,
+.elementor-mcp-admin .wp-list-table tbody tr:hover,
+body.emcp-admin-page table.widefat tbody tr:hover,
+body:has(.elementor-mcp-admin) table.widefat tbody tr:hover {
+	background: rgba(220, 38, 38, 0.06) !important;
+}
+
+.elementor-mcp-admin table.widefat td strong,
+body.emcp-admin-page table.widefat td strong,
+body:has(.elementor-mcp-admin) table.widefat td strong {
+	color: #ffffff !important;
+}
+
+.elementor-mcp-admin table.widefat a,
+body.emcp-admin-page table.widefat a,
+body:has(.elementor-mcp-admin) table.widefat a {
+	color: #f87171 !important;
+	text-decoration: none;
+}
+
+.elementor-mcp-admin table.widefat a:hover,
+body.emcp-admin-page table.widefat a:hover,
+body:has(.elementor-mcp-admin) table.widefat a:hover {
+	color: #ffffff !important;
+	text-decoration: underline;
+}
+
+/* =========================================================================
+ * WordPress Form Controls & Buttons
+ * ========================================================================= */
+
+.elementor-mcp-admin input[type="text"],
+.elementor-mcp-admin input[type="search"],
+.elementor-mcp-admin input[type="url"],
+.elementor-mcp-admin input[type="password"],
+.elementor-mcp-admin input[type="number"],
+.elementor-mcp-admin input[type="email"],
+.elementor-mcp-admin select,
+.elementor-mcp-admin textarea,
+body.emcp-admin-page input[type="text"],
+body.emcp-admin-page input[type="search"],
+body.emcp-admin-page input[type="url"],
+body.emcp-admin-page input[type="password"],
+body.emcp-admin-page input[type="number"],
+body.emcp-admin-page input[type="email"],
+body.emcp-admin-page select,
+body.emcp-admin-page textarea,
+body:has(.elementor-mcp-admin) input[type="text"],
+body:has(.elementor-mcp-admin) input[type="search"],
+body:has(.elementor-mcp-admin) input[type="url"],
+body:has(.elementor-mcp-admin) input[type="password"],
+body:has(.elementor-mcp-admin) input[type="number"],
+body:has(.elementor-mcp-admin) input[type="email"],
+body:has(.elementor-mcp-admin) select,
+body:has(.elementor-mcp-admin) textarea {
+	background: #14141a !important;
+	color: #ffffff !important;
+	border: 1px solid var(--mcp-gray-200) !important;
+	border-radius: 6px !important;
+	padding: 8px 12px !important;
+	box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4) !important;
+}
+
+.elementor-mcp-admin input:focus,
+.elementor-mcp-admin select:focus,
+.elementor-mcp-admin textarea:focus,
+body.emcp-admin-page input:focus,
+body.emcp-admin-page select:focus,
+body.emcp-admin-page textarea:focus,
+body:has(.elementor-mcp-admin) input:focus,
+body:has(.elementor-mcp-admin) select:focus,
+body:has(.elementor-mcp-admin) textarea:focus {
+	border-color: var(--mcp-primary) !important;
+	box-shadow: 0 0 0 1px var(--mcp-primary), 0 0 8px rgba(220, 38, 38, 0.3) !important;
+	outline: none !important;
+}
+
+.elementor-mcp-admin .wp-core-ui .button,
+.elementor-mcp-admin .button,
+body.emcp-admin-page .wp-core-ui .button,
+body.emcp-admin-page .button,
+body:has(.elementor-mcp-admin) .wp-core-ui .button,
+body:has(.elementor-mcp-admin) .button {
+	background: #16161d !important;
+	color: #f1f1f5 !important;
+	border: 1px solid var(--mcp-gray-200) !important;
+	border-radius: 6px !important;
+	font-weight: 600 !important;
+	box-shadow: none !important;
+	text-shadow: none !important;
+	transition: all 0.15s ease !important;
+}
+
+.elementor-mcp-admin .wp-core-ui .button:hover,
+.elementor-mcp-admin .button:hover,
+body.emcp-admin-page .wp-core-ui .button:hover,
+body.emcp-admin-page .button:hover,
+body:has(.elementor-mcp-admin) .wp-core-ui .button:hover,
+body:has(.elementor-mcp-admin) .button:hover {
+	background: #202028 !important;
+	border-color: var(--mcp-primary) !important;
+	color: #ffffff !important;
+	box-shadow: 0 0 8px rgba(220, 38, 38, 0.25) !important;
+}
+
+.elementor-mcp-admin .wp-core-ui .button-primary,
+.elementor-mcp-admin .button.button-primary,
+body.emcp-admin-page .wp-core-ui .button-primary,
+body.emcp-admin-page .button.button-primary,
+body:has(.elementor-mcp-admin) .wp-core-ui .button-primary,
+body:has(.elementor-mcp-admin) .button.button-primary {
+	background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%) !important;
+	border-color: #ef4444 !important;
+	color: #ffffff !important;
+	text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.5) !important;
+	box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4) !important;
+}
+
+.elementor-mcp-admin .wp-core-ui .button-primary:hover,
+.elementor-mcp-admin .button.button-primary:hover,
+body.emcp-admin-page .wp-core-ui .button-primary:hover,
+body.emcp-admin-page .button.button-primary:hover,
+body:has(.elementor-mcp-admin) .wp-core-ui .button-primary:hover,
+body:has(.elementor-mcp-admin) .button.button-primary:hover {
+	background: linear-gradient(135deg, #b91c1c 0%, #ef4444 100%) !important;
+	border-color: #f87171 !important;
+	color: #ffffff !important;
+	box-shadow: 0 0 16px rgba(220, 38, 38, 0.6) !important;
 }

@@ -3807,10 +3807,10 @@ class EMCP_Tools_Admin {
 							<span class="dashicons dashicons-arrow-down-alt2 emcp-help-caret" aria-hidden="true"></span>
 						</button>
 						<div class="emcp-help-dropdown" role="menu">
-							<a role="menuitem" href="https://github.com/Heretek-AI/elementor-mcp/issues" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-sos" aria-hidden="true"></span><?php esc_html_e( 'Vox Support &amp; Issues', 'emcp-tools' ); ?></a>
-							<a role="menuitem" href="https://github.com/Heretek-AI/elementor-mcp#readme" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-book" aria-hidden="true"></span><?php esc_html_e( 'Noosphere Codex (Docs)', 'emcp-tools' ); ?></a>
-							<a role="menuitem" href="https://github.com/Heretek-AI/elementor-mcp/discussions" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-format-chat" aria-hidden="true"></span><?php esc_html_e( 'Adept Assembly', 'emcp-tools' ); ?></a>
-							<a role="menuitem" href="https://github.com/Heretek-AI/elementor-mcp/releases" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-update" aria-hidden="true"></span><?php esc_html_e( 'Sanctified Releases', 'emcp-tools' ); ?></a>
+							<a role="menuitem" href="https://github.com/Heretek-AI/heretek-control-core/issues" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-sos" aria-hidden="true"></span><?php esc_html_e( 'Vox Support &amp; Issues', 'emcp-tools' ); ?></a>
+							<a role="menuitem" href="https://github.com/Heretek-AI/heretek-control-core#readme" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-book" aria-hidden="true"></span><?php esc_html_e( 'Noosphere Codex (Docs)', 'emcp-tools' ); ?></a>
+							<a role="menuitem" href="https://github.com/Heretek-AI/heretek-control-core/discussions" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-format-chat" aria-hidden="true"></span><?php esc_html_e( 'Adept Assembly', 'emcp-tools' ); ?></a>
+							<a role="menuitem" href="https://github.com/Heretek-AI/heretek-control-core/releases" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-update" aria-hidden="true"></span><?php esc_html_e( 'Sanctified Releases', 'emcp-tools' ); ?></a>
 						</div>
 					</div>
 					<div class="emcp-notif">

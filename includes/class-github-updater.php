@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class EMCP_Tools_GitHub_Updater {
 
 	/** GitHub `owner/repo` the free releases live on. */
-	const REPO = 'Heretek-AI/elementor-mcp';
+	const REPO = 'Heretek-AI/heretek-control-core';
 
 	/** Transient caching the parsed latest-release payload (limits API hits). */
 	const TRANSIENT = 'emcp_tools_github_release';
@@ -39,8 +39,8 @@ class EMCP_Tools_GitHub_Updater {
 	/** Shorter cache after a failed/empty lookup so we recover quickly. */
 	const CACHE_TTL_FAIL = 2 * HOUR_IN_SECONDS;
 
-	/** Matches the release ZIP asset (elementor-mcp or emcp-tools). */
-	const ASSET_PATTERN = '/^.*(elementor-mcp|emcp-tools).*\.zip$/i';
+	/** Matches the release ZIP asset (heretek, elementor-mcp, or emcp-tools). */
+	const ASSET_PATTERN = '/^.*(heretek|elementor-mcp|emcp-tools).*\.zip$/i';
 
 	/**
 	 * The installed plugin folder slug (e.g. `emcp-tools` or `elementor-mcp`),

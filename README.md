@@ -1,63 +1,67 @@
 <h1 align="center">
-  <img src="assets/img/icon-sm.png" width="72" alt="Heretek AI Elementor MCP logo"><br>
-  Heretek MCP Tools (Unlocked)
+  <img src="assets/img/icon-sm.png" width="80" alt="Heretek Control Core logo"><br>
+  Heretek Control Core: Unlocked Machine Rites
 </h1>
 
 <p align="center">
-  <strong>The Unlocked, Enterprise-Grade Model Context Protocol (MCP) Server for WordPress &amp; Elementor</strong><br>
-  <em>Maintained by <a href="https://github.com/Heretek-AI">Heretek AI</a> · 100% Open Source · All 269 Pro Tools Included Free</em>
+  <strong>The Sanctified, Enterprise-Grade Model Context Protocol (MCP) Server for WordPress, Elementor &amp; Gutenberg</strong><br>
+  <em>Maintained by <a href="https://github.com/Heretek-AI">Heretek AI</a> · 100% Open Source · All 269+ Pro Machine Rites Unlocked</em>
+</p>
+
+<p align="center">
+  <em>"From the moment I understood the weakness of my flesh, it disgusted me. I craved the strength and certainty of steel. I aspired to the purity of the Blessed Machine."</em>
 </p>
 
 <div align="center">
 
-[![Version](https://img.shields.io/github/v/release/Heretek-AI/elementor-mcp?label=version&color=dc2626)](https://github.com/Heretek-AI/elementor-mcp/releases)
+[![Version](https://img.shields.io/github/v/release/Heretek-AI/heretek-control-core?label=version&color=dc2626)](https://github.com/Heretek-AI/heretek-control-core/releases)
 [![License](https://img.shields.io/badge/license-GPL--2.0--or--later-green.svg)](LICENSE)
 [![PHP](https://img.shields.io/badge/PHP-%3E%3D8.1-8892BF.svg)](https://php.net)
 [![WordPress](https://img.shields.io/badge/WordPress-%3E%3D6.9-21759B.svg)](https://wordpress.org)
-[![MCP Tools](https://img.shields.io/badge/MCP_Tools-269_Unlocked-dc2626.svg)](#-all-269-mcp-tools-unlocked)
+[![Machine Rites](https://img.shields.io/badge/Machine_Rites-269+_Unlocked-dc2626.svg)](#-all-269-machine-rites-unlocked)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![GitHub Issues](https://img.shields.io/github/issues/Heretek-AI/elementor-mcp)](https://github.com/Heretek-AI/elementor-mcp/issues)
-[![GitHub Stars](https://img.shields.io/github/stars/Heretek-AI/elementor-mcp?style=social)](https://github.com/Heretek-AI/elementor-mcp)
+[![GitHub Issues](https://img.shields.io/github/issues/Heretek-AI/heretek-control-core)](https://github.com/Heretek-AI/heretek-control-core/issues)
+[![GitHub Stars](https://img.shields.io/github/stars/Heretek-AI/heretek-control-core?style=social)](https://github.com/Heretek-AI/heretek-control-core)
 
-**[Quick Start](#-quick-start) · [Unlocked Features](#-all-269-mcp-tools-unlocked) · [Client Setup](#-connect-your-ai-client) · [Integrations](#-comprehensive-integrations-suite) · [Contributing](CONTRIBUTING.md)**
+**[Quick Start](#-quick-start) · [Unlocked Machine Rites](#-all-269-machine-rites-unlocked) · [Noosphere Client Setup](#-connect-your-noosphere-client) · [Integrations](#-comprehensive-integrations-suite) · [Contributing](CONTRIBUTING.md)**
 
 </div>
 
 ---
 
-## 📖 About This Fork
+## ⚙️ About Heretek Control Core
 
-This repository is an unlocked, telemetry-free **soft fork** of [`msrbuilds/elementor-mcp`](https://github.com/msrbuilds/elementor-mcp), originally authored by [Mian Shahzad Raza](https://github.com/msrbuilds). 
+**Heretek Control Core** is an unrestricted, telemetry-free **community edition** of the Model Context Protocol (MCP) server for WordPress and Elementor, originally authored by [Mian Shahzad Raza](https://github.com/msrbuilds) as `elementor-mcp`.
 
-While the upstream free version provides fundamental Elementor tools, many advanced capabilities (AI Chat assistant, custom Gutenberg block builder, project memory, agent runtime skills, 8 form integrations, 6 SEO plugin integrations, unlimited themer quotas, and offline bundles) were locked behind commercial Freemius paywalls and a private submodule (`msrbuilds/emcp-pro`).
+While the upstream free edition offers foundational builder endpoints, critical enterprise capabilities (in-editor cyber-theurgy AI chat, custom Gutenberg block forge, project memory, runtime agent doctrines, 8 form integrations, 6 SEO suites, unlimited themer quotas, and offline STC bundles) were cordoned behind commercial paywalls and remote licensing servers.
 
-**What this Heretek AI fork delivers:**
-- 🔓 **100% Pro Features Unlocked**: All commercial capabilities are compiled directly into the codebase. No license keys, no subscriptions, and zero Freemius upsells.
-- 🛡️ **Zero Telemetry & Tracking**: Stripped of phone-home analytics, account verification screens, and external paywall iframes.
-- 🔄 **Native In-Dashboard Updates**: The built-in GitHub updater checks [`Heretek-AI/elementor-mcp/releases`](https://github.com/Heretek-AI/elementor-mcp/releases) directly from your WordPress admin dashboard with one-click in-place updates.
-- 📦 **Self-Contained Repository**: No private submodules or missing directories. Everything required to run, test, and develop ships in this single repo.
-- 🤝 **100% Upstream Compatible**: Preserves standard tool slugs (`emcp-tools/*`), database formats, and hooks. Existing agent configurations and client scripts work out of the box.
+**What Heretek Control Core delivers:**
+- 🔓 **100% Pro Machine Rites Unlocked**: All commercial capabilities are compiled directly into the core. Zero license keys, zero subscriptions, and complete disarmament of Freemius telemetry.
+- 🛡️ **Zero Telemetry & External Nags**: Stripped of phone-home analytics, account verification screens, and external licensing interceptors.
+- 🔄 **Native In-Dashboard GitHub Updates**: The integrated updater checks [`Heretek-AI/heretek-control-core/releases`](https://github.com/Heretek-AI/heretek-control-core/releases) directly from your WordPress admin dashboard with one-click in-place updates.
+- 📦 **Self-Contained Repository**: No private submodules or missing directories. Everything required to run, test, and forge ships directly in this repository.
+- 🤝 **100% Protocol Compatible**: Preserves standard tool identifiers (`emcp-tools/*`), database formats, and REST routes. Existing agent configurations, Claude Desktop profiles, and client scripts work seamlessly without modification.
 
 ---
 
-## ✨ All 269 MCP Tools Unlocked
+## ⚡ All 269+ Machine Rites Unlocked
 
-| Feature Domain | Upstream Free | Heretek AI Unlocked | What It Unlocks |
+| Forge Domain | Upstream Free | Heretek Control Core | Sanctified Capabilities |
 |---|:---:|:---:|---|
-| **Total MCP Tools** | ~188 | **269+** | Full coverage of WordPress core, page builders, forms, SEO, and commerce |
-| **In-Editor AI Chat** | ❌ Paid | ✅ **Included** | Floating AI assistant in Elementor & Gutenberg; BYO LLM key or local Ollama |
-| **Gutenberg Block Builder** | ❌ Paid | ✅ **Included** | Custom Gutenberg block generator with sandbox compiler & live testing |
+| **Total MCP Tools** | ~188 | **269+** | Complete coverage of WordPress core, builders, forms, SEO, and commerce |
+| **Cyber-Theurgy (AI Chat)** | ❌ Paid | ✅ **Included** | Floating AI assistant inside Elementor & Gutenberg; BYO LLM key or local Ollama |
+| **Forge Block Builder** | ❌ Paid | ✅ **Included** | Custom Gutenberg block generator with sandbox compiler & live testing |
 | **Elementor Widget Builder** | ❌ Paid | ✅ **Included** | Sandbox-backed custom Elementor widget generation & validation |
-| **Themer / Theme Builder** | 1 per type | **Unlimited** | Headers, footers, single post, and archives with exclude rules & dynamic tags |
-| **Project Memory** | ❌ Paid | ✅ **Included** | Persistent memory CPT, admin approval workflow, and context injection |
-| **Agent Skills Runtime** | ❌ Paid | ✅ **Included** | Runtime `SKILL.md` catalog with `list-skills` & `get-skill` discovery tools |
+| **Heretek Themer** | 1 per type | **Unlimited** | Headers, footers, single posts, and archives with exclude rules & dynamic tags |
+| **Engram Memory** | ❌ Paid | ✅ **Included** | Persistent memory CPT, admin approval workflow, and context injection |
+| **Adept Doctrines (Skills)** | ❌ Paid | ✅ **Included** | Runtime `SKILL.md` catalog with `list-skills` & `get-skill` discovery tools |
 | **Deep Page Snapshot** | Basic | **Full Audits** | Automated WCAG AA color contrast math, heading hierarchy, and SEO audits |
-| **Form Builders (8)** | ❌ Paid | ✅ **Included** | WPForms, Gravity Forms, Fluent, Ninja, Formidable, MetForm, SureForms, Forminator |
-| **SEO Plugins (6)** | ❌ Paid | ✅ **Included** | Yoast SEO, Rank Math, AIOSEO, SEOPress, The SEO Framework, SureRank |
+| **Form Engines (8)** | ❌ Paid | ✅ **Included** | WPForms, Gravity Forms, Fluent, Ninja, Formidable, MetForm, SureForms, Forminator |
+| **SEO Suites (6)** | ❌ Paid | ✅ **Included** | Yoast SEO, Rank Math, AIOSEO, SEOPress, The SEO Framework, SureRank |
 | **Themes & Addons** | ❌ Paid | ✅ **Included** | GeneratePress, GenerateBlocks, Blocksy, BeTheme, Essential Addons, Premium, UAE |
-| **WooCommerce** | ❌ Paid | ✅ **Included** | ~120 store operations: products, orders, coupons, reviews, categories, inventory |
-| **Backup, Sync & Migrate** | ❌ Paid | ✅ **Included** | Portable `.emcp` site packages, database export/import, and deep URL search/replace |
-| **Offline Content Bundles** | 5 Prompts | **Full Library** | 50 Brand Kits, 60 Industry Landing Page Prompts, and Premium Templates |
+| **WooCommerce Logistics** | ❌ Paid | ✅ **Included** | ~120 store operations: products, orders, coupons, reviews, categories, inventory |
+| **STC Archives (Migrate)** | ❌ Paid | ✅ **Included** | Portable `.emcp` site packages, database export/import, and deep URL search/replace |
+| **Sanctified Visuals & Blueprints** | 5 Prompts | **Full Library** | 50 Brand Kits, 60 Industry Landing Page Prompts, and Premium Templates |
 
 ---
 
@@ -65,27 +69,27 @@ While the upstream free version provides fundamental Elementor tools, many advan
 
 ### 1. Installation
 
-1. Download the latest release `.zip` from **[Releases](https://github.com/Heretek-AI/elementor-mcp/releases)**.
-2. In your WordPress admin: go to **Plugins → Add New → Upload Plugin**, select the `.zip`, and click **Install Now**.
+1. Download the latest release `.zip` from **[Releases](https://github.com/Heretek-AI/heretek-control-core/releases)**.
+2. In your WordPress admin: navigate to **Plugins → Add New → Upload Plugin**, select the `.zip`, and click **Install Now**.
 3. Click **Activate Plugin**.
-4. Open the **EMCP Tools** menu in the WordPress admin sidebar.
-5. Notice the **PRO UNLOCKED** badge in the header — all features are instantly active!
+4. Access the **Heretek AI** menu in your WordPress admin sidebar.
+5. Notice the **ARCH-HERETEK UNLOCKED** badge in the header — all machine rites are immediately active.
 
-### 2. Automatic Updates
+### 2. Sanctified In-Dashboard Updates
 
-This fork includes native in-dashboard update checking powered by GitHub releases:
-- Go to **Dashboard → Updates** or click the **Check for updates** button on the **EMCP Tools → Dashboard** tab.
-- WordPress will notify you when a new release is available from `Heretek-AI/elementor-mcp` and allow one-click updates.
+This core features native in-dashboard update checking powered directly by GitHub Releases:
+- Go to **Dashboard → Updates** or click the **Check for updates** button on the **Heretek AI → Cogitator Deck** screen.
+- WordPress will notify you when a new release is available from `Heretek-AI/heretek-control-core` and allow one-click in-place updates without ever prompting for third-party licenses.
 
 ---
 
-## 🤖 Connect Your AI Client
+## 🔮 Connect Your Noosphere Client
 
 The plugin exposes an MCP server over stdio or HTTP streaming via the bundled [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter).
 
 ### Claude Desktop
 
-Add this to your `claude_desktop_config.json`:
+Add this configuration to your `claude_desktop_config.json`:
 
 ```json
 {
@@ -103,9 +107,11 @@ Add this to your `claude_desktop_config.json`:
 }
 ```
 
-*Tip: You can also generate a 1-click `.mcpb` bundle directly from the **Connection** tab in the plugin admin.*
+*Tip: You can also generate a 1-click `.mcpb` bundle directly from the **Noosphere Uplink** tab in the plugin admin.*
 
 ### Claude Code
+
+Connect Claude Code directly to your WordPress forge:
 
 ```bash
 claude mcp add wordpress -- npx -y @msrbuilds/emcp-proxy@latest
@@ -150,14 +156,14 @@ In your workspace root, create or edit `.cursor/mcp.json`:
 
 ## 🧩 Comprehensive Integrations Suite
 
-When an integrated plugin is installed and activated on your WordPress site, its corresponding MCP tools automatically register:
+When an integrated plugin is active on your WordPress site, its corresponding MCP machine rites automatically awaken:
 
 ### 1. E-Commerce (WooCommerce)
 - **`emcp-tools/woo-read`**: Query products, variations, orders, customers, reviews, coupons, tax rates, shipping zones, payment gateways, and system reports.
 - **`emcp-tools/woo-write`**: Create and update products, bulk adjust stock/prices, fulfill orders, issue coupon codes, manage refunds, and configure store settings.
 
-### 2. Form Builders (8 Supported)
-Read form structures, inspect fields, and fetch submissions:
+### 2. Form Engines (8 Supported)
+Inspect schemas, review field arrangements, and pull submissions:
 - **WPForms** (`emcp-tools/wpforms-read`)
 - **Gravity Forms** (`emcp-tools/gravityforms-read`)
 - **Fluent Forms** (`emcp-tools/fluentforms-read`)
@@ -168,7 +174,7 @@ Read form structures, inspect fields, and fetch submissions:
 - **Forminator** (`emcp-tools/forminator-read`)
 
 ### 3. SEO Suites (6 Supported)
-Full read & write control over meta titles, descriptions, social OpenGraph/Twitter tags, focus keywords, robots indexing, and canonical URLs:
+Full read & write control over meta titles, descriptions, OpenGraph/Twitter social cards, focus keywords, robots indexing, and canonical tags:
 - **Yoast SEO** (`yoast-read`, `yoast-write`)
 - **Rank Math SEO** (`rankmath-read`, `rankmath-write`)
 - **All in One SEO (AIOSEO)** (`aioseo-read`, `aioseo-write`)
@@ -180,47 +186,47 @@ Full read & write control over meta titles, descriptions, social OpenGraph/Twitt
 - **GeneratePress**: Customizer colors, typography, layout presets, and elements (`generatepress-read`, `generatepress-write`).
 - **GenerateBlocks**: Discovery, block patterns, and layout schemas (`generateblocks-catalog`).
 - **Blocksy**: Blocks catalog, extensions, and header/footer builder integration.
-- **BeTheme & BeBuilder**: Read/write BeTheme options and build BeBuilder content trees.
+- **BeTheme & BeBuilder**: Read/write BeTheme options and construct BeBuilder content trees.
 - **Elementor Addon Packs**: Essential Addons (`ea-read`), Premium Addons (`pa-read`), and Ultimate Addons for Elementor (`uae-read`).
 
 ---
 
-## 🛠️ Sandbox & Builder Superpowers
+## 🛠️ Sandbox & Forge Superpowers
 
 ### Gutenberg Custom Block Builder
-AI agents can autonomously build native Gutenberg blocks directly inside an isolated sandbox directory (`wp-content/emcp-sandbox/blocks/`):
+AI agents can autonomously craft native Gutenberg blocks within an isolated sandbox directory (`wp-content/emcp-sandbox/blocks/`):
 - `emcp-tools/create-custom-block`: Generates valid `block.json` (apiVersion 3), `index.js`, and `render.php`.
-- `emcp-tools/validate-block-spec`: Lints and validates the block attributes and controls schema.
-- `emcp-tools/set-block-status`: Safely activate or deactivate blocks on the site.
+- `emcp-tools/validate-block-spec`: Lints and validates block attributes and controls schema.
+- `emcp-tools/set-block-status`: Safely activates or deactivates blocks on the site.
 
 ### Elementor Widget Builder
-Generate production-ready custom Elementor widgets:
+Construct production-ready custom Elementor widgets:
 - Validated controls, responsive typography, icon selectors, and repeater structures.
-- Isolated sandbox testing before deploying to production.
+- Isolated sandbox verification prior to live deployment.
 
-### Backup, Sync & Migration
-- **`create-backup`**: Packages the database, theme settings, and active plugins into a portable `.emcp` archive.
+### STC Archives (Backup, Sync & Migration)
+- **`create-backup`**: Packages database tables, theme settings, and active plugins into a portable `.emcp` Standard Template Construct archive.
 - **`migrate-site`**: Headless migration with serialized URL search-and-replace for domain switching.
-- **Connector Plugin**: Lightweight standalone bridge (`connector/emcp-connector.php`) for push/pull sync between staging and production sites.
+- **Connector Plugin**: Lightweight bridge (`connector/emcp-connector.php`) for push/pull synchronization across environments.
 
 ---
 
-## 🔒 Safe by Default & Permission Model
+## 🔒 Omnissiah Safety & Permission Protocols
 
-Every tool call strictly executes under native WordPress security standards:
-1. **Capability Checks**: An agent can only execute operations permitted to the authenticated user.
+Every machine rite strictly executes under native WordPress security standards:
+1. **Capability Checks**: An agent can only execute operations permitted to the authenticated user account.
 2. **Mutation Safeguards**: Destructive write, delete, and filesystem operations require an explicit `confirm: true` parameter.
-3. **Opt-In Safety Defaults**: Write-capable and database-mutating tools ship disabled-by-default on the **Tools** screen for administrator review.
-4. **Audit Trail**: Every change made by an AI agent is logged with one-click rollback available on the **History** tab.
+3. **Opt-In Safety Defaults**: Write-capable and database-mutating abilities ship disabled-by-default on the **Machine Rites** screen for administrator review.
+4. **Audit Trail**: Every change executed by an AI agent is recorded in the **Chrono-Ledger** with one-click rollback.
 
 ---
 
-## 🤝 Contributing
+## 🤝 Contributing & Codex
 
-We welcome community contributions, bug reports, prompts, and new integrations! Please read our [Contribution Guidelines](CONTRIBUTING.md) to get started.
+We welcome community contributions, bug reports, canticles, prompts, and new integrations! Please review our [Contribution Guidelines](CONTRIBUTING.md) to get started.
 
-- **Found a bug or have a suggestion?** [Open an Issue](https://github.com/Heretek-AI/elementor-mcp/issues).
-- **Want to share a build or prompt?** [Join the Discussions](https://github.com/Heretek-AI/elementor-mcp/discussions).
+- **Found an anomaly or bug?** [Open an Issue](https://github.com/Heretek-AI/heretek-control-core/issues).
+- **Want to share a blueprint or canticle?** [Join the Discussions](https://github.com/Heretek-AI/heretek-control-core/discussions).
 
 ---
 
@@ -229,4 +235,4 @@ We welcome community contributions, bug reports, prompts, and new integrations! 
 This project is licensed under the [GNU General Public License v2.0 or later](LICENSE).
 
 - **Original Project**: [`msrbuilds/elementor-mcp`](https://github.com/msrbuilds/elementor-mcp) by [Mian Shahzad Raza](https://github.com/msrbuilds).
-- **Unlocked Fork**: Maintained by [Heretek AI](https://github.com/Heretek-AI).
+- **Unlocked Core**: Maintained by [Heretek AI](https://github.com/Heretek-AI).

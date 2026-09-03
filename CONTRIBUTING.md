@@ -1,11 +1,11 @@
-# Contributing to EMCP Tools
+# Contributing to Heretek Control Core
 
 Thanks for being here. Bug reports, docs fixes, prompts, and new tools are all genuinely useful, and you don't need to write PHP to help.
 
-- **Found a bug?** [Open a bug report](https://github.com/Heretek-AI/elementor-mcp/issues/new)
-- **Want a tool that doesn't exist?** [Request a feature](https://github.com/Heretek-AI/elementor-mcp/issues/new)
-- **Want a plugin supported?** [Request an integration](https://github.com/Heretek-AI/elementor-mcp/issues/new)
-- **Just an idea or a question?** [Start a discussion](https://github.com/Heretek-AI/elementor-mcp/discussions)
+- **Found a bug?** [Open a bug report](https://github.com/Heretek-AI/heretek-control-core/issues/new)
+- **Want a tool that doesn't exist?** [Request a feature](https://github.com/Heretek-AI/heretek-control-core/issues/new)
+- **Want a plugin supported?** [Request an integration](https://github.com/Heretek-AI/heretek-control-core/issues/new)
+- **Just an idea or a question?** [Start a discussion](https://github.com/Heretek-AI/heretek-control-core/discussions)
 
 Documentation and setup guides live in **[README.md](README.md)**. This file is about working on the plugin itself.
 
@@ -25,7 +25,7 @@ Documentation and setup guides live in **[README.md](README.md)**. This file is 
 
 ```bash
 cd /path/to/wordpress/wp-content/plugins
-git clone https://github.com/Heretek-AI/elementor-mcp.git elementor-mcp
+git clone https://github.com/Heretek-AI/heretek-control-core.git elementor-mcp
 cd elementor-mcp
 composer install
 ```
@@ -177,7 +177,7 @@ Put new tests in `tests/`, named `SomethingTest.php`. Test the pure logic, valid
 
 ## Reporting bugs
 
-Use [GitHub Issues](https://github.com/Heretek-AI/elementor-mcp/issues/new). The details that actually speed up a fix:
+Use [GitHub Issues](https://github.com/Heretek-AI/heretek-control-core/issues/new). The details that actually speed up a fix:
 
 - Plugin, WordPress, and PHP versions (and Elementor, if relevant)
 - Which **MCP client** you're using

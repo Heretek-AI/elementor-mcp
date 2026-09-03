@@ -379,21 +379,21 @@ $emcp_features = array(
 			</a>
 		</div>
 		<div class="emcp-dash-help">
-			<a class="emcp-dash-help-link" href="https://github.com/Heretek-AI/elementor-mcp#readme" target="_blank" rel="noopener noreferrer">
+			<a class="emcp-dash-help-link" href="https://github.com/Heretek-AI/heretek-control-core#readme" target="_blank" rel="noopener noreferrer">
 				<span class="dashicons dashicons-book" aria-hidden="true"></span>
 				<span>
 					<span class="emcp-dash-help-title"><?php esc_html_e( 'Documentation', 'emcp-tools' ); ?></span>
 					<span class="emcp-dash-help-desc"><?php esc_html_e( 'Guides and reference for all unlocked tools.', 'emcp-tools' ); ?></span>
 				</span>
 			</a>
-			<a class="emcp-dash-help-link" href="https://github.com/Heretek-AI/elementor-mcp/issues" target="_blank" rel="noopener noreferrer">
+			<a class="emcp-dash-help-link" href="https://github.com/Heretek-AI/heretek-control-core/issues" target="_blank" rel="noopener noreferrer">
 				<span class="dashicons dashicons-sos" aria-hidden="true"></span>
 				<span>
 					<span class="emcp-dash-help-title"><?php esc_html_e( 'Issues &amp; Support', 'emcp-tools' ); ?></span>
 					<span class="emcp-dash-help-desc"><?php esc_html_e( 'Report bugs or request new features.', 'emcp-tools' ); ?></span>
 				</span>
 			</a>
-			<a class="emcp-dash-help-link" href="https://github.com/Heretek-AI/elementor-mcp/discussions" target="_blank" rel="noopener noreferrer">
+			<a class="emcp-dash-help-link" href="https://github.com/Heretek-AI/heretek-control-core/discussions" target="_blank" rel="noopener noreferrer">
 				<span class="dashicons dashicons-groups" aria-hidden="true"></span>
 				<span>
 					<span class="emcp-dash-help-title"><?php esc_html_e( 'Discussions &amp; Community', 'emcp-tools' ); ?></span>

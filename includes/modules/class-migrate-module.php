@@ -41,12 +41,17 @@ class EMCP_Tools_Migrate_Module extends EMCP_Tools_Module {
 		}
 	}
 
+	/** URL of the Backup & Migrate admin tab. */
+	private static function migrate_page_url(): string {
+		return admin_url( 'admin.php?page=' . \EMCP_Tools_Admin::PAGE_SLUG . '-migrate' );
+	}
+
 	/** Stream a installable connector-plugin zip (emcp-connector/). */
 	public function handle_download_connector(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to download the connector.', 'emcp-tools' ) );
 		}
-		check_admin_referer( self::ADMIN_ACTION, '_emcp_nonce' );
+		check_admin_referer( self::ADMIN_ACTION );
 		$this->stream_connector_zip();
 	}
 
@@ -55,7 +60,7 @@ class EMCP_Tools_Migrate_Module extends EMCP_Tools_Module {
 		$source = EMCP_Tools_Pro_Loader::path( 'connector/emcp-connector.php' );
 		if ( '' === $source || ! is_readable( $source ) ) {
 			$this->set_notice( 'error', __( 'Connector plugin file not found in this build.', 'emcp-tools' ) );
-			wp_safe_redirect( admin_url( 'admin.php?page=' . \EMCP_Tools_Admin::PAGE_SLUG . '-migrate' ) );
+			wp_safe_redirect( self::migrate_page_url() );
 			exit;
 		}
 		$tmp = EMCP_Tools_Packager::backup_dir() . '/.emcp-connector-' . wp_generate_password( 6, false ) . '.zip';
@@ -66,7 +71,7 @@ class EMCP_Tools_Migrate_Module extends EMCP_Tools_Module {
 		}
 		if ( ! is_file( $tmp ) ) {
 			$this->set_notice( 'error', __( 'Could not build the connector zip.', 'emcp-tools' ) );
-			wp_safe_redirect( admin_url( 'admin.php?page=' . \EMCP_Tools_Admin::PAGE_SLUG . '-migrate' ) );
+			wp_safe_redirect( self::migrate_page_url() );
 			exit;
 		}
 		header( 'Content-Type: application/zip' );
@@ -86,11 +91,10 @@ class EMCP_Tools_Migrate_Module extends EMCP_Tools_Module {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to manage backups.', 'emcp-tools' ) );
 		}
-		check_admin_referer( self::ADMIN_ACTION, '_emcp_nonce' );
+		check_admin_referer( self::ADMIN_ACTION );
 
 		$action = sanitize_key( (string) ( $_POST['emcp_migrate_action'] ?? '' ) );
 		$file   = sanitize_file_name( (string) ( $_POST['archive'] ?? '' ) );
-		$back   = admin_url( 'admin.php?page=' . \EMCP_Tools_Admin::PAGE_SLUG . '-migrate' );
 
 		switch ( $action ) {
 			case 'create':
@@ -98,22 +102,22 @@ class EMCP_Tools_Migrate_Module extends EMCP_Tools_Module {
 				break;
 
 			case 'restore':
-				$this->admin_restore( $file, $back );
+				$this->admin_restore( $file );
 				break;
 
 			case 'delete':
-				$this->admin_delete( $file, $back );
+				$this->admin_delete( $file );
 				break;
 
 			case 'download':
-				$this->admin_download( $file, $back );
+				$this->admin_download( $file );
 				break;
 
 			default:
 				$this->set_notice( 'error', __( 'Unknown action.', 'emcp-tools' ) );
 		}
 
-		wp_safe_redirect( $back );
+		wp_safe_redirect( self::migrate_page_url() );
 		exit;
 	}
 
@@ -131,7 +135,7 @@ class EMCP_Tools_Migrate_Module extends EMCP_Tools_Module {
 	}
 
 	/** Restore an archive (verification + import + optional URL rewrite + files). */
-	private function admin_restore( string $file, string $back ): void {
+	private function admin_restore( string $file ): void {
 		if ( '' === $file ) {
 			$this->set_notice( 'error', __( 'No archive selected to restore.', 'emcp-tools' ) );
 			return;
@@ -173,7 +177,7 @@ class EMCP_Tools_Migrate_Module extends EMCP_Tools_Module {
 	}
 
 	/** Delete an archive (admin-only). */
-	private function admin_delete( string $file, string $back ): void {
+	private function admin_delete( string $file ): void {
 		if ( '' === $file ) {
 			$this->set_notice( 'error', __( 'No archive selected to delete.', 'emcp-tools' ) );
 			return;
@@ -188,7 +192,7 @@ class EMCP_Tools_Migrate_Module extends EMCP_Tools_Module {
 	}
 
 	/** Stream an archive to the browser and stop. */
-	private function admin_download( string $file, string $back ): void {
+	private function admin_download( string $file ): void {
 		$path = EMCP_Tools_Packager::archive_path( $file );
 		if ( '' === $path ) {
 			$this->set_notice( 'error', __( 'Archive not found for download.', 'emcp-tools' ) );

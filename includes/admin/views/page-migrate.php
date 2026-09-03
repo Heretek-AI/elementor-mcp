@@ -39,7 +39,7 @@ if ( $emcp_notice ) {
 
 	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin: 12px 0;">
 		<input type="hidden" name="action" value="emcp_tools_download_connector">
-		<?php wp_nonce_field( $emcp_action, '_emcp_nonce' ); ?>
+		<?php wp_nonce_field( $emcp_action ); ?>
 		<p>
 			<button type="submit" class="button"><?php esc_html_e( 'Download Connector Plugin', 'emcp-tools' ); ?></button>
 			<span class="description">
@@ -56,7 +56,7 @@ if ( $emcp_notice ) {
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="<?php echo esc_attr( $emcp_action ); ?>">
 				<input type="hidden" name="emcp_migrate_action" value="create">
-				<?php wp_nonce_field( $emcp_action, '_emcp_nonce' ); ?>
+				<?php wp_nonce_field( $emcp_action ); ?>
 				<p>
 					<label for="emcp_backup_name"><?php esc_html_e( 'Archive name (optional):', 'emcp-tools' ); ?></label><br>
 					<input type="text" name="backup_name" id="emcp_backup_name" class="regular-text" placeholder="e.g. pre-redesign-backup">
@@ -102,7 +102,7 @@ if ( $emcp_notice ) {
 										<input type="hidden" name="action" value="<?php echo esc_attr( $emcp_action ); ?>">
 										<input type="hidden" name="emcp_migrate_action" value="download">
 										<input type="hidden" name="archive" value="<?php echo esc_attr( $emcp_b['filename'] ); ?>">
-										<?php wp_nonce_field( $emcp_action, '_emcp_nonce' ); ?>
+										<?php wp_nonce_field( $emcp_action ); ?>
 										<button type="submit" class="button"><?php esc_html_e( 'Download', 'emcp-tools' ); ?></button>
 									</form>
 									<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline-block;"
@@ -110,7 +110,7 @@ if ( $emcp_notice ) {
 										<input type="hidden" name="action" value="<?php echo esc_attr( $emcp_action ); ?>">
 										<input type="hidden" name="emcp_migrate_action" value="restore">
 										<input type="hidden" name="archive" value="<?php echo esc_attr( $emcp_b['filename'] ); ?>">
-										<?php wp_nonce_field( $emcp_action, '_emcp_nonce' ); ?>
+										<?php wp_nonce_field( $emcp_action ); ?>
 										<button type="submit" class="button button-primary"><?php esc_html_e( 'Restore', 'emcp-tools' ); ?></button>
 									</form>
 									<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline-block;"
@@ -118,7 +118,7 @@ if ( $emcp_notice ) {
 										<input type="hidden" name="action" value="<?php echo esc_attr( $emcp_action ); ?>">
 										<input type="hidden" name="emcp_migrate_action" value="delete">
 										<input type="hidden" name="archive" value="<?php echo esc_attr( $emcp_b['filename'] ); ?>">
-										<?php wp_nonce_field( $emcp_action, '_emcp_nonce' ); ?>
+										<?php wp_nonce_field( $emcp_action ); ?>
 										<button type="submit" class="button button-link-delete"><?php esc_html_e( 'Delete', 'emcp-tools' ); ?></button>
 									</form>
 								</td>

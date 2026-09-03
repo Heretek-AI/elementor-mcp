@@ -80,7 +80,6 @@ class EMCP_Tools_DB_Exporter {
 			return 0;
 		}
 		$col_list = '`' . implode( '`, `', $columns ) . '`';
-		$col_ph   = '(' . implode( ', ', array_fill( 0, count( $columns ), '%s' ) ) . ')';
 
 		$offset = 0;
 		$rows   = 0;

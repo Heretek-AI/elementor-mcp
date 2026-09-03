@@ -87,6 +87,20 @@ function emcp_connector_authed( WP_REST_Request $request ) {
 	return emcp_connector_verify( emcp_connector_canonical( $request ), $signature );
 }
 
+/**
+ * Whitelist a client-supplied transfer id before it can reach a filesystem path.
+ *
+ * The HMAC gate is the outer trust boundary; this is defense-in-depth for the
+ * on-disk chunk store. Anything outside [A-Za-z0-9_-]{8,64} is rejected with an
+ * empty string, so the handlers never build a path from an unvalidated value.
+ *
+ * @param string $raw Raw transfer id from the request body.
+ * @return string The validated id, or '' when invalid.
+ */
+function emcp_connector_safe_transfer_id( string $raw ): string {
+	return preg_match( '/^[A-Za-z0-9_-]{8,64}$/', $raw ) ? $raw : '';
+}
+
 /** Incoming transfer directory. */
 function emcp_connector_transfer_dir( string $transfer_id ): string {
 	$dir = emcp_connector_base_dir() . '/incoming/' . preg_replace( '/[^a-zA-Z0-9_-]/', '', $transfer_id );
@@ -144,13 +158,13 @@ add_action( 'rest_api_init', function () {
 /** Receive one chunk; idempotent per index. */
 function emcp_connector_handle_packet( WP_REST_Request $request ) {
 	$body = $request->get_json_params();
-	$transfer_id = isset( $body['transfer_id'] ) ? (string) $body['transfer_id'] : '';
+	$transfer_id = emcp_connector_safe_transfer_id( isset( $body['transfer_id'] ) ? (string) $body['transfer_id'] : '' );
 	$index       = isset( $body['index'] ) ? (int) $body['index'] : -1;
 	$data_b64    = isset( $body['data_b64'] ) ? (string) $body['data_b64'] : '';
 	$chunk_sha   = isset( $body['sha256'] ) ? (string) $body['sha256'] : '';
 
 	if ( '' === $transfer_id || $index < 0 || '' === $data_b64 ) {
-		return new WP_Error( 'bad_packet', 'transfer_id, index and data_b64 are required', array( 'status' => 400 ) );
+		return new WP_Error( 'bad_packet', 'A valid transfer_id, a non-negative index, and data_b64 are required', array( 'status' => 400 ) );
 	}
 	$chunk = base64_decode( $data_b64, true );
 	if ( false === $chunk || '' === $chunk_sha || ! hash_equals( $chunk_sha, hash( 'sha256', $chunk ) ) ) {
@@ -174,10 +188,10 @@ function emcp_connector_handle_finalize( WP_REST_Request $request ) {
 		return new WP_Error( 'not_configured', 'No EMCP_CONNECTOR_SECRET configured on this destination', array( 'status' => 403 ) );
 	}
 	$body         = $request->get_json_params();
-	$transfer_id  = isset( $body['transfer_id'] ) ? (string) $body['transfer_id'] : '';
+	$transfer_id  = emcp_connector_safe_transfer_id( isset( $body['transfer_id'] ) ? (string) $body['transfer_id'] : '' );
 	$whole_sha    = isset( $body['sha256'] ) ? (string) $body['sha256'] : '';
 	if ( '' === $transfer_id || '' === $whole_sha ) {
-		return new WP_Error( 'bad_request', 'transfer_id and sha256 are required', array( 'status' => 400 ) );
+		return new WP_Error( 'bad_request', 'A valid transfer_id and sha256 are required', array( 'status' => 400 ) );
 	}
 
 	$dir    = emcp_connector_transfer_dir( $transfer_id );
@@ -185,9 +199,12 @@ function emcp_connector_handle_finalize( WP_REST_Request $request ) {
 	if ( ! $chunks ) {
 		return new WP_Error( 'empty_transfer', 'no chunks received', array( 'status' => 400 ) );
 	}
-	// Concatenate in index order.
+	// Concatenate in index order. $transfer_id passed emcp_connector_safe_transfer_id()
+	// above (alnum/-/_ only, 8-64 chars) and the route is HMAC-gated, so it cannot
+	// carry a path separator. // NOSONAR -- transfer store is resume-keyed by id.
 	sort( $chunks, SORT_NATURAL );
 	$assembled = emcp_connector_base_dir() . '/assembled-' . $transfer_id . '.emcp';
+	// NOSONAR -- see whitelist rationale above: $transfer_id is validated, not raw input.
 	$out       = fopen( $assembled, 'wb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions
 	if ( false === $out ) {
 		return new WP_Error( 'storage', 'could not open assembled archive', array( 'status' => 500 ) );
@@ -198,7 +215,7 @@ function emcp_connector_handle_finalize( WP_REST_Request $request ) {
 	fclose( $out ); // phpcs:ignore WordPress.WP.AlternativeFunctions
 
 	if ( ! hash_equals( $whole_sha, hash_file( 'sha256', $assembled ) ) ) {
-		@unlink( $assembled ); // phpcs:ignore WordPress.WP.AlternativeFunctions,WordPress.PHP.NoSilencedErrors
+		@unlink( $assembled ); // NOSONAR -- path from whitelisted transfer id (see above). phpcs:ignore WordPress.WP.AlternativeFunctions,WordPress.PHP.NoSilencedErrors
 		return new WP_Error( 'hash_mismatch', 'assembled archive failed its sha256 check', array( 'status' => 400 ) );
 	}
 
@@ -219,7 +236,7 @@ function emcp_connector_handle_finalize( WP_REST_Request $request ) {
 	foreach ( $chunks as $chunk ) {
 		@unlink( $chunk ); // phpcs:ignore WordPress.WP.AlternativeFunctions,WordPress.PHP.NoSilencedErrors
 	}
-	@unlink( $assembled ); // phpcs:ignore WordPress.WP.AlternativeFunctions,WordPress.PHP.NoSilencedErrors
+	@unlink( $assembled ); // NOSONAR -- path from whitelisted transfer id (see above). phpcs:ignore WordPress.WP.AlternativeFunctions,WordPress.PHP.NoSilencedErrors
 	@rmdir( $dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions,WordPress.PHP.NoSilencedErrors
 
 	return rest_ensure_response( array( 'job_id' => $job_id, 'state' => $stats['state'] ) );
@@ -241,7 +258,7 @@ function emcp_connector_handle_job( WP_REST_Request $request ) {
 // ---------------------------------------------------------------------------
 
 /** Extract one complete statement (ending at a top-level ';') from a buffer. */
-function emcp_connector_extract_statement( string &$buffer ) {
+function emcp_connector_extract_statement( string &$buffer ) { // NOSONAR -- a per-character SQL quote/comment state machine has no meaningful decomposition below its branch table.
 	$len = strlen( $buffer );
 	$i   = 0;
 	$sq = $dq = $bt = $lc = $bc = false;
@@ -287,7 +304,6 @@ function emcp_connector_is_skip( string $stmt ): bool {
 
 /** Import a dump through the destination $wpdb. */
 function emcp_connector_import( string $file ) {
-	global $wpdb;
 	$stats = array( 'statements' => 0, 'executed' => 0, 'skipped' => 0, 'errors' => 0, 'error_details' => array() );
 	$fh    = fopen( $file, 'r' ); // phpcs:ignore WordPress.WP.AlternativeFunctions
 	if ( false === $fh ) {
@@ -304,29 +320,35 @@ function emcp_connector_import( string $file ) {
 				$stats['skipped']++;
 				continue;
 			}
-			$result = $wpdb->query( $trim ); // phpcs:ignore WordPress.DB -- dump statement, connector restore.
-			if ( false === $result ) {
-				$stats['errors']++;
-				if ( count( $stats['error_details'] ) < 10 ) {
-					$stats['error_details'][] = $wpdb->last_error;
-				}
-			} else {
-				$stats['executed']++;
-			}
+			emcp_connector_run_dump_statement( $trim, $stats );
 		}
 	}
 	$buffer = trim( $buffer );
 	if ( '' !== $buffer && 0 !== strpos( $buffer, '--' ) && ! emcp_connector_is_skip( $buffer ) ) {
 		$stats['statements']++;
-		$result = $wpdb->query( $buffer ); // phpcs:ignore WordPress.DB
-		if ( false === $result ) {
-			$stats['errors']++;
-		} else {
-			$stats['executed']++;
-		}
+		emcp_connector_run_dump_statement( $buffer, $stats );
 	}
 	fclose( $fh ); // phpcs:ignore WordPress.WP.AlternativeFunctions
 	return $stats;
+}
+
+/**
+ * Execute one dump statement through the live connection, updating stats.
+ *
+ * @param string $sql   Trimmed statement (directives already filtered).
+ * @param array  $stats In/out counters.
+ */
+function emcp_connector_run_dump_statement( string $sql, array &$stats ): void {
+	global $wpdb;
+	$result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB -- dump statement, connector restore.
+	if ( false === $result ) {
+		$stats['errors']++;
+		if ( count( $stats['error_details'] ) < 10 ) {
+			$stats['error_details'][] = $wpdb->last_error;
+		}
+	} else {
+		$stats['executed']++;
+	}
 }
 
 /** Byte-accurate replacement over a raw string (plain + escaped JSON URL pairs). */
@@ -375,11 +397,41 @@ function emcp_connector_replace_value( $value, string $search, string $replace )
 	return $value;
 }
 
-/** Search-replace URL across the destination's data tables. */
+/**
+ * Search-replace URL across the destination's data tables.
+ *
+ * @param string $old_url Source URL.
+ * @param string $new_url Destination URL.
+ * @return int Rows rewritten.
+ */
 function emcp_connector_search_replace( string $old_url, string $new_url ): int {
 	if ( '' === $old_url || $old_url === $new_url ) {
 		return 0;
 	}
+	global $wpdb;
+	$total = 0;
+	foreach ( emcp_connector_data_tables() as $table ) {
+		$pks = $wpdb->get_results( "SHOW KEYS FROM `{$table}` WHERE Key_name = 'PRIMARY'" ); // phpcs:ignore WordPress.DB
+		if ( count( $pks ) !== 1 ) {
+			continue; // Composite/no-PK tables are skipped — rows can't be addressed safely.
+		}
+		$pk        = (string) $pks[0]->Column_name;
+		$text_cols = emcp_connector_text_columns( $table );
+		if ( empty( $text_cols ) ) {
+			continue;
+		}
+		$total += emcp_connector_rewrite_rows( $table, $pk, $text_cols, $old_url, $new_url );
+	}
+	return $total;
+}
+
+/**
+ * Text-bearing tables the search-replace walks (all prefixed tables minus
+ * operational ones whose values are paths/session data).
+ *
+ * @return string[] Table names.
+ */
+function emcp_connector_data_tables(): array {
 	global $wpdb;
 	$exclude = array(
 		$wpdb->prefix . 'emcp_connector_transfers',
@@ -400,55 +452,70 @@ function emcp_connector_search_replace( string $old_url, string $new_url ): int 
 			$tables[] = $table;
 		}
 	}
+	return $tables;
+}
 
-	$total = 0;
-	foreach ( $tables as $table ) {
-		$pks = $wpdb->get_results( "SHOW KEYS FROM `{$table}` WHERE Key_name = 'PRIMARY'" ); // phpcs:ignore WordPress.DB
-		if ( count( $pks ) !== 1 ) {
-			continue;
-		}
-		$pk = (string) $pks[0]->Column_name;
-
-		$text_cols = array();
-		foreach ( (array) $wpdb->get_results( "DESCRIBE `{$table}`" ) as $col ) { // phpcs:ignore WordPress.DB
-			$type = strtolower( (string) $col->Type );
-			if ( false !== strpos( $type, 'char' ) || false !== strpos( $type, 'text' ) || false !== strpos( $type, 'json' ) ) {
-				$text_cols[] = $col->Field;
-			}
-		}
-		if ( empty( $text_cols ) ) {
-			continue;
-		}
-		$like = '%' . $wpdb->esc_like( $old_url ) . '%';
-		$where = array();
-		$args  = array();
-		foreach ( $text_cols as $col ) {
-			$where[] = "`{$col}` LIKE %s";
-			$args[]  = $like;
-		}
-		$sql = "SELECT `{$pk}`, `" . implode( '`, `', $text_cols ) . "` FROM `{$table}` WHERE (" . implode( ' OR ', $where ) . ') LIMIT 5000';
-		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $args ), ARRAY_A ); // phpcs:ignore WordPress.DB
-		if ( null === $rows ) {
-			continue;
-		}
-		foreach ( $rows as $row ) {
-			$changes = array();
-			foreach ( $text_cols as $col ) {
-				if ( ! isset( $row[ $col ] ) || ! is_string( $row[ $col ] ) ) {
-					continue;
-				}
-				$new = emcp_connector_replace_value( $row[ $col ], $old_url, $new_url );
-				if ( $new !== $row[ $col ] ) {
-					$changes[ $col ] = $new;
-				}
-			}
-			if ( $changes ) {
-				$wpdb->update( $table, $changes, array( $pk => $row[ $pk ] ) ); // phpcs:ignore WordPress.DB
-				$total++;
-			}
+/**
+ * char/text/json columns of a table (the only ones worth rewriting).
+ *
+ * @param string $table Table name.
+ * @return string[] Column names.
+ */
+function emcp_connector_text_columns( string $table ): array {
+	global $wpdb;
+	$text_cols = array();
+	foreach ( (array) $wpdb->get_results( "DESCRIBE `{$table}`" ) as $col ) { // phpcs:ignore WordPress.DB -- identifier quoted.
+		$type = strtolower( (string) $col->Type );
+		if ( false !== strpos( $type, 'char' ) || false !== strpos( $type, 'text' ) || false !== strpos( $type, 'json' ) ) {
+			$text_cols[] = $col->Field;
 		}
 	}
-	return $total;
+	return $text_cols;
+}
+
+/**
+ * Fetch rows of one table containing $old_url and rewrite the changed columns.
+ *
+ * @param string   $table    Table name.
+ * @param string   $pk       Single-column primary key.
+ * @param string[] $text_cols Text columns to scan/rewrite.
+ * @param string   $old_url  Source URL.
+ * @param string   $new_url  Destination URL.
+ * @return int Rows updated.
+ */
+function emcp_connector_rewrite_rows( string $table, string $pk, array $text_cols, string $old_url, string $new_url ): int {
+	global $wpdb;
+	$like  = '%' . $wpdb->esc_like( $old_url ) . '%';
+	$where = array();
+	$args  = array();
+	foreach ( $text_cols as $col ) {
+		$where[] = "`{$col}` LIKE %s";
+		$args[]  = $like;
+	}
+	$sql  = "SELECT `{$pk}`, `" . implode( '`, `', $text_cols ) . "` FROM `{$table}` WHERE (" . implode( ' OR ', $where ) . ') LIMIT 5000';
+	$rows = $wpdb->get_results( $wpdb->prepare( $sql, $args ), ARRAY_A ); // phpcs:ignore WordPress.DB -- prepared; identifier-quoted.
+	if ( null === $rows ) {
+		return 0;
+	}
+
+	$updated = 0;
+	foreach ( $rows as $row ) {
+		$changes = array();
+		foreach ( $text_cols as $col ) {
+			if ( ! isset( $row[ $col ] ) || ! is_string( $row[ $col ] ) ) {
+				continue;
+			}
+			$new = emcp_connector_replace_value( $row[ $col ], $old_url, $new_url );
+			if ( $new !== $row[ $col ] ) {
+				$changes[ $col ] = $new;
+			}
+		}
+		if ( $changes ) {
+			$wpdb->update( $table, $changes, array( $pk => $row[ $pk ] ) ); // phpcs:ignore WordPress.DB -- keyed by PK.
+			$updated++;
+		}
+	}
+	return $updated;
 }
 
 /** Place files/ entries under wp-content (traversal-guarded). */
@@ -527,27 +594,8 @@ function emcp_connector_restore_archive( string $archive ): array {
 	$work = emcp_connector_base_dir() . '/restore-' . wp_generate_password( 8, false );
 	wp_mkdir_p( $work );
 
-	// 1) DB.
-	$src = $zip->getStream( 'database.sql' );
-	if ( false !== $src ) {
-		$db_file = $work . '/database.sql';
-		$dst = fopen( $db_file, 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions
-		if ( false !== $dst ) {
-			stream_copy_to_stream( $src, $dst );
-			fclose( $src ); // phpcs:ignore WordPress.WP.AlternativeFunctions
-			fclose( $dst ); // phpcs:ignore WordPress.WP.AlternativeFunctions
-			$expected = isset( $manifest['database_sha256'] ) ? $manifest['database_sha256'] : '';
-			$actual   = hash_file( 'sha256', $db_file );
-			if ( '' !== $expected && hash_equals( $expected, $actual ) ) {
-				$stats['db'] = emcp_connector_import( $db_file );
-				if ( ! empty( $stats['db']['error_details'] ) ) {
-					$stats['errors'] = array_merge( $stats['errors'], $stats['db']['error_details'] );
-				}
-			} else {
-				$stats['errors'][] = 'hash_mismatch';
-			}
-		}
-	}
+	// 1) DB (verify hash, then import).
+	emcp_connector_restore_db( $zip, $manifest, $work, $stats );
 
 	// 2) URL search-replace (source -> this destination).
 	if ( empty( $stats['errors'] ) && ! empty( $manifest['site_url'] ) ) {
@@ -563,4 +611,41 @@ function emcp_connector_restore_archive( string $archive ): array {
 	emcp_connector_cleanup( $work );
 
 	return $stats;
+}
+
+/**
+ * Stream database.sql out of the archive, verify its manifest hash, import it.
+ *
+ * @param \ZipArchive $zip      Open archive.
+ * @param array       $manifest Parsed manifest.
+ * @param string      $work     Work directory.
+ * @param array       $stats    In/out restore stats.
+ */
+function emcp_connector_restore_db( ZipArchive $zip, array $manifest, string $work, array &$stats ): void {
+	$src = $zip->getStream( 'database.sql' );
+	if ( false === $src ) {
+		$stats['errors'][] = 'db_stream_failed';
+		return;
+	}
+	$db_file = $work . '/database.sql';
+	$dst     = fopen( $db_file, 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+	if ( false === $dst ) {
+		fclose( $src ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+		$stats['errors'][] = 'db_stream_failed';
+		return;
+	}
+	stream_copy_to_stream( $src, $dst );
+	fclose( $src ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+	fclose( $dst ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+
+	$expected = isset( $manifest['database_sha256'] ) ? $manifest['database_sha256'] : '';
+	$actual   = hash_file( 'sha256', $db_file );
+	if ( '' !== $expected && hash_equals( $expected, $actual ) ) {
+		$stats['db'] = emcp_connector_import( $db_file );
+		if ( ! empty( $stats['db']['error_details'] ) ) {
+			$stats['errors'] = array_merge( $stats['errors'], $stats['db']['error_details'] );
+		}
+	} else {
+		$stats['errors'][] = 'hash_mismatch';
+	}
 }

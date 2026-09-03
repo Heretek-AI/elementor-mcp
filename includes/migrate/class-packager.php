@@ -20,6 +20,9 @@ class EMCP_Tools_Packager {
 
 	const FORMAT_VERSION = 2;
 
+	/** Portable archive extension. */
+	const EXT = '.emcp';
+
 	/**
 	 * Absolute directory .emcp archives live in (uploads/emcp-backups).
 	 *
@@ -40,7 +43,7 @@ class EMCP_Tools_Packager {
 	 */
 	public static function archive_path( string $name ): string {
 		$name = sanitize_file_name( $name );
-		if ( '' === $name || '.emcp' !== substr( $name, -5 ) || false !== strpos( $name, '/' ) || false !== strpos( $name, '..' ) ) {
+		if ( '' === $name || self::EXT !== substr( $name, -5 ) || false !== strpos( $name, '/' ) || false !== strpos( $name, '..' ) ) {
 			return '';
 		}
 		$path = wp_normalize_path( self::backup_dir() . '/' . $name );
@@ -70,8 +73,8 @@ class EMCP_Tools_Packager {
 		if ( '' === $name ) {
 			$name = 'backup-' . gmdate( 'Y-m-d-His' );
 		}
-		if ( '.emcp' !== substr( $name, -5 ) ) {
-			$name .= '.emcp';
+		if ( self::EXT !== substr( $name, -5 ) ) {
+			$name .= self::EXT;
 		}
 		$zip_file = $dir . '/' . $name;
 		$tmp_sql  = $dir . '/.tmp-' . wp_generate_password( 8, false ) . '.sql';
@@ -167,7 +170,7 @@ class EMCP_Tools_Packager {
 	 */
 	public static function list_archives(): array {
 		$dir   = self::backup_dir();
-		$files = glob( $dir . '/*.emcp' ) ?: array(); // phpcs:ignore WordPress.WP.AlternativeFunctions
+		$files = glob( $dir . '/*' . self::EXT ) ?: array(); // phpcs:ignore WordPress.WP.AlternativeFunctions
 		$out   = array();
 		foreach ( $files as $f ) {
 			$size = filesize( $f );
@@ -219,34 +222,16 @@ class EMCP_Tools_Packager {
 				continue;
 			}
 			$count = 0;
-			$it    = new RecursiveIteratorIterator(
-				new RecursiveCallbackFilterIterator(
-					new RecursiveDirectoryIterator( $root, FilesystemIterator::SKIP_DOTS ),
-					static function ( $current ) use ( $skip_dirs ): bool {
-						if ( $current->isDir() ) {
-							$path = wp_normalize_path( $current->getPathname() );
-							foreach ( $skip_dirs as $skip ) {
-								if ( '' !== $skip && ( $path === $skip || 0 === strpos( $path, $skip . '/' ) ) ) {
-									return false;
-								}
-							}
-							return '.' !== $current->getFilename();
-						}
-						return true;
-					}
-				),
-				RecursiveIteratorIterator::LEAVES_ONLY
-			);
+			$it    = self::file_iterator( $root, $skip_dirs );
 			foreach ( $it as $file ) {
 				if ( ! $file->isFile() ) {
 					continue;
 				}
-				$local = wp_normalize_path( $file->getPathname() );
-				if ( 0 !== strpos( $local, $content_dir . '/' ) ) {
+				$zip_name = self::zip_relative_name( wp_normalize_path( $file->getPathname() ), $content_dir );
+				if ( '' === $zip_name ) {
 					continue; // Outside wp-content — never bundled.
 				}
-				$zip_name = 'files/' . ltrim( substr( $local, strlen( $content_dir ) ), '/' );
-				$zip->addFile( $local, $zip_name );
+				$zip->addFile( $file->getPathname(), $zip_name );
 				$count++;
 			}
 			if ( $count > 0 ) {
@@ -254,6 +239,60 @@ class EMCP_Tools_Packager {
 			}
 		}
 		return $added;
+	}
+
+	/**
+	 * Recursive file iterator over a root, pruning excluded directories.
+	 *
+	 * @param string   $root      Root directory (normalized).
+	 * @param string[] $skip_dirs Directories never descended into.
+	 * @return \RecursiveIteratorIterator
+	 */
+	private static function file_iterator( string $root, array $skip_dirs ) {
+		return new RecursiveIteratorIterator(
+			new RecursiveCallbackFilterIterator(
+				new RecursiveDirectoryIterator( $root, FilesystemIterator::SKIP_DOTS ),
+				static function ( $current ) use ( $skip_dirs ): bool {
+					if ( $current->isDir() ) {
+						return ! self::dir_is_skipped( $current->getPathname(), $skip_dirs );
+					}
+					return true;
+				}
+			),
+			RecursiveIteratorIterator::LEAVES_ONLY
+		);
+	}
+
+	/**
+	 * Whether a directory is inside an excluded path.
+	 *
+	 * @param string   $path      Normalized path.
+	 * @param string[] $skip_dirs Excluded roots.
+	 * @return bool
+	 */
+	private static function dir_is_skipped( string $path, array $skip_dirs ): bool {
+		$path = wp_normalize_path( $path );
+		foreach ( $skip_dirs as $skip ) {
+			if ( '' !== $skip && ( $path === $skip || 0 === strpos( $path, $skip . '/' ) ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Archive name for a file: files/<rel-to-wp-content>, or '' when the file
+	 * is outside wp-content.
+	 *
+	 * @param string $local       Normalized absolute path.
+	 * @param string $content_dir Normalized wp-content path.
+	 * @return string
+	 */
+	private static function zip_relative_name( string $local, string $content_dir ): string {
+		if ( 0 !== strpos( $local, $content_dir . '/' ) ) {
+			return '';
+		}
+		return 'files/' . ltrim( substr( $local, strlen( $content_dir ) ), '/' );
 	}
 
 	/**

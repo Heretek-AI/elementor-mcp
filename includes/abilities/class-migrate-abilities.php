@@ -193,62 +193,127 @@ class EMCP_Tools_Migrate_Abilities {
 
 		$endpoint    = untrailingslashit( $remote ) . '/wp-json/emcp-connector/v1';
 		$transfer_id = 'emcp-' . wp_generate_password( 12, false );
-		$chunk_size  = 2 * 1024 * 1024; // 2 MB.
+
+		$pushed = self::push_archive_packets( $path, $endpoint, $secret, $transfer_id );
+		if ( is_wp_error( $pushed ) ) {
+			return $pushed;
+		}
+		$job_id = self::push_finalize( $path, $endpoint, $secret, $transfer_id );
+		if ( is_wp_error( $job_id ) ) {
+			return $job_id;
+		}
+
+		// Poll the job until it settles (the connector restores inline, so this
+		// normally returns on the first poll; bounded at ~60 s).
+		$job = self::poll_job( $endpoint, $secret, $job_id );
+
+		$state = ( $job && isset( $job['state'] ) ) ? $job['state'] : 'unknown';
+		if ( 'error' === $state ) {
+			return new WP_Error( 'restore_failed', __( 'Destination reported an error during restore.', 'emcp-tools' ), array( 'job' => $job ) );
+		}
+
+		return array(
+			'success'    => true,
+			'message'    => __( 'Archive pushed and restored on the destination.', 'emcp-tools' ),
+			'remote_url' => untrailingslashit( $remote ),
+			'job_id'     => $job_id,
+			'state'      => $state,
+			'archive'    => basename( $path ),
+			'job'        => $job,
+		);
+	}
+
+	/**
+	 * Stream an archive to the connector as signed 2 MB packets.
+	 *
+	 * @param string $path        Archive path.
+	 * @param string $endpoint    Connector REST base.
+	 * @param string $secret      Shared secret.
+	 * @param string $transfer_id Transfer id for this push.
+	 * @return true|\WP_Error
+	 */
+	private function push_archive_packets( string $path, string $endpoint, string $secret, string $transfer_id ) {
+		$chunk_size = 2 * 1024 * 1024; // 2 MB.
+		$total      = (int) ceil( filesize( $path ) / $chunk_size );
 
 		$handle = fopen( $path, 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions
 		if ( false === $handle ) {
 			return new WP_Error( 'read_failed', __( 'Could not read the archive for upload.', 'emcp-tools' ) );
 		}
-		$total_chunks = (int) ceil( filesize( $path ) / $chunk_size );
 		$index = 0;
 		while ( ! feof( $handle ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions
 			$data = fread( $handle, $chunk_size ); // phpcs:ignore WordPress.WP.AlternativeFunctions
-			if ( false === $data || '' === $data ) {
+			if ( '' === $data || false === $data ) {
 				if ( feof( $handle ) ) {
 					break;
 				}
 				fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions
 				return new WP_Error( 'read_failed', __( 'Failed while reading the archive.', 'emcp-tools' ) );
 			}
-			$data_b64   = base64_encode( $data );
-			$chunk_sha  = hash( 'sha256', $data );
-			$canonical  = 'packet|' . $chunk_sha . '|' . $transfer_id . '|' . $index;
-			$response   = wp_remote_post(
+			$chunk_sha = hash( 'sha256', $data );
+			$canonical = 'packet|' . $chunk_sha . '|' . $transfer_id . '|' . $index;
+			$response  = wp_remote_post(
 				$endpoint . '/packet',
 				array(
 					'timeout' => 120,
 					'headers' => array(
-						'Content-Type'      => 'application/json',
-						'X-EMCP-Signature'  => hash_hmac( 'sha256', $canonical, $secret ),
+						'Content-Type'     => 'application/json',
+						'X-EMCP-Signature' => hash_hmac( 'sha256', $canonical, $secret ),
 					),
 					'body'    => wp_json_encode( array(
 						'transfer_id' => $transfer_id,
 						'index'       => $index,
-						'total'       => $total_chunks,
-						'data_b64'    => $data_b64,
+						'total'       => $total,
+						'data_b64'    => base64_encode( $data ),
 						'sha256'      => $chunk_sha,
 					) ),
 				)
 			);
-			if ( is_wp_error( $response ) ) {
+			$error = $this->packet_error( $response, $index );
+			if ( is_wp_error( $error ) ) {
 				fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions
-				return new WP_Error(
-					'packet_failed',
-					sprintf( /* translators: 1: error message. */ __( 'Upload failed at packet %1$d: %2$s', 'emcp-tools' ), $index, $response->get_error_message() ),
-					array( 'resume_offset' => $index )
-				);
-			}
-			$code  = (int) wp_remote_retrieve_response_code( $response );
-			$rbody = json_decode( (string) wp_remote_retrieve_body( $response ), true );
-			if ( $code < 200 || $code >= 300 || ! is_array( $rbody ) || ! empty( $rbody['code'] ) ) {
-				fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions
-				$msg = is_array( $rbody ) && isset( $rbody['message'] ) ? (string) $rbody['message'] : sprintf( 'HTTP %d', $code );
-				return new WP_Error( 'packet_rejected', sprintf( /* translators: 1: packet index, 2: message. */ __( 'Destination rejected packet %1$d: %2$s', 'emcp-tools' ), $index, $msg ), array( 'resume_offset' => $index ) );
+				return $error;
 			}
 			$index++;
 		}
 		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+		return true;
+	}
 
+	/**
+	 * Normalize a packet upload response into a WP_Error, or null when accepted.
+	 *
+	 * @param mixed $response wp_remote_post result.
+	 * @param int   $index    Packet index (for resume reporting).
+	 * @return \WP_Error|null
+	 */
+	private function packet_error( $response, int $index ) {
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'packet_failed',
+				sprintf( /* translators: 1: error message. */ __( 'Upload failed at packet %1$d: %2$s', 'emcp-tools' ), $index, $response->get_error_message() ),
+				array( 'resume_offset' => $index )
+			);
+		}
+		$code  = (int) wp_remote_retrieve_response_code( $response );
+		$rbody = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+		if ( $code < 200 || $code >= 300 || ! is_array( $rbody ) || ! empty( $rbody['code'] ) ) {
+			$msg = is_array( $rbody ) && isset( $rbody['message'] ) ? (string) $rbody['message'] : sprintf( 'HTTP %d', $code );
+			return new WP_Error( 'packet_rejected', sprintf( /* translators: 1: packet index, 2: message. */ __( 'Destination rejected packet %1$d: %2$s', 'emcp-tools' ), $index, $msg ), array( 'resume_offset' => $index ) );
+		}
+		return null;
+	}
+
+	/**
+	 * Ask the connector to assemble + verify the transfer and start the restore.
+	 *
+	 * @param string $path        Archive path (for its sha256).
+	 * @param string $endpoint    Connector REST base.
+	 * @param string $secret      Shared secret.
+	 * @param string $transfer_id Transfer id just pushed.
+	 * @return string|\WP_Error The destination job id.
+	 */
+	private function push_finalize( string $path, string $endpoint, string $secret, string $transfer_id ) {
 		$whole_sha = hash_file( 'sha256', $path );
 		$canonical = 'finalize|' . $whole_sha . '|' . $transfer_id;
 		$response  = wp_remote_post(
@@ -271,21 +336,29 @@ class EMCP_Tools_Migrate_Abilities {
 			$msg = is_array( $rbody ) && isset( $rbody['message'] ) ? (string) $rbody['message'] : sprintf( 'HTTP %d', $code );
 			return new WP_Error( 'finalize_rejected', sprintf( /* translators: %s: message. */ __( 'Destination restore did not start: %s', 'emcp-tools' ), $msg ) );
 		}
-		$job_id = (string) $rbody['job_id'];
+		return (string) $rbody['job_id'];
+	}
 
-		// Poll the job until it settles (the connector restores inline, so this
-		// normally returns on the first poll; bounded at ~60 s).
+	/**
+	 * Poll a connector job until it settles.
+	 *
+	 * @param string $endpoint Connector REST base.
+	 * @param string $secret   Shared secret.
+	 * @param string $job_id   Destination job id.
+	 * @return array|null Job payload (state done/error/…), null when still pending after the bound.
+	 */
+	private function poll_job( string $endpoint, string $secret, string $job_id ) {
 		$job = null;
 		for ( $i = 0; $i < 30; $i++ ) {
-			$job_response = wp_remote_get(
+			$response = wp_remote_get(
 				$endpoint . '/job/' . rawurlencode( $job_id ),
 				array(
 					'timeout' => 30,
 					'headers' => array( 'X-EMCP-Signature' => hash_hmac( 'sha256', 'job|' . $job_id, $secret ) ),
 				)
 			);
-			if ( ! is_wp_error( $job_response ) ) {
-				$body = json_decode( (string) wp_remote_retrieve_body( $job_response ), true );
+			if ( ! is_wp_error( $response ) ) {
+				$body = json_decode( (string) wp_remote_retrieve_body( $response ), true );
 				if ( is_array( $body ) && isset( $body['state'] ) ) {
 					$job = $body;
 					if ( 'done' === $body['state'] || 'error' === $body['state'] ) {
@@ -295,21 +368,7 @@ class EMCP_Tools_Migrate_Abilities {
 			}
 			sleep( 2 ); // phpcs:ignore WordPress.PHP -- poll cadence for a remote batch job.
 		}
-
-		$state = ( $job && isset( $job['state'] ) ) ? $job['state'] : 'unknown';
-		if ( 'error' === $state ) {
-			return new WP_Error( 'restore_failed', __( 'Destination reported an error during restore.', 'emcp-tools' ), array( 'job' => $job ) );
-		}
-
-		return array(
-			'success'    => true,
-			'message'    => __( 'Archive pushed and restored on the destination.', 'emcp-tools' ),
-			'remote_url' => untrailingslashit( $remote ),
-			'job_id'     => $job_id,
-			'state'      => $state,
-			'archive'    => basename( $path ),
-			'job'        => $job,
-		);
+		return $job;
 	}
 
 	public function execute_sync( array $args ) {

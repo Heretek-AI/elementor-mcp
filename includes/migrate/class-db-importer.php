@@ -60,34 +60,39 @@ class EMCP_Tools_DB_Importer {
 					$stats['skipped']++;
 					continue;
 				}
-				$result = $wpdb->query( $trimmed ); // phpcs:ignore WordPress.DB -- validated dump statement; admin-authorized restore.
-				if ( false === $result ) {
-					$stats['errors']++;
-					if ( count( $stats['error_details'] ) < 20 ) {
-						$stats['error_details'][] = array(
-							'error' => $wpdb->last_error,
-							'stmt'  => self::truncate( $trimmed, 200 ),
-						);
-					}
-				} else {
-					$stats['executed']++;
-				}
+				self::run_statement( $trimmed, $stats );
 			}
 		}
 		// Trailing statement with no final ';' — execute it if anything remains.
-		$buffer = self::strip_leading_comments( $buffer );
-		if ( '' !== trim( $buffer ) && ! self::is_skip_directive( trim( $buffer ) ) ) {
+		$trimmed = self::strip_leading_comments( $buffer );
+		if ( '' !== $trimmed && ! self::is_skip_directive( $trimmed ) ) {
 			$stats['statements']++;
-			$trimmed = trim( $buffer );
-			$result = $wpdb->query( $trimmed ); // phpcs:ignore WordPress.DB -- validated dump statement.
-			if ( false === $result ) {
-				$stats['errors']++;
-			} else {
-				$stats['executed']++;
-			}
+			self::run_statement( $trimmed, $stats );
 		}
 		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions
 		return $stats;
+	}
+
+	/**
+	 * Run one dump statement through the live connection, updating stats.
+	 *
+	 * @param string $sql   Trimmed statement (directives already filtered).
+	 * @param array  $stats In/out counters.
+	 */
+	private static function run_statement( string $sql, array &$stats ): void {
+		global $wpdb;
+		$result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB -- validated dump statement; admin-authorized restore.
+		if ( false === $result ) {
+			$stats['errors']++;
+			if ( count( $stats['error_details'] ) < 20 ) {
+				$stats['error_details'][] = array(
+					'error' => $wpdb->last_error,
+					'stmt'  => self::truncate( $sql, 200 ),
+				);
+			}
+		} else {
+			$stats['executed']++;
+		}
 	}
 
 	/**
@@ -108,7 +113,7 @@ class EMCP_Tools_DB_Importer {
 	 * @param string $buffer In/out accumulator (reference).
 	 * @return string|null The statement including its trailing ';', or null when no complete statement exists yet.
 	 */
-	private static function extract_statement( string &$buffer ) {
+	private static function extract_statement( string &$buffer ) { // NOSONAR -- a per-character SQL quote/comment state machine has no meaningful decomposition below its branch table.
 		$len = strlen( $buffer );
 		$i   = 0;
 		$sq  = false; // Single-quoted string.

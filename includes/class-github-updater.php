@@ -193,7 +193,7 @@ class EMCP_Tools_GitHub_Updater {
 		}
 
 		$info                = new stdClass();
-		$info->name          = 'EMCP Tools Unlocked';
+		$info->name          = 'Heretek Control Core: Unlocked Machine Rites';
 		$info->slug          = $this->slug;
 		$info->version       = $release['version'];
 		$info->author        = '<a href="https://github.com/Heretek-AI">Heretek AI</a>';

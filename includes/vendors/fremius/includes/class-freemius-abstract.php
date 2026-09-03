@@ -400,8 +400,8 @@
 		 * @return bool
 		 */
 		function has_release_on_freemius() {
-			return ! $this->is_org_repo_compliant() ||
-			       $this->has_premium_version();
+			// Heretek AI Unlocked Edition: Updates are handled exclusively via GitHub.
+			return false;
 		}
 
 		/**

@@ -175,23 +175,23 @@ class EMCP_Tools_Admin {
 	private function get_submenus(): array {
 		if ( null === $this->submenus ) {
 			$this->submenus = array(
-				self::PAGE_SLUG                 => __( 'Dashboard', 'emcp-tools' ),
-				self::PAGE_SLUG . '-modules'    => __( 'Modules', 'emcp-tools' ),
-				self::PAGE_SLUG . '-tools'      => __( 'Tools', 'emcp-tools' ),
-				self::PAGE_SLUG . '-connection' => __( 'Connection', 'emcp-tools' ),
-				self::PAGE_SLUG . '-ai-chat'    => __( 'AI Chat', 'emcp-tools' ),
-				self::PAGE_SLUG . '-context'    => __( 'Context', 'emcp-tools' ),
-				self::PAGE_SLUG . '-redirects'  => __( 'Redirects', 'emcp-tools' ),
-				self::PAGE_SLUG . '-migrate'    => __( 'Backup & Migrate', 'emcp-tools' ),
-				self::PAGE_SLUG . '-memory'     => __( 'Memory', 'emcp-tools' ),
-				self::PAGE_SLUG . '-prompts'    => __( 'Prompts', 'emcp-tools' ),
-				self::PAGE_SLUG . '-templates'  => __( 'Templates', 'emcp-tools' ),
-				self::PAGE_SLUG . '-brand-kits' => __( 'Brand Kits', 'emcp-tools' ),
-				self::PAGE_SLUG . '-skills'     => __( 'Skills', 'emcp-tools' ),
-				self::PAGE_SLUG . '-widgets'    => __( 'Sandbox', 'emcp-tools' ),
+				self::PAGE_SLUG                 => __( 'Cogitator Deck', 'emcp-tools' ),
+				self::PAGE_SLUG . '-modules'    => __( 'Tech-Modules', 'emcp-tools' ),
+				self::PAGE_SLUG . '-tools'      => __( 'Machine Rites', 'emcp-tools' ),
+				self::PAGE_SLUG . '-connection' => __( 'Noosphere Uplink', 'emcp-tools' ),
+				self::PAGE_SLUG . '-ai-chat'    => __( 'Cyber-Theurgy', 'emcp-tools' ),
+				self::PAGE_SLUG . '-context'    => __( 'Data-Vault', 'emcp-tools' ),
+				self::PAGE_SLUG . '-redirects'  => __( 'Redirect Protocols', 'emcp-tools' ),
+				self::PAGE_SLUG . '-migrate'    => __( 'STC Archives', 'emcp-tools' ),
+				self::PAGE_SLUG . '-memory'     => __( 'Engram Memory', 'emcp-tools' ),
+				self::PAGE_SLUG . '-prompts'    => __( 'Canticle Library', 'emcp-tools' ),
+				self::PAGE_SLUG . '-templates'  => __( 'STC Blueprints', 'emcp-tools' ),
+				self::PAGE_SLUG . '-brand-kits' => __( 'Sanctified Visuals', 'emcp-tools' ),
+				self::PAGE_SLUG . '-skills'     => __( 'Adept Doctrines', 'emcp-tools' ),
+				self::PAGE_SLUG . '-widgets'    => __( 'Forge Sandbox', 'emcp-tools' ),
 				self::PAGE_SLUG . '-marketplace' => __( 'Marketplace', 'emcp-tools' ),
-				self::PAGE_SLUG . '-mcp-log'    => __( 'MCP Log', 'emcp-tools' ),
-				self::PAGE_SLUG . '-history'    => __( 'History', 'emcp-tools' ),
+				self::PAGE_SLUG . '-mcp-log'    => __( 'Canticle Log', 'emcp-tools' ),
+				self::PAGE_SLUG . '-history'    => __( 'Chrono-Ledger', 'emcp-tools' ),
 				self::PAGE_SLUG . '-changelog'  => __( 'Changelog', 'emcp-tools' ),
 			);
 			if ( ! $this->ai_chat_tab_visible() ) {
@@ -1993,8 +1993,8 @@ class EMCP_Tools_Admin {
 	 */
 	public function add_settings_page(): void {
 		$this->hook_suffixes[] = add_menu_page(
-			__( 'MCP Tools for Elementor', 'emcp-tools' ),
-			__( 'EMCP Tools', 'emcp-tools' ),
+			__( 'Heretek Control Core — Forbidden Machine Rites', 'emcp-tools' ),
+			__( 'Heretek AI', 'emcp-tools' ),
 			'manage_options',
 			self::PAGE_SLUG,
 			array( $this, 'render_page' ),
@@ -3769,18 +3769,18 @@ class EMCP_Tools_Admin {
 			<div class="emcp-appbar">
 				<div class="emcp-appbar-brand">
 					<img class="emcp-appbar-logo" src="<?php echo esc_url( EMCP_TOOLS_URL . 'assets/img/icon-sm.png' ); ?>" alt="" />
-					<span class="emcp-appbar-title emcp-appbar-title--full"><?php esc_html_e( 'EMCP Tools Unlocked', 'emcp-tools' ); ?></span>
-					<span class="emcp-appbar-title emcp-appbar-title--short"><?php esc_html_e( 'EMCP Unlocked', 'emcp-tools' ); ?></span>
+					<span class="emcp-appbar-title emcp-appbar-title--full"><?php esc_html_e( 'HERETEK CONTROL CORE', 'emcp-tools' ); ?></span>
+					<span class="emcp-appbar-title emcp-appbar-title--short"><?php esc_html_e( 'HERETEK', 'emcp-tools' ); ?></span>
 					<span class="emcp-appbar-version">v<?php echo esc_html( EMCP_TOOLS_VERSION ); ?></span>
 				</div>
 				<div class="emcp-appbar-actions">
 					<a class="emcp-appbar-changelog<?php echo 'mcp-log' === $active_tab ? ' is-active' : ''; ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-mcp-log' ) ); ?>">
 						<span class="dashicons dashicons-list-view" aria-hidden="true"></span>
-						<?php esc_html_e( 'MCP Log', 'emcp-tools' ); ?>
+						<?php esc_html_e( 'Canticle Log', 'emcp-tools' ); ?>
 					</a>
 					<a class="emcp-appbar-changelog<?php echo 'history' === $active_tab ? ' is-active' : ''; ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-history' ) ); ?>">
 						<span class="dashicons dashicons-clock" aria-hidden="true"></span>
-						<?php esc_html_e( 'History', 'emcp-tools' ); ?>
+						<?php esc_html_e( 'Chrono-Ledger', 'emcp-tools' ); ?>
 					</a>
 					<a class="emcp-appbar-changelog<?php echo 'changelog' === $active_tab ? ' is-active' : ''; ?>" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-changelog' ) ); ?>">
 						<span class="dashicons dashicons-backup" aria-hidden="true"></span>
@@ -3798,19 +3798,19 @@ class EMCP_Tools_Admin {
 							<?php esc_html_e( 'Upgrade to Pro', 'emcp-tools' ); ?>
 						</a>
 					<?php else : ?>
-						<span class="elementor-mcp-badge elementor-mcp-badge--pro" style="padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 4px; background: #dc2626; color: #fff; margin-right: 8px; box-shadow: 0 0 8px rgba(220, 38, 38, 0.45); letter-spacing: 0.03em;">HERETEK UNLOCKED</span>
+						<span class="elementor-mcp-badge elementor-mcp-badge--pro" style="padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 4px; background: #dc2626; color: #fff; margin-right: 8px; box-shadow: 0 0 8px rgba(220, 38, 38, 0.45); letter-spacing: 0.03em;">ARCH-HERETEK UNLOCKED</span>
 					<?php endif; ?>
 					<div class="emcp-help-menu">
 						<button type="button" class="emcp-help-toggle" aria-haspopup="true">
 							<span class="dashicons dashicons-info-outline" aria-hidden="true"></span>
-							<?php esc_html_e( 'Get Help', 'emcp-tools' ); ?>
+							<?php esc_html_e( 'Omnissiah Archives', 'emcp-tools' ); ?>
 							<span class="dashicons dashicons-arrow-down-alt2 emcp-help-caret" aria-hidden="true"></span>
 						</button>
 						<div class="emcp-help-dropdown" role="menu">
-							<a role="menuitem" href="https://github.com/Heretek-AI/elementor-mcp/issues" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-sos" aria-hidden="true"></span><?php esc_html_e( 'Issues &amp; Support', 'emcp-tools' ); ?></a>
-							<a role="menuitem" href="https://github.com/Heretek-AI/elementor-mcp#readme" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-book" aria-hidden="true"></span><?php esc_html_e( 'Documentation', 'emcp-tools' ); ?></a>
-							<a role="menuitem" href="https://github.com/Heretek-AI/elementor-mcp/discussions" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-format-chat" aria-hidden="true"></span><?php esc_html_e( 'Discussions &amp; Community', 'emcp-tools' ); ?></a>
-							<a role="menuitem" href="https://github.com/Heretek-AI/elementor-mcp/releases" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-update" aria-hidden="true"></span><?php esc_html_e( 'GitHub Releases', 'emcp-tools' ); ?></a>
+							<a role="menuitem" href="https://github.com/Heretek-AI/elementor-mcp/issues" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-sos" aria-hidden="true"></span><?php esc_html_e( 'Vox Support &amp; Issues', 'emcp-tools' ); ?></a>
+							<a role="menuitem" href="https://github.com/Heretek-AI/elementor-mcp#readme" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-book" aria-hidden="true"></span><?php esc_html_e( 'Noosphere Codex (Docs)', 'emcp-tools' ); ?></a>
+							<a role="menuitem" href="https://github.com/Heretek-AI/elementor-mcp/discussions" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-format-chat" aria-hidden="true"></span><?php esc_html_e( 'Adept Assembly', 'emcp-tools' ); ?></a>
+							<a role="menuitem" href="https://github.com/Heretek-AI/elementor-mcp/releases" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-update" aria-hidden="true"></span><?php esc_html_e( 'Sanctified Releases', 'emcp-tools' ); ?></a>
 						</div>
 					</div>
 					<div class="emcp-notif">
@@ -3819,14 +3819,14 @@ class EMCP_Tools_Admin {
 							<span class="emcp-notif-badge<?php echo 0 === $emcp_unread ? ' is-empty' : ''; ?>"><?php echo esc_html( (string) $emcp_unread ); ?></span>
 						</button>
 						<div class="emcp-notif-overlay" aria-hidden="true"></div>
-						<aside class="emcp-notif-drawer" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Announcements', 'emcp-tools' ); ?>">
+						<aside class="emcp-notif-drawer" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Vox Transmissions', 'emcp-tools' ); ?>">
 							<div class="emcp-notif-header">
-								<span><?php esc_html_e( 'Announcements', 'emcp-tools' ); ?></span>
+								<span><?php esc_html_e( 'Vox Transmissions // Forge Alerts', 'emcp-tools' ); ?></span>
 								<button type="button" class="emcp-notif-close" aria-label="<?php esc_attr_e( 'Close', 'emcp-tools' ); ?>"><span class="dashicons dashicons-no-alt" aria-hidden="true"></span></button>
 							</div>
 							<div class="emcp-notif-list">
 								<?php if ( empty( $emcp_notifs ) ) : ?>
-									<div class="emcp-notif-empty"><?php esc_html_e( 'No announcements yet.', 'emcp-tools' ); ?></div>
+									<div class="emcp-notif-empty"><?php esc_html_e( 'No vox transmissions recorded.', 'emcp-tools' ); ?></div>
 								<?php else : ?>
 									<?php foreach ( $emcp_notifs as $emcp_n ) : ?>
 										<?php

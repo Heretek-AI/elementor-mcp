@@ -1,6 +1,6 @@
-=== MCP Tools for Elementor ===
-Contributors: mianshahzadraza
-Tags: elementor, mcp, ai, page-builder, automation
+=== Heretek Control Core: Unlocked Machine Rites ===
+Contributors: Heretek-AI, mianshahzadraza
+Tags: heretek, mechanicus, elementor, mcp, ai, omnissiah
 Requires at least: 6.9
 Tested up to: 7.1
 Stable tag: 3.15.0
@@ -8,7 +8,7 @@ Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Extends the WordPress MCP Adapter to expose Elementor data, widgets, and page design tools as MCP tools for AI agents.
+Forbidden cyber-theurgy protocols bridging WordPress, Elementor & Gutenberg to AI Machine Spirits via the Model Context Protocol. All 269 abilities sanctified & unlocked by Heretek AI.
 
 == Description ==
 

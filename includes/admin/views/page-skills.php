@@ -59,8 +59,8 @@ if ( $emcp_tools_has_pro && defined( 'EMCP_TOOLS_DIR' ) ) {
 	<div class="elementor-mcp-pro-prompts-header">
 		<div class="elementor-mcp-pro-prompts-heading">
 			<h2>
-				<?php esc_html_e( 'EMCP Skill for AI Agents', 'emcp-tools' ); ?>
-				<span class="elementor-mcp-badge elementor-mcp-badge--pro">PRO</span>
+				<?php esc_html_e( 'Adept Doctrines // Agent Skills', 'emcp-tools' ); ?>
+				<span class="elementor-mcp-badge elementor-mcp-badge--pro">ARCH-HERETEK UNLOCKED</span>
 			</h2>
 			<p class="description">
 				<?php esc_html_e( 'Pre-written Agent Skills that teach Claude (and any compatible AI client) exactly how to use the EMCP Tools MCP. The bundle includes three skills: Elementor page building (with industry skill packs), a Performance Analyzer skill, and a Security & Malware Scanner skill (which pairs the security scanner with the filesystem tools to confirm and clean findings). Install once per machine — every future session that loads them knows your workflow.', 'emcp-tools' ); ?>

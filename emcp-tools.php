@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name:       EMCP Tools Unlocked
+ * Plugin Name:       Heretek Control Core: Unlocked Machine Rites
  * Plugin URI:        https://github.com/Heretek-AI/elementor-mcp
- * Description:       Community-unlocked enterprise edition of Elementor MCP Tools by Heretek AI. Exposes Elementor & WordPress as MCP tools with all 269 Pro features included free.
+ * Description:       Forbidden cyber-theurgy protocols bridging WordPress, Elementor & Gutenberg to AI Machine Spirits via the Model Context Protocol. All 269 abilities sanctified & unlocked by Heretek AI.
  * Version:           3.15.0
  * Requires at least: 6.9
  * Tested up to:      7.1
@@ -205,11 +205,11 @@ if ( ! function_exists( 'emcp_tools_fs' ) ) {
 				'public_key'          => 'pk_2b2a026d5c27655581635abcd4556',
 				'is_premium'          => $emcp_tools_is_premium,
 				'premium_suffix'      => 'Pro',
-				'has_premium_version' => true,
+				'has_premium_version' => false,
 				'has_addons'          => false,
-				'has_paid_plans'      => true,
+				'has_paid_plans'      => false,
 				'is_org_compliant'    => false,
-				'has_affiliation'     => 'selected',
+				'has_affiliation'     => false,
 				'menu'                => array(
 					'slug'           => 'emcp-tools',
 					'support'        => false,
@@ -224,6 +224,25 @@ if ( ! function_exists( 'emcp_tools_fs' ) ) {
 	emcp_tools_fs();
 	// Signal that SDK was initiated.
 	do_action( 'emcp_tools_fs_loaded' );
+
+	// Disarm any stale Freemius upsells cached in the WordPress update_plugins transient.
+	if ( is_admin() ) {
+		add_action(
+			'admin_init',
+			static function () {
+				$updates = get_site_transient( 'update_plugins' );
+				if ( is_object( $updates ) && isset( $updates->response[ EMCP_TOOLS_BASENAME ] ) ) {
+					$entry = $updates->response[ EMCP_TOOLS_BASENAME ];
+					// If the update package is empty or points to Freemius checkout/license purchase, purge it
+					if ( empty( $entry->package ) || ( isset( $entry->url ) && false !== strpos( $entry->url, 'freemius' ) ) ) {
+						unset( $updates->response[ EMCP_TOOLS_BASENAME ] );
+						set_site_transient( 'update_plugins', $updates );
+					}
+				}
+			},
+			5
+		);
+	}
 
 	// Trim the Freemius-injected submenu items we surface elsewhere: Contact Us
 	// (Help & Support lives in the plugin header), Affiliation (shown in the

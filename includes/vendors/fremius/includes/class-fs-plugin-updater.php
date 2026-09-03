@@ -81,6 +81,9 @@
          * @since  1.0.4
          */
         private function filters() {
+            // Heretek AI Unlocked Edition: Disarm all Freemius update and upsell hooks.
+            return;
+
             // Override request for plugin information
             add_filter( 'plugins_api', array( &$this, 'plugins_api_filter' ), 10, 3 );
 
@@ -339,8 +342,8 @@
          */
         function edit_and_echo_plugin_update_row( $file, $plugin_data ) {
             $plugin_update_row = ob_get_clean();
-
-            $current = get_site_transient( 'update_plugins' );
+            echo $plugin_update_row;
+            return;
             if ( ! isset( $current->response[ $file ] ) ) {
                 echo $plugin_update_row;
 

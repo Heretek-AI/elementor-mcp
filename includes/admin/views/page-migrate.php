@@ -40,16 +40,16 @@ $backups = class_exists( 'EMCP_Tools_Packager' ) ? EMCP_Tools_Packager::list_arc
 
 <div class="elementor-mcp-migrate">
 	<h2>
-		<?php esc_html_e( 'Backup, Sync & Migrate', 'emcp-tools' ); ?>
-		<span class="elementor-mcp-badge elementor-mcp-badge--pro">PRO UNLOCKED</span>
+		<?php esc_html_e( 'STC Archives // Backup, Sync & Migrate', 'emcp-tools' ); ?>
+		<span class="elementor-mcp-badge elementor-mcp-badge--pro">ARCH-HERETEK UNLOCKED</span>
 	</h2>
 	<p class="description">
-		<?php esc_html_e( 'Create portable .emcp site archives, download backups, and synchronize changes across staging and live environments.', 'emcp-tools' ); ?>
+		<?php esc_html_e( 'Package, export, and synchronize Standard Template Constructs (.emcp archives) across Forge environments.', 'emcp-tools' ); ?>
 	</p>
 
 	<div class="postbox" style="margin-top: 20px; max-width: 700px;">
 		<div class="postbox-header">
-			<h3 class="hndle"><?php esc_html_e( 'Create New Backup', 'emcp-tools' ); ?></h3>
+			<h3 class="hndle"><?php esc_html_e( 'Forge New STC Archive', 'emcp-tools' ); ?></h3>
 		</div>
 		<div class="inside">
 			<form method="post" action="">

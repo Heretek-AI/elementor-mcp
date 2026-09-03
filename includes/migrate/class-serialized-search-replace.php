@@ -280,10 +280,15 @@ class EMCP_Tools_Serialized_Search_Replace {
             }
             $wpdb->update( $table, $changes, array( $pk => $row[ $pk ] ) ); // phpcs:ignore WordPress.DB -- keyed by PK.
             $result['affected']++;
-            if ( count( $result['before_rows'] ) < $before_cap ) {
-                $result['before_rows'][] = $row;
-            } else {
-                $result['partial'] = true;
+            // before_cap === 0 means the caller wants no before-images (e.g. no
+            // change ledger available); that is not truncation, so partial stays
+            // untouched. Partial is reserved for real row/key/query truncation.
+            if ( $before_cap > 0 ) {
+                if ( count( $result['before_rows'] ) < $before_cap ) {
+                    $result['before_rows'][] = $row;
+                } else {
+                    $result['partial'] = true;
+                }
             }
         }
         return $result;

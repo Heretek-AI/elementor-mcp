@@ -15,6 +15,11 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 class EMCP_Tools_Search_Replace {
 
 	public static function replace( $data, string $search, string $replace ) {
+		// Defensive: the runtime loader loads the engine first (FILES order),
+		// but a lone require of this file must never fatal.
+		if ( ! class_exists( 'EMCP_Tools_Serialized_Search_Replace' ) ) {
+			return $data;
+		}
 		return EMCP_Tools_Serialized_Search_Replace::replace( $data, $search, $replace );
 	}
 }

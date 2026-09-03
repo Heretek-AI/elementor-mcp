@@ -109,7 +109,9 @@ class Fake_Wpdb {
 		array( 'id' => 1, 'name' => 'Hello http://old-site.com world' ),
 		array( 'id' => 2, 'name' => 'plain' ),
 	);
+	public $walk_rows  = array( array( 'id' => 3, 'name' => 'http://old-site.com fixture' ) );
 	public $queries = array();
+	public $updates = array();
 
 	public function get_col( $sql ) {
 		if ( 0 === strpos( ltrim( $sql ), 'SHOW TABLES' ) ) { return $this->tables; }
@@ -121,8 +123,36 @@ class Fake_Wpdb {
 		return null;
 	}
 	public function get_results( $sql, $output = OBJECT ) {
+		if ( false !== strpos( $sql, 'DESCRIBE' ) ) {
+			$out = array();
+			foreach ( $this->columns as $col ) {
+				$c          = new stdClass();
+				$c->Field   = $col;
+				$c->Type    = ( 'id' === $col ) ? 'bigint(20)' : 'varchar(255)';
+				$out[]      = $c;
+			}
+			return $out;
+		}
+		if ( false !== strpos( $sql, "SHOW KEYS" ) ) {
+			return array( (object) array( 'Column_name' => 'id' ) );
+		}
+		if ( false !== strpos( $sql, 'LIKE' ) ) { return $this->walk_rows; }
 		if ( false !== strpos( $sql, 'LIMIT 0, 400' ) ) { return $this->rows; }
 		return array(); // Second chunk is empty -> exporter stops.
+	}
+	public function prepare( $query, $args = array() ) {
+		if ( ! is_array( $args ) ) {
+			$args = array_slice( func_get_args(), 1 );
+		}
+		foreach ( $args as $a ) {
+			$literal = ( is_int( $a ) || is_float( $a ) ) ? (string) $a : "'" . addslashes( (string) $a ) . "'";
+			$query   = preg_replace( '/%[sd]/', $literal, $query, 1 );
+		}
+		return $query;
+	}
+	public function update( $table, $data, $where ) {
+		$this->updates[] = array( 'table' => $table, 'data' => $data, 'where' => $where );
+		return 1;
 	}
 	public function _real_escape( $value ) { return addslashes( (string) $value ); }
 	public function esc_like( $value ) { return $value; }
@@ -272,5 +302,16 @@ assert( count( $found ) === 1, 'list_archives did not include the new archive' )
 assert( EMCP_Tools_Packager::delete_archive( $name ), 'delete_archive returned false' );
 assert( ! is_file( $arch ), 'delete_archive left the file behind' );
 echo "PASS: packager create/list/read/delete round trip verified\n\n";
+
+echo "=== TEST 9: walk_table with before_cap = 0 ===\n";
+$walker = new Fake_Wpdb();
+$walker->walk_rows = array( array( 'id' => 3, 'name' => 'Hello http://old-site.com world' ) );
+$GLOBALS['wpdb'] = $walker;
+$r9 = EMCP_Tools_Serialized_Search_Replace::walk_table( $walker, 'wpx', 'http://old-site.com', 'https://new-site.com', 0, 0 );
+assert( $r9['affected'] >= 1, 'walk_table rewrote no rows' );
+assert( $r9['before_rows'] === array(), 'before_cap=0 must not capture before-images' );
+assert( false === $r9['partial'], 'before_cap=0 must not set partial (no capture is not truncation)' );
+assert( count( $walker->updates ) >= 1, 'walk_table did not update rows' );
+echo "PASS: before_cap=0 captured no before-images and did not claim partial\n\n";
 
 echo "ALL MIGRATE & PACKAGER TEST SUITES PASSED 100%!\n";

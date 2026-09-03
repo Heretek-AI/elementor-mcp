@@ -404,12 +404,12 @@ function emcp_connector_replace_value( $value, string $search, string $replace )
  * @param string $new_url Destination URL.
  * @return int Rows rewritten.
  */
-function emcp_connector_search_replace( string $old_url, string $new_url ): int {
+function emcp_connector_search_replace( string $old_url, string $new_url ): array {
 	if ( '' === $old_url || $old_url === $new_url ) {
-		return 0;
+		return array( 'rows' => 0, 'partial' => false );
 	}
 	global $wpdb;
-	$total = 0;
+	$result  = array( 'rows' => 0, 'partial' => false );
 	foreach ( emcp_connector_data_tables() as $table ) {
 		$pks = $wpdb->get_results( "SHOW KEYS FROM `{$table}` WHERE Key_name = 'PRIMARY'" ); // phpcs:ignore WordPress.DB
 		if ( count( $pks ) !== 1 ) {
@@ -420,9 +420,11 @@ function emcp_connector_search_replace( string $old_url, string $new_url ): int 
 		if ( empty( $text_cols ) ) {
 			continue;
 		}
-		$total += emcp_connector_rewrite_rows( $table, $pk, $text_cols, $old_url, $new_url );
+		$per_table = emcp_connector_rewrite_rows( $table, $pk, $text_cols, $old_url, $new_url );
+		$result['rows']    += $per_table['rows'];
+		$result['partial'] = $result['partial'] || $per_table['partial'];
 	}
-	return $total;
+	return $result;
 }
 
 /**
@@ -481,9 +483,10 @@ function emcp_connector_text_columns( string $table ): array {
  * @param string[] $text_cols Text columns to scan/rewrite.
  * @param string   $old_url  Source URL.
  * @param string   $new_url  Destination URL.
- * @return int Rows updated.
+ * @return array  { rows: int, partial: bool } — partial when more than the
+ *                per-table cap (5000) matched and were left for a later run.
  */
-function emcp_connector_rewrite_rows( string $table, string $pk, array $text_cols, string $old_url, string $new_url ): int {
+function emcp_connector_rewrite_rows( string $table, string $pk, array $text_cols, string $old_url, string $new_url ): array {
 	global $wpdb;
 	$like  = '%' . $wpdb->esc_like( $old_url ) . '%';
 	$where = array();
@@ -492,10 +495,14 @@ function emcp_connector_rewrite_rows( string $table, string $pk, array $text_col
 		$where[] = "`{$col}` LIKE %s";
 		$args[]  = $like;
 	}
-	$sql  = "SELECT `{$pk}`, `" . implode( '`, `', $text_cols ) . "` FROM `{$table}` WHERE (" . implode( ' OR ', $where ) . ') LIMIT 5000';
+	$sql  = "SELECT `{$pk}`, `" . implode( '`, `', $text_cols ) . "` FROM `{$table}` WHERE (" . implode( ' OR ', $where ) . ') LIMIT 5001';
 	$rows = $wpdb->get_results( $wpdb->prepare( $sql, $args ), ARRAY_A ); // phpcs:ignore WordPress.DB -- prepared; identifier-quoted.
 	if ( null === $rows ) {
-		return 0;
+		return array( 'rows' => 0, 'partial' => false );
+	}
+	$partial = count( $rows ) > 5000;
+	if ( $partial ) {
+		$rows = array_slice( $rows, 0, 5000 );
 	}
 
 	$updated = 0;
@@ -515,7 +522,7 @@ function emcp_connector_rewrite_rows( string $table, string $pk, array $text_col
 			$updated++;
 		}
 	}
-	return $updated;
+	return array( 'rows' => $updated, 'partial' => $partial );
 }
 
 /** Place files/ entries under wp-content (traversal-guarded). */
@@ -594,14 +601,25 @@ function emcp_connector_restore_archive( string $archive ): array {
 	$work = emcp_connector_base_dir() . '/restore-' . wp_generate_password( 8, false );
 	wp_mkdir_p( $work );
 
+	// Capture the destination URL BEFORE the import replaces wp_options — the
+	// in-memory option cache usually survives, but we must not depend on it.
+	$dest_url = home_url();
+
 	// 1) DB (verify hash, then import).
 	emcp_connector_restore_db( $zip, $manifest, $work, $stats );
 
-	// 2) URL search-replace (source -> this destination).
+	// 2) URL search-replace (source -> this destination). Runs whenever the DB
+	// was imported (fatal errors empty), even after a partial import that had
+	// statement errors — those are reported under $stats['db'], not fatal.
 	if ( empty( $stats['errors'] ) && ! empty( $manifest['site_url'] ) ) {
-		$rows = emcp_connector_search_replace( (string) $manifest['site_url'], home_url() );
-		if ( $rows > 0 ) {
-			$stats['search_replace'] = array( 'rows' => $rows, 'from' => (string) $manifest['site_url'], 'to' => home_url() );
+		$sr = emcp_connector_search_replace( (string) $manifest['site_url'], $dest_url );
+		if ( $sr['rows'] > 0 ) {
+			$stats['search_replace'] = array(
+				'rows'    => $sr['rows'],
+				'partial' => ! empty( $sr['partial'] ),
+				'from'    => (string) $manifest['site_url'],
+				'to'      => $dest_url,
+			);
 		}
 	}
 
@@ -640,12 +658,14 @@ function emcp_connector_restore_db( ZipArchive $zip, array $manifest, string $wo
 
 	$expected = isset( $manifest['database_sha256'] ) ? $manifest['database_sha256'] : '';
 	$actual   = hash_file( 'sha256', $db_file );
-	if ( '' !== $expected && hash_equals( $expected, $actual ) ) {
-		$stats['db'] = emcp_connector_import( $db_file );
-		if ( ! empty( $stats['db']['error_details'] ) ) {
-			$stats['errors'] = array_merge( $stats['errors'], $stats['db']['error_details'] );
-		}
-	} else {
+	// A missing manifest hash is not an integrity failure (older/foreign
+	// archives): import proceeds. A present-but-mismatched hash aborts. Import
+	// statement errors stay under $stats['db'] (visible, non-fatal) so a
+	// partial import still gets the URL rewrite; $stats['errors'] is reserved
+	// for fatal failures (stream/hash), which drive the job state.
+	if ( '' !== $expected && ! hash_equals( $expected, $actual ) ) {
 		$stats['errors'][] = 'hash_mismatch';
+		return;
 	}
+	$stats['db'] = emcp_connector_import( $db_file );
 }

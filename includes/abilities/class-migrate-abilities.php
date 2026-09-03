@@ -67,7 +67,7 @@ class EMCP_Tools_Migrate_Abilities {
 					'properties' => array(
 						'remote_url'    => array( 'type' => 'string', 'description' => __( 'Destination site URL (the connector is installed there).', 'emcp-tools' ) ),
 						'secret_key'    => array( 'type' => 'string', 'description' => __( 'Shared secret (must match EMCP_CONNECTOR_SECRET on the destination).', 'emcp-tools' ) ),
-						'direction'     => array( 'type' => 'string', 'enum' => array( 'push' ), 'description' => __( 'Only "push" is supported; "pull" returns unsupported.', 'emcp-tools' ) ),
+						'direction'     => array( 'type' => 'string', 'enum' => array( 'push', 'pull' ), 'description' => __( '"push" uploads to the connector; "pull" reaches execute and returns a clear unsupported error.', 'emcp-tools' ) ),
 						'backup_id'     => array( 'type' => 'string', 'description' => __( 'Reuse an existing backup filename instead of building a fresh one.', 'emcp-tools' ) ),
 						'include_files' => array( 'type' => 'boolean', 'description' => __( 'Bundle site files when building a fresh backup (default false).', 'emcp-tools' ) ),
 						'confirm'       => array( 'type' => 'boolean', 'description' => __( 'Restoring over the destination replaces its database — must be true.', 'emcp-tools' ) ),
@@ -208,8 +208,13 @@ class EMCP_Tools_Migrate_Abilities {
 		$job = self::poll_job( $endpoint, $secret, $job_id );
 
 		$state = ( $job && isset( $job['state'] ) ) ? $job['state'] : 'unknown';
-		if ( 'error' === $state ) {
-			return new WP_Error( 'restore_failed', __( 'Destination reported an error during restore.', 'emcp-tools' ), array( 'job' => $job ) );
+		if ( 'done' !== $state ) {
+			$code = ( 'error' === $state ) ? 'restore_failed' : 'restore_pending';
+			$msg  = ( 'error' === $state )
+				? __( 'Destination reported an error during restore.', 'emcp-tools' )
+				/* translators: %s: destination job state. */
+				: sprintf( __( 'Destination restore is not finished (state: %s). Re-run migrate-site or poll the returned job.', 'emcp-tools' ), $state );
+			return new WP_Error( $code, $msg, array( 'job_id' => $job_id, 'job' => $job ) );
 		}
 
 		return array(

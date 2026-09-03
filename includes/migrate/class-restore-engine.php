@@ -94,8 +94,7 @@ class EMCP_Tools_Restore_Engine {
                 $abort = self::restore_database( $zip, $workdir, $manifest, $opts, $stats );
                 if ( $abort ) {
                     self::append_log( $stats );
-                    $zip->close();
-                    self::cleanup( $workdir );
+                    // Cleanup happens once in the finally block below.
                     return new WP_Error( 'hash_mismatch', __( 'Archive failed its integrity check (database.sql does not match the manifest hash). Nothing was imported.', 'emcp-tools' ) );
                 }
             }
@@ -126,24 +125,28 @@ class EMCP_Tools_Restore_Engine {
      */
     private static function restore_database( ZipArchive $zip, string $workdir, array $manifest, array $opts, array &$stats ): bool {
         $sr_on = ! array_key_exists( 'search_replace', $opts ) || ! empty( $opts['search_replace'] );
+        // Capture the destination URL before the import replaces wp_options —
+        // do not rely on the in-memory option cache surviving the restore.
+        $dest_url = (string) ( $opts['new_url'] ?? home_url() );
 
         $db_file = $workdir . '/database.sql';
         $src     = $zip->getStream( 'database.sql' );
-        $dst     = fopen( $db_file, 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions
-        if ( false === $src || false === $dst ) {
-            if ( is_resource( $src ) ) {
-                fclose( $src ); // phpcs:ignore WordPress.WP.AlternativeFunctions
-            }
+        if ( false === $src ) {
             $stats['errors'][] = 'db_stream_failed';
             return false;
         }
-        stream_copy_to_stream( $src, $dst );
+        $dst = fopen( $db_file, 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+        if ( false === $dst ) {
+            fclose( $src ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+            $stats['errors'][] = 'db_stream_failed';
+            return false;
+        }
+        $copied = stream_copy_to_stream( $src, $dst );
         fclose( $src ); // phpcs:ignore WordPress.WP.AlternativeFunctions
         fclose( $dst ); // phpcs:ignore WordPress.WP.AlternativeFunctions
-
-        if ( ! is_file( $db_file ) ) {
-            $stats['errors'][] = 'db_missing';
-            return false;
+        if ( false === $copied ) {
+            $stats['errors'][] = 'db_stream_failed';
+            return false; // Extraction failed — never import a truncated dump.
         }
 
         $expected = isset( $manifest['database_sha256'] ) ? $manifest['database_sha256'] : '';
@@ -153,25 +156,23 @@ class EMCP_Tools_Restore_Engine {
             return true; // Nothing was imported — abort the whole restore.
         }
 
-        $import       = EMCP_Tools_DB_Importer::import_from_file( $db_file );
-        $stats['db']  = ( false === $import ) ? array( 'statements' => 0, 'executed' => 0, 'skipped' => 0, 'errors' => 1 ) : $import;
-        if ( ! empty( $stats['db']['error_details'] ) ) {
-            $stats['errors'] = array_merge( $stats['errors'], array_slice( $stats['db']['error_details'], 0, 5 ) );
-        }
+        $import      = EMCP_Tools_DB_Importer::import_from_file( $db_file );
+        $stats['db'] = ( false === $import ) ? array( 'statements' => 0, 'executed' => 0, 'skipped' => 0, 'errors' => 1 ) : $import;
+        // Statement errors are reported under $stats['db'] but are NOT fatal: a
+        // partial import still gets the URL rewrite below.
 
         // URL rewrite (source → this site) when the URLs differ.
         if ( $sr_on && class_exists( 'EMCP_Tools_Serialized_Search_Replace' ) ) {
             $old_url = isset( $manifest['site_url'] ) ? (string) $manifest['site_url'] : '';
-            $new_url = (string) ( $opts['new_url'] ?? home_url() );
-            if ( '' !== $old_url && $old_url !== $new_url ) {
+            if ( '' !== $old_url && $old_url !== $dest_url ) {
                 global $wpdb;
                 $engine = 'EMCP_Tools_Serialized_Search_Replace';
                 $total  = 0;
                 foreach ( $engine::data_tables( $wpdb ) as $table ) {
-                    $r = $engine::walk_table( $wpdb, $table, $old_url, $new_url );
+                    $r = $engine::walk_table( $wpdb, $table, $old_url, $dest_url );
                     $total += (int) $r['affected'];
                 }
-                $stats['search_replace'] = array( 'old' => $old_url, 'new' => $new_url, 'rows' => $total );
+                $stats['search_replace'] = array( 'old' => $old_url, 'new' => $dest_url, 'rows' => $total );
             }
         }
         return false;

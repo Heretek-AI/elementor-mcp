@@ -32,7 +32,29 @@ class EMCP_Tools_Packager {
 		$upload = wp_upload_dir();
 		$dir    = $upload['basedir'] . '/emcp-backups';
 		wp_mkdir_p( $dir );
+		self::write_guard_files( $dir );
 		return $dir;
+	}
+
+	/**
+	 * Drop web-denial guards into the backups dir so .emcp archives (full DB
+	 * dumps) are not servable by guessing a filename.
+	 *
+	 * Note: .htaccess only shields Apache; nginx/other hosts must protect the
+	 * dir themselves. Downloads always go through the nonce'd admin handler.
+	 *
+	 * @param string $dir Backups directory.
+	 */
+	private static function write_guard_files( string $dir ): void {
+		$htaccess = $dir . '/.htaccess';
+		if ( ! is_file( $htaccess ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions,WordPress.PHP.NoSilencedErrors -- guard file in the plugin's own dir.
+			@file_put_contents( $htaccess, "# Deny web access to .emcp site archives (database dumps).\n<IfModule mod_authz_core.c>\nRequire all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\nOrder allow,deny\nDeny from all\n</IfModule>\n" );
+		}
+		if ( ! is_file( $dir . '/index.html' ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions,WordPress.PHP.NoSilencedErrors
+			@file_put_contents( $dir . '/index.html', '' );
+		}
 	}
 
 	/**
@@ -68,10 +90,11 @@ class EMCP_Tools_Packager {
 		}
 		$include_files = ! empty( $opts['include_files'] );
 
-		$dir      = self::backup_dir();
-		$name     = sanitize_file_name( $name );
+		$dir  = self::backup_dir();
+		$name = sanitize_file_name( $name );
 		if ( '' === $name ) {
-			$name = 'backup-' . gmdate( 'Y-m-d-His' );
+			// Random suffix so the filename is not date-guessable on the web.
+			$name = 'backup-' . gmdate( 'Y-m-d-His' ) . '-' . wp_generate_password( 6, false );
 		}
 		if ( self::EXT !== substr( $name, -5 ) ) {
 			$name .= self::EXT;
@@ -91,11 +114,12 @@ class EMCP_Tools_Packager {
 			return false;
 		}
 
-		$zip->addFile( $tmp_sql, 'database.sql' );
+		$ok = ( true === $zip->addFile( $tmp_sql, 'database.sql' ) );
 
 		$file_entries = array();
-		if ( $include_files ) {
+		if ( $ok && $include_files ) {
 			$file_entries = self::add_files( $zip );
+			$ok           = is_array( $file_entries ); // add_files returns false on a failed addFile.
 		}
 
 		$manifest = array(
@@ -118,10 +142,16 @@ class EMCP_Tools_Packager {
 			'files'           => count( $file_entries ),
 			'file_roots'      => $file_entries,
 		);
-		$zip->addFromString( 'manifest.json', wp_json_encode( $manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) );
-		$zip->close();
+		if ( $ok ) {
+			$ok = ( false !== $zip->addFromString( 'manifest.json', wp_json_encode( $manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) ) );
+		}
+		$closed = $zip->close();
 
 		@unlink( $tmp_sql ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+		if ( ! $ok || true !== $closed ) {
+			@unlink( $zip_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- remove the partial archive.
+			return false;
+		}
 		return is_file( $zip_file ) ? $zip_file : false;
 	}
 
@@ -180,7 +210,9 @@ class EMCP_Tools_Packager {
 				'size'       => size_format( $size ),
 				'size_bytes' => (int) $size,
 				'date'       => gmdate( 'Y-m-d H:i:s', filemtime( $f ) ),
-				'sha256'     => hash_file( 'sha256', $f ),
+				// No sha256 here: hashing every archive reads its full contents on
+				// a plain listing. Integrity lives in the manifest hash checked at
+				// restore time (and in the per-archive hash when one is requested).
 			);
 		}
 		usort( $out, static function ( $a, $b ) {
@@ -198,9 +230,9 @@ class EMCP_Tools_Packager {
 	 * itself, the backups dir, the sandbox, or caches.
 	 *
 	 * @param \ZipArchive $zip Open archive.
-	 * @return string[] Root → file-count map added.
+	 * @return string[]|false Root → file-count map, or false when an addFile fails.
 	 */
-	private static function add_files( ZipArchive $zip ): array {
+	private static function add_files( ZipArchive $zip ) {
 		$content_dir = wp_normalize_path( ( defined( 'WP_CONTENT_DIR' ) ? WP_CONTENT_DIR : ABSPATH . 'wp-content' ) );
 		$roots       = array(
 			'uploads'  => self::uploads_basedir(),
@@ -231,7 +263,9 @@ class EMCP_Tools_Packager {
 				if ( '' === $zip_name ) {
 					continue; // Outside wp-content — never bundled.
 				}
-				$zip->addFile( $file->getPathname(), $zip_name );
+				if ( ! $zip->addFile( $file->getPathname(), $zip_name ) ) {
+					return false; // Propagate failure so create_archive cannot report a complete bundle.
+				}
 				$count++;
 			}
 			if ( $count > 0 ) {

@@ -74,6 +74,7 @@ class EMCP_Tools_Migrate_Module extends EMCP_Tools_Module {
 			wp_safe_redirect( self::migrate_page_url() );
 			exit;
 		}
+		self::drain_output_buffers();
 		header( 'Content-Type: application/zip' );
 		header( 'Content-Disposition: attachment; filename="emcp-connector.zip"' );
 		header( 'Content-Length: ' . filesize( $tmp ) );
@@ -198,12 +199,20 @@ class EMCP_Tools_Migrate_Module extends EMCP_Tools_Module {
 			$this->set_notice( 'error', __( 'Archive not found for download.', 'emcp-tools' ) );
 			return;
 		}
+		self::drain_output_buffers();
 		header( 'Content-Type: application/octet-stream' );
 		header( 'Content-Disposition: attachment; filename="' . $file . '"' );
 		header( 'Content-Length: ' . filesize( $path ) );
 		header( 'X-Content-Type-Options: nosniff' );
 		readfile( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- binary download.
 		exit;
+	}
+
+	/** Discard buffered output so a binary download is never polluted by it. */
+	private static function drain_output_buffers(): void {
+		while ( ob_get_level() > 0 ) {
+			ob_end_clean();
+		}
 	}
 
 	/** Flash a one-shot admin notice via transient. */

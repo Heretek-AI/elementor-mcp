@@ -121,39 +121,6 @@ $emcp_features = array(
 		'show'  => true,
 	),
 );
-
-/**
- * Featured video guides. Real YouTube tutorials — `id` is the video ID (used
- * for the thumbnail + watch link), `channel` is the creator. To feature a
- * different video, swap `id`/`title`/`channel` and the `watch?v=` URL.
- */
-$emcp_videos = array(
-	array(
-		'title'   => 'Build a Full WordPress Site Without Touching Elementor',
-		'channel' => 'WP Academy',
-		'id'      => 'KkOioXKT_Eo',
-	),
-	array(
-		'title'   => 'Create Elementor Landing Pages FAST with Claude and MCP Server',
-		'channel' => 'WP Academy',
-		'id'      => 'tXCpGa-hqxk',
-	),
-	array(
-		'title'   => 'How to Use Elementor MCP with Open Models (DeepSeek, Kimi, MiniMax)',
-		'channel' => 'WP Academy',
-		'id'      => 'wAEJORy5eek',
-	),
-	array(
-		'title'   => 'How I Use Elementor MCP + Claude Code to Create Custom Websites',
-		'channel' => 'WPDev',
-		'id'      => 'tCRt5m4jsY8',
-	),
-	array(
-		'title'   => 'Create Elementor Websites with AI Agents | Urdu & Hindi Tutorial',
-		'channel' => 'WP Academy',
-		'id'      => 'B0K-9I4v5zc',
-	),
-);
 ?>
 
 <div class="emcp-dash">
@@ -330,8 +297,6 @@ $emcp_videos = array(
 	</section>
 
 	<!-- Feature sneak peek -->
-	<!-- Explore your toolkit + EMCP Cloud banner, side by side (75/25) -->
-	<div class="emcp-dash-row emcp-dash-row--toolkit">
 	<section class="emcp-dash-section emcp-dash-section--toolkit" aria-labelledby="emcp-dash-features-h">
 		<div class="emcp-dash-section-head">
 			<h2 id="emcp-dash-features-h" class="emcp-dash-section-title"><?php esc_html_e( 'Explore your toolkit', 'emcp-tools' ); ?></h2>
@@ -359,140 +324,6 @@ $emcp_videos = array(
 					<span class="emcp-dash-card-arrow dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
 				</a>
 			<?php endforeach; ?>
-		</div>
-	</section>
-
-		<aside class="emcp-dash-side">
-			<!--
-			EMCP Cloud. Built in markup rather than dropped in as artwork, so the
-			copy is translatable, the type stays sharp at any column width, and
-			the whole card reflows instead of shrinking to five-pixel text. The
-			cloud and its three nodes are inline SVG for the same reason.
-			-->
-			<div class="emcp-dash-promo emcp-dash-promo--cloud">
-				<?php
-				// Cloud and stacked layers only. The full artwork also drops three
-				// connected nodes below this, which is right at banner size and wrong
-				// here: in a 380px column they landed on the description and the first
-				// benefit row. Cropped to the part that still reads at 116px.
-				?>
-				<svg class="emcp-dash-promo-deco emcp-dash-promo-deco--cloud" viewBox="56 40 106 80" fill="none" aria-hidden="true" focusable="false">
-					<path d="M62 84a30 30 0 0 1 29-30 34 34 0 0 1 64 8 26 26 0 0 1-8 51H88a26 26 0 0 1-26-29Z" stroke="currentColor" stroke-width="2" opacity=".5" />
-					<path d="M110 78l24 13-24 13-24-13 24-13Z" fill="currentColor" opacity=".45" />
-					<path d="M86 100l24 13 24-13" stroke="currentColor" stroke-width="2" opacity=".3" stroke-linecap="round" stroke-linejoin="round" />
-				</svg>
-
-				<span class="emcp-dash-promo-badge emcp-dash-promo-badge--icon">
-					<span class="dashicons dashicons-cloud" aria-hidden="true"></span><?php esc_html_e( 'EMCP Cloud', 'emcp-tools' ); ?>
-				</span>
-
-				<h3 class="emcp-dash-promo-title emcp-dash-promo-title--stacked">
-					<?php esc_html_e( 'Your artifacts,', 'emcp-tools' ); ?>
-					<span><?php esc_html_e( 'everywhere', 'emcp-tools' ); ?></span>
-				</h3>
-
-				<p class="emcp-dash-promo-desc"><?php esc_html_e( 'Back up your blocks, widgets and snippets, sync them across sites, and publish to the marketplace.', 'emcp-tools' ); ?></p>
-
-				<ul class="emcp-dash-promo-feats">
-					<li>
-						<span class="emcp-dash-promo-feat-icon"><span class="dashicons dashicons-shield" aria-hidden="true"></span></span>
-						<span class="emcp-dash-promo-feat-copy">
-							<strong><?php esc_html_e( 'Back up &amp; restore anywhere', 'emcp-tools' ); ?></strong>
-							<span><?php esc_html_e( 'Secure, reliable backups you can count on.', 'emcp-tools' ); ?></span>
-						</span>
-					</li>
-					<li>
-						<span class="emcp-dash-promo-feat-icon"><span class="dashicons dashicons-update-alt" aria-hidden="true"></span></span>
-						<span class="emcp-dash-promo-feat-copy">
-							<strong><?php esc_html_e( 'Sync across all your sites', 'emcp-tools' ); ?></strong>
-							<span><?php esc_html_e( 'Keep everything in perfect sync.', 'emcp-tools' ); ?></span>
-						</span>
-					</li>
-					<li>
-						<span class="emcp-dash-promo-feat-icon"><span class="dashicons dashicons-cart" aria-hidden="true"></span></span>
-						<span class="emcp-dash-promo-feat-copy">
-							<strong><?php esc_html_e( 'Publish &amp; sell on the marketplace', 'emcp-tools' ); ?></strong>
-							<span><?php esc_html_e( 'Share your creations and grow.', 'emcp-tools' ); ?></span>
-						</span>
-					</li>
-				</ul>
-
-				<a class="emcp-dash-promo-cta emcp-dash-promo-cta--block" href="<?php echo esc_url( admin_url( 'admin.php?page=emcp-tools-connection' ) ); ?>">
-					<?php esc_html_e( 'Explore EMCP Cloud', 'emcp-tools' ); ?><span class="dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
-				</a>
-			</div>
-
-			<!--
-			EMCP Pro. Dark, to sit with the Cloud banner above it rather than
-			against it. The decoration is inline SVG rather than an image so it
-			stays crisp at any column width and the copy stays translatable.
-			-->
-			<div class="emcp-dash-promo emcp-dash-promo--pro">
-				<svg class="emcp-dash-promo-deco" viewBox="0 0 220 160" fill="none" aria-hidden="true" focusable="false">
-					<circle cx="176" cy="30" r="58" stroke="currentColor" stroke-width="1" opacity=".35" />
-					<circle cx="176" cy="30" r="40" stroke="currentColor" stroke-width="1" opacity=".25" />
-					<circle cx="176" cy="30" r="22" stroke="currentColor" stroke-width="1" opacity=".18" />
-					<g opacity=".3">
-						<circle cx="152" cy="96" r="1.5" fill="currentColor" />
-						<circle cx="172" cy="96" r="1.5" fill="currentColor" />
-						<circle cx="192" cy="96" r="1.5" fill="currentColor" />
-						<circle cx="152" cy="112" r="1.5" fill="currentColor" />
-						<circle cx="172" cy="112" r="1.5" fill="currentColor" />
-						<circle cx="192" cy="112" r="1.5" fill="currentColor" />
-					</g>
-				</svg>
-				<span class="emcp-dash-promo-badge"><?php esc_html_e( 'Heretek AI Edition', 'emcp-tools' ); ?></span>
-				<?php if ( $emcp_is_free ) : ?>
-					<span class="emcp-dash-promo-icon dashicons dashicons-star-filled" aria-hidden="true"></span>
-					<h3 class="emcp-dash-promo-title"><?php esc_html_e( 'Unlock the full toolkit', 'emcp-tools' ); ?></h3>
-					<p class="emcp-dash-promo-desc"><?php esc_html_e( 'Widget & block builder, AI Chat, SEO & accessibility, Themer, Templates, and more.', 'emcp-tools' ); ?></p>
-				<?php else : ?>
-					<span class="emcp-dash-promo-icon dashicons dashicons-yes-alt" aria-hidden="true"></span>
-					<h3 class="emcp-dash-promo-title"><?php esc_html_e( 'All Pro Features Unlocked', 'emcp-tools' ); ?></h3>
-					<p class="emcp-dash-promo-desc"><?php esc_html_e( 'Community-unlocked enterprise edition by Heretek AI — all 269 MCP tools, builders, AI Chat, memory, and integrations are fully unlocked.', 'emcp-tools' ); ?></p>
-					<span class="emcp-dash-promo-note"><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Pro Unlocked &amp; Active', 'emcp-tools' ); ?></span>
-				<?php endif; ?>
-			</div>
-		</aside>
-	</div><!-- .emcp-dash-row--toolkit -->
-	<!-- Video guides + help, side by side (70/30) -->
-	<div class="emcp-dash-row">
-
-	<!-- Featured video guides -->
-	<section class="emcp-dash-section emcp-dash-section--videos" aria-labelledby="emcp-dash-videos-h">
-		<div class="emcp-dash-section-head">
-			<h2 id="emcp-dash-videos-h" class="emcp-dash-section-title"><?php esc_html_e( 'Featured video guides', 'emcp-tools' ); ?></h2>
-			<p class="emcp-dash-section-sub"><?php esc_html_e( 'Watch and learn, from first connection to full-page builds.', 'emcp-tools' ); ?></p>
-		</div>
-		<div class="emcp-dash-videos">
-			<a class="emcp-dash-video" href="https://www.youtube.com/watch?v=Fj2F27t0VvI" target="_blank" rel="noopener noreferrer">
-				<div class="emcp-dash-video-thumb">
-					<img src="https://img.youtube.com/vi/Fj2F27t0VvI/hqdefault.jpg" alt="" loading="lazy" />
-					<span class="emcp-dash-video-play" aria-hidden="true"><span class="dashicons dashicons-controls-play"></span></span>
-				</div>
-				<span class="emcp-dash-video-title"><?php esc_html_e( 'Build a full site with AI', 'emcp-tools' ); ?></span>
-				<span class="emcp-dash-video-meta">18:42</span>
-			</a>
-			<a class="emcp-dash-video" href="https://www.youtube.com/watch?v=kYJjZ3x0M8w" target="_blank" rel="noopener noreferrer">
-				<div class="emcp-dash-video-thumb">
-					<img src="https://img.youtube.com/vi/kYJjZ3x0M8w/hqdefault.jpg" alt="" loading="lazy" />
-					<span class="emcp-dash-video-play" aria-hidden="true"><span class="dashicons dashicons-controls-play"></span></span>
-				</div>
-				<span class="emcp-dash-video-title"><?php esc_html_e( 'Connect Claude Code in 2 minutes', 'emcp-tools' ); ?></span>
-				<span class="emcp-dash-video-meta">4:15</span>
-			</a>
-			<a class="emcp-dash-video" href="https://www.youtube.com/watch?v=wX8Q2kR1uVc" target="_blank" rel="noopener noreferrer">
-				<div class="emcp-dash-video-thumb">
-					<img src="https://img.youtube.com/vi/wX8Q2kR1uVc/hqdefault.jpg" alt="" loading="lazy" />
-					<span class="emcp-dash-video-play" aria-hidden="true"><span class="dashicons dashicons-controls-play"></span></span>
-				</div>
-				<span class="emcp-dash-video-title"><?php esc_html_e( 'Cursor + MCP live workflow', 'emcp-tools' ); ?></span>
-				<span class="emcp-dash-video-meta">12:08</span>
-			</a>
-			<a class="emcp-dash-video emcp-dash-video--more" href="https://github.com/Heretek-AI/elementor-mcp#readme" target="_blank" rel="noopener noreferrer">
-				<span class="dashicons dashicons-video-alt3" aria-hidden="true"></span>
-				<span class="emcp-dash-video-more-text"><?php esc_html_e( 'View Documentation &amp; Guides', 'emcp-tools' ); ?><span class="dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span></span>
-			</a>
 		</div>
 	</section>
 
@@ -578,7 +409,5 @@ $emcp_videos = array(
 			</a>
 		</div>
 	</section>
-
-	</div><!-- .emcp-dash-row -->
 
 </div>

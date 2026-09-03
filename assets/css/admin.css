@@ -3669,18 +3669,15 @@ body.emcp-modal-open { overflow: hidden; }
 }
 
 .emcp-dash-section--help {
-	flex: 3 1 0;
+	width: 100%;
 	min-width: 0;
 }
 
-/* Two videos per row inside the 70% column. */
-.emcp-dash-section--videos .emcp-dash-videos {
-	grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-/* Help links stack in a single column inside the 30% column. */
+/* Help links grid: clean responsive 4-column cards across the full-width section. */
 .emcp-dash-section--help .emcp-dash-help {
-	grid-template-columns: 1fr;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+	gap: 14px;
 }
 
 /* Stack the row on narrower screens. */
@@ -4652,130 +4649,12 @@ body[data-emcp-auth="app-password"] [data-authfor="oauth"] { display: none; }
 .emcp-sb-actions .button-primary:hover .dashicons,
 .emcp-sb-actions .button-primary:focus .dashicons { color: var(--mcp-white); }
 
-/* ── Rotating announcement / promo bar ─────────────────────────────────── */
-/* Full-width edge-to-edge permanent top strip, matching the app-bar breakout. */
-.emcp-annc { position: relative; margin: -10px -20px 0 -22px; overflow: hidden; }
-.emcp-annc-slides { position: relative; }
-.emcp-annc-slide { display: none; align-items: center; gap: 12px; min-height: 44px; padding: 10px 56px 10px 20px; text-decoration: none; box-sizing: border-box; }
-.emcp-annc-slide.is-active { display: flex; }
-.emcp-annc-slide--cloud { background: var(--mcp-primary); }
-.emcp-annc-slide--ltd { background: #c2410c; }
-.emcp-annc-badge { flex: none; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; background: rgba(255,255,255,.22); color: #fff; padding: 2px 8px; border-radius: 999px; }
-.emcp-annc-icon { flex: none; color: rgba(255,255,255,.85); font-size: 18px; width: 18px; height: 18px; }
-.emcp-annc-text { flex: 1 1 auto; min-width: 0; font-size: 13px; color: rgba(255,255,255,.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.emcp-annc-text strong { color: #fff; font-weight: 700; }
-.emcp-annc-cta { flex: none; display: inline-flex; align-items: center; gap: 2px; font-size: 12.5px; font-weight: 600; color: #fff; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.4); padding: 5px 12px; border-radius: 999px; transition: background .15s; }
-.emcp-annc-slide:hover .emcp-annc-cta { background: rgba(255,255,255,.28); }
-.emcp-annc-cta .dashicons { font-size: 15px; width: 15px; height: 15px; }
-.emcp-annc-dots { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); display: flex; gap: 5px; z-index: 2; }
-.emcp-annc-dot { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 50%; background: rgba(255,255,255,.4); cursor: pointer; transition: background .15s; }
-.emcp-annc-dot.is-active { background: #fff; }
-.emcp-annc-close { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: inline-flex; align-items: center; justify-content: center; background: transparent; border: 0; color: rgba(255,255,255,.7); cursor: pointer; padding: 3px; line-height: 0; z-index: 2; }
-.emcp-annc-close:hover { color: #fff; }
-.emcp-annc-close .dashicons { font-size: 18px; width: 18px; height: 18px; }
-@media screen and (max-width: 782px) {
-	.emcp-annc-slide { padding-right: 66px; gap: 8px; }
-	.emcp-annc-badge, .emcp-annc-icon, .emcp-annc-dots { display: none; }
-	.emcp-annc-text { white-space: normal; font-size: 12px; }
+/* ── Explore your toolkit (full width) ─────────────────────────────────── */
+.emcp-dash-section--toolkit {
+	width: 100%;
+	min-width: 0;
+	margin-bottom: 26px;
 }
-
-/* ── Explore your toolkit + EMCP Cloud banner (75/25) ──────────────────── */
-.emcp-dash-row--toolkit { display: flex; gap: 20px; align-items: stretch; margin-bottom: 26px; }
-.emcp-dash-section--toolkit { flex: 75 1 0; min-width: 0; }
-/* Right column: two stacked promo banners (Cloud + Pro). */
-.emcp-dash-side { flex: 25 1 0; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
-/* Grows to take whatever the Cloud image above it leaves, so the column ends
-   level with the toolkit panel beside it instead of stopping short. Its
-   content is centred as a group rather than pinned top and bottom, which is
-   what left a tall empty band through the middle. */
-.emcp-dash-promo { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; gap: 8px; border-radius: var(--mcp-radius); padding: 20px; color: #fff; }
-.emcp-dash-promo--cloud { background: var(--mcp-primary); }
-/* EMCP Pro. Dark indigo rather than the flat violet it used to be, so it reads
-   as a pair with the Cloud banner stacked above it instead of fighting it. The
-   deeper base also lets the indigo accent actually register as an accent. */
-.emcp-dash-promo--pro {
-	position: relative;
-	overflow: hidden;
-	background: linear-gradient(160deg, #17153a 0%, #100e2b 55%, #0b0a1f 100%);
-	border: 1px solid rgba(129, 140, 248, .22);
-}
-
-/* Decoration only: it must never sit over the text or eat a click. */
-.emcp-dash-promo-deco {
-	position: absolute;
-	inset: 0 0 auto auto;
-	width: 220px;
-	height: 160px;
-	color: #818cf8;
-	pointer-events: none;
-}
-
-.emcp-dash-promo--pro > :not(.emcp-dash-promo-deco) { position: relative; }
-.emcp-dash-promo--pro .emcp-dash-promo-badge { background: rgba(129, 140, 248, .18); border: 1px solid rgba(129, 140, 248, .35); color: #c7d2fe; }
-.emcp-dash-promo--pro .emcp-dash-promo-icon { color: #a5b4fc; }
-.emcp-dash-promo--pro .emcp-dash-promo-desc { color: rgba(226, 232, 240, .78); }
-.emcp-dash-promo--pro .emcp-dash-promo-cta { background: var(--mcp-primary); color: #fff; box-shadow: 0 6px 18px -6px rgba(99, 102, 241, .8); }
-.emcp-dash-promo--pro .emcp-dash-promo-cta:hover { background: #4f46e5; }
-.emcp-dash-promo--pro .emcp-dash-promo-note { background: rgba(129, 140, 248, .14); border-color: rgba(129, 140, 248, .38); color: #c7d2fe; }
-.emcp-dash-promo--pro .emcp-dash-promo-note .dashicons { color: #a5b4fc; }
-.emcp-dash-promo--pro .emcp-dash-promo-cta,
-.emcp-dash-promo--pro .emcp-dash-promo-note { margin-top: 6px; }
-.emcp-dash-promo-badge { align-self: flex-start; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; background: rgba(255,255,255,.2); padding: 3px 9px; border-radius: 999px; }
-.emcp-dash-promo-icon { font-size: 26px; width: 26px; height: 26px; color: rgba(255,255,255,.92); margin-top: 2px; }
-.emcp-dash-promo-title { color: #fff; font-family: 'Geist', sans-serif; font-size: 17px; font-weight: 600; margin: 2px 0 0; letter-spacing: -0.01em; }
-.emcp-dash-promo-desc { color: rgba(255,255,255,.85); font-size: 12.5px; line-height: 1.5; margin: 0; }
-.emcp-dash-promo-list { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.emcp-dash-promo-list li { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: rgba(255,255,255,.92); }
-.emcp-dash-promo-list li .dashicons { flex: none; font-size: 15px; width: 15px; height: 15px; color: #fff; }
-.emcp-dash-promo-cta { margin-top: auto; display: inline-flex; align-items: center; justify-content: center; gap: 4px; background: #fff; color: var(--mcp-primary); font-weight: 600; font-size: 13px; padding: 9px 14px; border-radius: 8px; text-decoration: none; transition: background .15s; }
-.emcp-dash-promo-cta:hover { background: rgba(255,255,255,.92); }
-.emcp-dash-promo-cta .dashicons { font-size: 15px; width: 15px; height: 15px; }
-.emcp-dash-promo-note { margin-top: auto; align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.4); color: #fff; font-size: 12.5px; font-weight: 600; padding: 7px 12px; border-radius: 8px; }
-.emcp-dash-promo-note .dashicons { font-size: 16px; width: 16px; height: 16px; }
-@media screen and (max-width: 1200px) { .emcp-dash-row--toolkit { flex-direction: column; } }
-
-/* EMCP Cloud. A pair with the Pro card below it: same dark base, same inline
-   decoration, so the column reads as one thing. Built in markup rather than as
-   artwork, which matters most in this column, an image would have to shrink its
-   own type to about five pixels to fit. */
-.emcp-dash-promo--cloud {
-	position: relative;
-	overflow: hidden;
-	background: linear-gradient(160deg, #16143a 0%, #0f0d29 55%, #0a0919 100%);
-	border: 1px solid rgba(129, 140, 248, .22);
-	justify-content: flex-start;
-}
-
-.emcp-dash-promo--cloud > :not(.emcp-dash-promo-deco) { position: relative; }
-/* Small and faint: at full size the cloud's three nodes landed right on the
-   description and the first benefit row. It is a corner watermark, not a
-   backdrop the copy has to compete with. */
-.emcp-dash-promo-deco--cloud { inset: 10px 10px auto auto; width: 116px; height: 88px; opacity: .3; }
-
-.emcp-dash-promo--cloud .emcp-dash-promo-badge { background: rgba(129, 140, 248, .18); border: 1px solid rgba(129, 140, 248, .35); color: #c7d2fe; }
-.emcp-dash-promo--cloud .emcp-dash-promo-desc { color: rgba(226, 232, 240, .72); }
-
-.emcp-dash-promo-badge--icon { display: inline-flex; align-items: center; gap: 5px; }
-.emcp-dash-promo-badge--icon .dashicons { font-size: 13px; width: 13px; height: 13px; }
-
-/* Two lines on purpose: the second is the word the card is really about. */
-.emcp-dash-promo-title--stacked { font-size: 21px; line-height: 1.15; margin-top: 4px; }
-.emcp-dash-promo-title--stacked span { display: block; color: #a5b4fc; }
-
-.emcp-dash-promo-feats { list-style: none; margin: 6px 0 0; padding: 0; }
-.emcp-dash-promo-feats li { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; }
-.emcp-dash-promo-feats li + li { border-top: 1px solid rgba(129, 140, 248, .16); }
-.emcp-dash-promo-feat-icon { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: rgba(129, 140, 248, .14); border: 1px solid rgba(129, 140, 248, .3); }
-.emcp-dash-promo-feat-icon .dashicons { font-size: 15px; width: 15px; height: 15px; color: #a5b4fc; }
-.emcp-dash-promo-feat-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.emcp-dash-promo-feat-copy strong { font-size: 12.5px; font-weight: 600; color: #fff; line-height: 1.35; }
-.emcp-dash-promo-feat-copy span { font-size: 11.5px; color: rgba(226, 232, 240, .6); line-height: 1.4; }
-
-/* Full width, and last, so it reads as the end of the card. The stretch comes
-   from the flex column: an explicit width:100% is measured before the button's
-   own padding and overflows the card by exactly that padding. */
-.emcp-dash-promo-cta--block { margin-top: 12px; background: var(--mcp-primary); color: #fff; box-shadow: 0 6px 18px -6px rgba(99, 102, 241, .8); }
-.emcp-dash-promo-cta--block:hover { background: #4f46e5; }
 
 
 /* -------------------------------------------------------------------------

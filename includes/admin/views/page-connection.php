@@ -738,9 +738,6 @@ SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1</pre>
 										<button type="submit" class="button"><?php esc_html_e( 'Pull settings from cloud', 'emcp-tools' ); ?></button>
 									</form>
 								</p>
-							<?php else : ?>
-								<p class="elementor-mcp-activate-note"><?php esc_html_e( 'Sync your EMCP settings across all your sites. This is a paid EMCP Cloud feature.', 'emcp-tools' ); ?></p>
-								<p><a href="<?php echo esc_url( trailingslashit( EMCP_Tools_Cloud::base_url() ) . 'account/billing' ); ?>" class="button" target="_blank" rel="noopener"><?php esc_html_e( 'Upgrade your Cloud plan', 'emcp-tools' ); ?></a></p>
 							<?php endif; ?>
 						</div>
 					<?php endif; ?>

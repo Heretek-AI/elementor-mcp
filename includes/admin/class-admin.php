@@ -3726,63 +3726,6 @@ class EMCP_Tools_Admin {
 			$emcp_cloud_connected = class_exists( 'EMCP_Tools_Cloud' ) && EMCP_Tools_Cloud::is_connected();
 			?>
 
-			<!-- Rotating promo / announcement bar -->
-			<?php
-			$emcp_anncs = array(
-				array(
-					'key'   => 'cloud',
-					'badge' => __( 'New', 'emcp-tools' ),
-					'icon'  => 'dashicons-cloud',
-					'title' => __( 'EMCP Cloud is live', 'emcp-tools' ),
-					'text'  => __( 'Back up, sync and sell your blocks, widgets and snippets across every site you run.', 'emcp-tools' ),
-					'cta'   => __( 'Explore Cloud', 'emcp-tools' ),
-					'url'   => 'https://emcptools.com/cloud',
-				),
-			);
-			if ( $emcp_tools_show_upgrade ) {
-				$emcp_anncs[] = array(
-					'key'   => 'ltd',
-					'badge' => __( 'Limited', 'emcp-tools' ),
-					'icon'  => 'dashicons-clock',
-					'title' => __( 'Lifetime deal ends soon', 'emcp-tools' ),
-					'text'  => __( 'Pay once, own EMCP Pro forever — this lifetime deal is going away for good.', 'emcp-tools' ),
-					'cta'   => __( 'Get the LTD', 'emcp-tools' ),
-					'url'   => function_exists( 'emcp_tools_upgrade_url' ) ? emcp_tools_upgrade_url() : 'https://emcptools.com/pricing',
-				);
-			}
-			$emcp_annc_rotate = count( $emcp_anncs ) > 1;
-			?>
-			<div class="emcp-annc" data-emcp-annc data-rotate="<?php echo $emcp_annc_rotate ? '1' : '0'; ?>">
-				<div class="emcp-annc-slides">
-					<?php foreach ( $emcp_anncs as $emcp_i => $emcp_a ) : ?>
-						<a class="emcp-annc-slide emcp-annc-slide--<?php echo esc_attr( $emcp_a['key'] ); ?><?php echo 0 === $emcp_i ? ' is-active' : ''; ?>" href="<?php echo esc_url( $emcp_a['url'] ); ?>" target="_blank" rel="noopener">
-							<span class="emcp-annc-badge"><?php echo esc_html( $emcp_a['badge'] ); ?></span>
-							<span class="emcp-annc-icon dashicons <?php echo esc_attr( $emcp_a['icon'] ); ?>" aria-hidden="true"></span>
-							<span class="emcp-annc-text"><strong><?php echo esc_html( $emcp_a['title'] ); ?></strong> <?php echo esc_html( $emcp_a['text'] ); ?></span>
-							<span class="emcp-annc-cta"><?php echo esc_html( $emcp_a['cta'] ); ?><span class="dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span></span>
-						</a>
-					<?php endforeach; ?>
-				</div>
-				<?php if ( $emcp_annc_rotate ) : ?>
-					<div class="emcp-annc-dots">
-						<?php foreach ( $emcp_anncs as $emcp_i => $emcp_a ) : ?>
-							<button type="button" class="emcp-annc-dot<?php echo 0 === $emcp_i ? ' is-active' : ''; ?>" data-i="<?php echo (int) $emcp_i; ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %d: announcement number */ __( 'Announcement %d', 'emcp-tools' ), $emcp_i + 1 ) ); ?>"></button>
-						<?php endforeach; ?>
-					</div>
-				<?php endif; ?>
-			</div>
-			<script>
-			( function () {
-				var b = document.querySelector( '[data-emcp-annc]' );
-				if ( ! b ) { return; }
-				var slides = b.querySelectorAll( '.emcp-annc-slide' ), dots = b.querySelectorAll( '.emcp-annc-dot' ), i = 0, t;
-				function go( n ) { i = ( n + slides.length ) % slides.length; slides.forEach( function ( s, x ) { s.classList.toggle( 'is-active', x === i ); } ); dots.forEach( function ( d, x ) { d.classList.toggle( 'is-active', x === i ); } ); }
-				function reset() { if ( b.getAttribute( 'data-rotate' ) !== '1' ) { return; } clearInterval( t ); t = setInterval( function () { go( i + 1 ); }, 7000 ); }
-				dots.forEach( function ( d ) { d.addEventListener( 'click', function () { go( parseInt( d.getAttribute( 'data-i' ), 10 ) ); reset(); } ); } );
-				reset();
-			} )();
-			</script>
-
 			<!-- App bar -->
 			<div class="emcp-appbar">
 				<div class="emcp-appbar-brand">
@@ -3881,10 +3824,6 @@ class EMCP_Tools_Admin {
 							</div>
 						</aside>
 					</div>
-					<a class="emcp-cloud-btn" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-connection' ) ); ?>" title="<?php echo esc_attr( $emcp_cloud_connected ? __( 'EMCP Cloud: Connected', 'emcp-tools' ) : __( 'EMCP Cloud: Not connected — click to connect', 'emcp-tools' ) ); ?>">
-						<span class="dashicons dashicons-cloud emcp-cloud-icon" aria-hidden="true"></span>
-						<span class="emcp-cloud-dot<?php echo $emcp_cloud_connected ? ' is-connected' : ''; ?>"></span>
-					</a>
 				</div>
 			</div>
 

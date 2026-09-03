@@ -73,21 +73,12 @@ class EMCP_Tools_Settings_Sync {
 	}
 
 	/**
-	 * Paid-Cloud gate: the connected account's `syncSettings` entitlement.
+	 * Settings sync entitlement — 100% unlocked in Heretek edition.
 	 *
 	 * @return bool
 	 */
 	public static function entitled() {
-		static $cache = null;
-		if ( null !== $cache ) {
-			return $cache;
-		}
-		if ( ! class_exists( 'EMCP_Tools_Cloud_Sync' ) ) {
-			return $cache = false;
-		}
-		$status = EMCP_Tools_Cloud_Sync::status();
-		$cache  = is_array( $status ) && ! empty( $status['limits']['syncSettings'] );
-		return $cache;
+		return true;
 	}
 
 	/**
@@ -123,16 +114,13 @@ class EMCP_Tools_Settings_Sync {
 	}
 
 	/**
-	 * Connection + entitlement precondition shared by push/pull.
+	 * Connection precondition shared by push/pull.
 	 *
 	 * @return true|\WP_Error
 	 */
 	private static function gate() {
 		if ( ! class_exists( 'EMCP_Tools_Cloud' ) || ! EMCP_Tools_Cloud::is_connected() ) {
 			return new \WP_Error( 'not_connected', __( 'Connect to EMCP Cloud first.', 'emcp-tools' ) );
-		}
-		if ( ! self::entitled() ) {
-			return new \WP_Error( 'not_entitled', __( 'Settings sync requires a paid EMCP Cloud plan.', 'emcp-tools' ) );
 		}
 		return true;
 	}

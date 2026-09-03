@@ -5163,6 +5163,34 @@ body:has(.elementor-mcp-admin) #wpfooter a:hover {
 	max-width: 720px;
 }
 
+/* The AI Chat settings page has only one short card. Without this rule the
+ * stub .tab-content (margin 24px / padding 24px) makes the small form look
+ * stranded in a tall card on a normal viewport. Make the page flush to the
+ * shell and present the form like an inline admin notice so the controls sit
+ * high in the viewport at every zoom level. */
+.elementor-mcp-ai-chat {
+	background: transparent !important;
+	border: 0;
+	padding: 0;
+	margin: 0;
+}
+
+/* The tiny hero line under the h2 (just one <p class="description">) gets a
+ * bit too tight when the .tab-content padding is gone. */
+.elementor-mcp-ai-chat > h2 {
+	margin-top: 0;
+}
+
+.elementor-mcp-ai-chat > p.description {
+	margin-top: 4px;
+	margin-bottom: 18px;
+}
+
+/* The form has its own max-width inline; tighten its top spacing too. */
+.elementor-mcp-ai-chat > form {
+	margin-top: 0;
+}
+
 /* =========================================================================
  * WordPress Postboxes — Dark Metal Cards
  * ========================================================================= */

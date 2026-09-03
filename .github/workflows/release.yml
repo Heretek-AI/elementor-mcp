@@ -1,0 +1,109 @@
+name: Release Plugin
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. 3.15.0). Leave blank to auto-increment by +0.0.1 with rollover (0.0.9 -> 0.1.0).'
+        required: false
+        type: string
+        default: ''
+      dry_run:
+        description: 'Dry run: validate, bump, and build zip without committing or publishing'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and Publish Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run Unit Tests
+        run: |
+          node --test bin/mcp-proxy.test.mjs
+          node --test bin/release.test.mjs
+          php -l emcp-tools.php
+
+      - name: Calculate & Bump Version
+        id: bump
+        run: |
+          VERSION_FLAG=""
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION_FLAG="--version=${{ github.event.inputs.version }}"
+          fi
+
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            node bin/release.mjs --bump $VERSION_FLAG --dry-run
+            NEW_VER=$(node bin/release.mjs $VERSION_FLAG --next)
+          else
+            node bin/release.mjs --bump $VERSION_FLAG
+            NEW_VER=$(node bin/release.mjs --current)
+          fi
+
+          echo "version=$NEW_VER" >> $GITHUB_OUTPUT
+          echo "tag=v$NEW_VER" >> $GITHUB_OUTPUT
+          echo "Target Version: $NEW_VER"
+
+      - name: Build Release ZIP (Dry Run)
+        if: ${{ inputs.dry_run }}
+        run: |
+          NEW_VER="${{ steps.bump.outputs.version }}"
+          git archive --worktree-attributes --format=zip --prefix=elementor-mcp/ HEAD -o "elementor-mcp-${NEW_VER}.zip"
+          cp "elementor-mcp-${NEW_VER}.zip" "emcp-tools-${NEW_VER}.zip"
+          echo "Archive built successfully in dry-run mode:"
+          unzip -l "elementor-mcp-${NEW_VER}.zip" | head -n 35
+
+      - name: Commit & Tag Version Bump
+        if: ${{ !inputs.dry_run }}
+        run: |
+          NEW_VER="${{ steps.bump.outputs.version }}"
+          TAG="${{ steps.bump.outputs.tag }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore(release): bump version to ${NEW_VER}"
+          git tag -a "$TAG" -m "Release $TAG"
+
+      - name: Build Release ZIP
+        if: ${{ !inputs.dry_run }}
+        run: |
+          NEW_VER="${{ steps.bump.outputs.version }}"
+          TAG="${{ steps.bump.outputs.tag }}"
+          git archive --format=zip --prefix=elementor-mcp/ "$TAG" -o "elementor-mcp-${NEW_VER}.zip"
+          cp "elementor-mcp-${NEW_VER}.zip" "emcp-tools-${NEW_VER}.zip"
+          echo "Archive built successfully:"
+          unzip -l "elementor-mcp-${NEW_VER}.zip" | head -n 35
+
+      - name: Push Commit and Tag
+        if: ${{ !inputs.dry_run }}
+        run: |
+          TAG="${{ steps.bump.outputs.tag }}"
+          git push origin main
+          git push origin "$TAG"
+
+      - name: Create GitHub Release
+        if: ${{ !inputs.dry_run }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NEW_VER="${{ steps.bump.outputs.version }}"
+          TAG="${{ steps.bump.outputs.tag }}"
+          gh release create "$TAG" \
+            "elementor-mcp-${NEW_VER}.zip" \
+            "emcp-tools-${NEW_VER}.zip" \
+            --title "$TAG" \
+            --generate-notes

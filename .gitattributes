@@ -1,0 +1,15 @@
+# Exclude developer, test, documentation, and CI files from release zip archives
+.git export-ignore
+.github export-ignore
+.gitignore export-ignore
+.gitattributes export-ignore
+.claude export-ignore
+tests export-ignore
+phpunit.xml export-ignore
+phpunit.xml.dist export-ignore
+composer.json export-ignore
+composer.lock export-ignore
+CLAUDE.md export-ignore
+bin/smoke-free-build.sh export-ignore
+bin/mcp-proxy.test.mjs export-ignore
+bin/release.test.mjs export-ignore

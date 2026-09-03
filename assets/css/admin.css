@@ -5213,6 +5213,27 @@ body:has(.elementor-mcp-admin) #wpfooter a:hover {
  * page, not only the AI Chat settings form, because the same admin shell
  * wrapping it is the source of the stretch. */
 
+/* WordPress core .form-table (forms.css / common.css) sets
+ * `border-collapse: collapse; margin-top: .5em; width: 100%; clear: both;`
+ * which combined with a flex/stretching ancestor can let the table report an
+ * inflated height. Match the form reset on the table itself so the cells
+ * drive the height, never a 100%-of-parent fall-through. */
+.elementor-mcp-admin form .form-table,
+.elementor-mcp-admin form .form-table th,
+.elementor-mcp-admin form .form-table td {
+	height: auto;
+	min-height: 0;
+	max-height: none;
+	box-sizing: border-box;
+}
+
+.elementor-mcp-admin form .form-table {
+	margin-top: 0 !important;
+	clear: none;
+	width: auto;
+	max-width: 100%;
+}
+
 /* =========================================================================
  * WordPress Postboxes — Dark Metal Cards
  * ========================================================================= */

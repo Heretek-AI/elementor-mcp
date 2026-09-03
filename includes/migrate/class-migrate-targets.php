@@ -29,6 +29,7 @@ class EMCP_Tools_Migrate_Targets {
 
 	const DB_VERSION        = 1;
 	const DB_VERSION_OPTION = 'emcp_tools_migrate_targets_db_version';
+	const SELECT_ALL        = 'SELECT * FROM ';
 
 	/** The targets table name. */
 	public static function table(): string {
@@ -139,7 +140,7 @@ class EMCP_Tools_Migrate_Targets {
 	public static function get( int $id ): ?array {
 		self::ensure();
 		global $wpdb;
-		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . self::table() . ' WHERE id = %d', $id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$row = $wpdb->get_row( $wpdb->prepare( self::SELECT_ALL . self::table() . ' WHERE id = %d', $id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		return $row ? self::cast( $row ) : null;
 	}
 
@@ -154,7 +155,7 @@ class EMCP_Tools_Migrate_Targets {
 	public static function all(): array {
 		self::ensure();
 		global $wpdb;
-		$rows = $wpdb->get_results( 'SELECT * FROM ' . self::table() . ' ORDER BY created_at DESC', ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery
+		$rows = $wpdb->get_results( self::SELECT_ALL . self::table() . ' ORDER BY created_at DESC', ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery
 		return is_array( $rows ) ? array_map( array( __CLASS__, 'cast' ), $rows ) : array();
 	}
 
@@ -219,7 +220,7 @@ class EMCP_Tools_Migrate_Targets {
 	public static function find_by_url( string $url ): ?array {
 		self::ensure();
 		global $wpdb;
-		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . self::table() . ' WHERE target_url = %s LIMIT 1', esc_url_raw( trim( $url ) ) ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$row = $wpdb->get_row( $wpdb->prepare( self::SELECT_ALL . self::table() . ' WHERE target_url = %s LIMIT 1', esc_url_raw( trim( $url ) ) ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		return $row ? self::cast( $row ) : null;
 	}
 
@@ -245,7 +246,45 @@ class EMCP_Tools_Migrate_Targets {
 			return new WP_Error( 'https_required', __( 'Pairing exchanges the connector secret — the destination must be reached over HTTPS (or be localhost).', 'emcp-tools' ) );
 		}
 
-		$endpoint = self::normalize_endpoint( $target_url );
+		$exchange = self::pair_exchange( self::normalize_endpoint( $target_url ), $code );
+		if ( is_wp_error( $exchange ) ) {
+			return $exchange;
+		}
+
+		if ( '' === $label ) {
+			$parts = function_exists( 'wp_parse_url' ) ? wp_parse_url( $target_url ) : parse_url( $target_url ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url
+			$label = isset( $parts['host'] ) ? (string) $parts['host'] : $target_url;
+		}
+
+		$id = self::add( array(
+			'label'             => $label,
+			'target_url'        => $target_url,
+			'secret'            => $exchange['secret'],
+			'site_url'          => $exchange['site'],
+			'connector_version' => $exchange['version'],
+		) );
+		if ( is_wp_error( $id ) ) {
+			return $id;
+		}
+
+		if ( ! self::verify_endpoint( self::normalize_endpoint( $target_url ), $exchange['secret'] ) ) {
+			self::delete( $id );
+			return new WP_Error( 'verify_failed', __( 'The destination did not accept the stored secret — the pair was removed.', 'emcp-tools' ) );
+		}
+
+		$row = self::admin_row( $id );
+		return $row ? $row : array();
+	}
+
+	/**
+	 * Exchange a pairing code for the connector secret (the single instant the
+	 * secret crosses the wire).
+	 *
+	 * @param string $endpoint Connector REST base.
+	 * @param string $code     Single-use pairing code.
+	 * @return array{secret:string,site:string,version:string}|\WP_Error
+	 */
+	private static function pair_exchange( string $endpoint, string $code ) {
 		$response = wp_remote_post(
 			$endpoint . '/pair/exchange',
 			array(
@@ -266,42 +305,33 @@ class EMCP_Tools_Migrate_Targets {
 			$msg = is_array( $body ) && isset( $body['message'] ) ? (string) $body['message'] : sprintf( 'HTTP %d', $status );
 			return new WP_Error( 'pair_rejected', sprintf( /* translators: %s: message. */ __( 'The destination rejected the pairing code: %s', 'emcp-tools' ), $msg ) );
 		}
-		$secret = (string) $body['secret'];
+		return array(
+			'secret' => (string) $body['secret'],
+			'site'   => isset( $body['site'] ) ? (string) $body['site'] : '',
+			'version' => isset( $body['version'] ) ? (string) $body['version'] : '',
+		);
+	}
 
-		if ( '' === $label ) {
-			$parts = function_exists( 'wp_parse_url' ) ? wp_parse_url( $target_url ) : parse_url( $target_url ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url
-			$label = isset( $parts['host'] ) ? (string) $parts['host'] : $target_url;
-		}
-
-		$id = self::add( array(
-			'label'             => $label,
-			'target_url'        => $target_url,
-			'secret'            => $secret,
-			'site_url'          => isset( $body['site'] ) ? (string) $body['site'] : '',
-			'connector_version' => isset( $body['version'] ) ? (string) $body['version'] : '',
-		) );
-		if ( is_wp_error( $id ) ) {
-			return $id;
-		}
-
-		// Prove the stored secret actually signs on the destination.
-		$verify = wp_remote_get(
+	/**
+	 * Prove a secret signs on the destination (signed GET /verify).
+	 *
+	 * @param string $endpoint Connector REST base.
+	 * @param string $secret   Connector secret.
+	 * @return bool
+	 */
+	private static function verify_endpoint( string $endpoint, string $secret ): bool {
+		$response = wp_remote_get(
 			$endpoint . '/verify',
 			array(
 				'timeout' => 30,
 				'headers' => array( 'X-EMCP-Signature' => hash_hmac( 'sha256', 'verify|', $secret ) ),
 			)
 		);
-		$ok = ! is_wp_error( $verify )
-			&& (int) wp_remote_retrieve_response_code( $verify ) >= 200
-			&& (int) wp_remote_retrieve_response_code( $verify ) < 300;
-		if ( ! $ok ) {
-			self::delete( $id );
-			return new WP_Error( 'verify_failed', __( 'The destination did not accept the stored secret — the pair was removed.', 'emcp-tools' ) );
+		if ( is_wp_error( $response ) ) {
+			return false;
 		}
-
-		$row = self::admin_row( $id );
-		return $row ? $row : array();
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		return $code >= 200 && $code < 300;
 	}
 
 	// ---------------------------------------------------------------------

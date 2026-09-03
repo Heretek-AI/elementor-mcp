@@ -24,12 +24,13 @@
 		if ( ! radios.length ) {
 			return;
 		}
+		var name = radios[ 0 ]?.name || '';
 		var panel = document.getElementById( panelId );
 		function refresh() {
 			if ( ! panel ) {
 				return;
 			}
-			var checked = document.querySelector( 'input[name="' + radios[ 0 ].name + '"]:checked' );
+			var checked = document.querySelector( 'input[name="' + name + '"]:checked' );
 			panel.style.display = checked && 'selected' === checked.value ? 'block' : 'none';
 		}
 		radios.forEach( function ( radio ) {
@@ -85,7 +86,7 @@
 				var btn = form.querySelector( 'button[type="submit"]' );
 				if ( btn ) {
 					btn.disabled = true;
-					btn.textContent = btn.getAttribute( 'data-working' ) || 'Working…';
+					btn.textContent = btn.dataset.working || 'Working…';
 				}
 				var note = form.querySelector( '.emcp-working-note' );
 				if ( note ) {

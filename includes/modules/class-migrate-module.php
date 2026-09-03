@@ -255,44 +255,17 @@ class EMCP_Tools_Migrate_Module extends EMCP_Tools_Module {
 	}
 
 	/**
-	 * Resolve the push/sync destination from a submitted form: a stored paired
-	 * target (target_id) or a raw remote_url + secret_key (advanced/one-off).
+	 * Resolve the push/sync destination from the submitted form (a stored paired
+	 * target or a raw remote_url + secret_key). Delegates to the shared engine
+	 * resolver so admin and MCP use identical validation.
 	 *
-	 * @return array{endpoint:string,secret:string,label:string}|\WP_Error
+	 * @return array{endpoint:string,secret:string,label:string,target_url:string}|\WP_Error
 	 */
 	private function read_destination() {
-		if ( ! empty( $_POST['target_id'] ) ) {
-			if ( ! class_exists( 'EMCP_Tools_Migrate_Targets' ) ) {
-				return new WP_Error( 'engine_unavailable', __( 'The paired-targets store is not available.', 'emcp-tools' ) );
-			}
-			$target = EMCP_Tools_Migrate_Targets::get( (int) $_POST['target_id'] );
-			if ( ! $target ) {
-				return new WP_Error( 'target_missing', __( 'Paired target not found.', 'emcp-tools' ) );
-			}
-			$secret = EMCP_Tools_Migrate_Targets::get_secret( (int) $target['id'] );
-			if ( '' === $secret ) {
-				return new WP_Error( 'target_secret', __( 'The paired target secret could not be decrypted.', 'emcp-tools' ) );
-			}
-			return array(
-				'endpoint' => (string) $target['endpoint'],
-				'secret'   => $secret,
-				'label'    => (string) $target['label'],
-			);
+		if ( ! class_exists( 'EMCP_Tools_Migration_Engine' ) ) {
+			return new WP_Error( 'engine_unavailable', __( 'The migrate engine is not available.', 'emcp-tools' ) );
 		}
-
-		$remote = esc_url_raw( trim( (string) ( $_POST['remote_url'] ?? '' ) ) );
-		if ( '' === $remote || ! wp_http_validate_url( $remote ) ) {
-			return new WP_Error( 'invalid_remote', __( 'A valid destination URL is required (or pick a paired target).', 'emcp-tools' ) );
-		}
-		$secret = (string) ( $_POST['secret_key'] ?? '' );
-		if ( '' === $secret ) {
-			return new WP_Error( 'secret_required', __( 'A shared secret is required (must match EMCP_CONNECTOR_SECRET on the destination).', 'emcp-tools' ) );
-		}
-		return array(
-			'endpoint' => untrailingslashit( $remote ) . '/wp-json/emcp-connector/v1',
-			'secret'   => $secret,
-			'label'    => untrailingslashit( $remote ),
-		);
+		return EMCP_Tools_Migration_Engine::destination_from_input( (array) $_POST );
 	}
 
 	/** Pair a destination from the admin form (single-use code exchange). */
@@ -432,16 +405,12 @@ class EMCP_Tools_Migrate_Module extends EMCP_Tools_Module {
 		}
 
 		$opts = array(
-			'confirm' => true,
-			'poll'    => true,
-			'scope'   => $this->read_sync_scope(),
+			'confirm'  => true,
+			'poll'     => true,
+			'scope'    => $this->read_sync_scope(),
+			'endpoint' => $dest['endpoint'],
+			'secret'   => $dest['secret'],
 		);
-		if ( ! empty( $_POST['target_id'] ) ) {
-			$opts['target_id'] = (int) $_POST['target_id'];
-		} else {
-			$opts['endpoint'] = $dest['endpoint'];
-			$opts['secret']   = $dest['secret'];
-		}
 
 		self::run_blocking();
 		$result = EMCP_Tools_Sync_Engine::sync_to_target( $opts );
@@ -450,8 +419,8 @@ class EMCP_Tools_Migrate_Module extends EMCP_Tools_Module {
 			return;
 		}
 		$scope = ( isset( $result['scope'] ) && is_array( $result['scope'] ) ) ? $result['scope'] : array();
-		$db    = is_array( $scope['db'] ?? null ) ? sprintf( /* translators: %d: tables. */ __( '%d tables', 'emcp-tools' ), count( $scope['db'] ) ) : ( ( $scope['db'] ?? '' ) === 'none' ? __( 'no DB', 'emcp-tools' ) : __( 'all tables', 'emcp-tools' ) );
-		$files = is_array( $scope['files'] ?? null ) ? implode( ', ', (array) $scope['files'] ) : ( ( $scope['files'] ?? '' ) === 'none' ? __( 'no files', 'emcp-tools' ) : __( 'all files', 'emcp-tools' ) );
+		$db    = $this->scope_part_summary( isset( $scope['db'] ) ? $scope['db'] : 'all' );
+		$files = $this->scope_part_summary( isset( $scope['files'] ) ? $scope['files'] : 'all' );
 		/* translators: 1: destination label, 2: DB scope, 3: files scope, 4: job id. */
 		$this->set_notice( 'success', sprintf( __( 'Sync to "%1$s" finished (DB: %2$s, files: %3$s). Job %4$s.', 'emcp-tools' ), $dest['label'], $db, $files, $result['job_id'] ) );
 	}
@@ -463,12 +432,19 @@ class EMCP_Tools_Migrate_Module extends EMCP_Tools_Module {
 	 * @return array
 	 */
 	private function read_sync_scope(): array {
-		$scope = array();
+		return array(
+			'db'    => $this->read_sync_db_part(),
+			'files' => $this->read_sync_files_part(),
+		);
+	}
 
+	/** DB part of the submitted sync scope. */
+	private function read_sync_db_part() {
 		$db_mode = isset( $_POST['db_mode'] ) ? sanitize_key( (string) $_POST['db_mode'] ) : 'all';
 		if ( 'none' === $db_mode ) {
-			$scope['db'] = 'none';
-		} elseif ( 'selected' === $db_mode ) {
+			return 'none';
+		}
+		if ( 'selected' === $db_mode ) {
 			$tables = array();
 			foreach ( (array) ( $_POST['tables'] ?? array() ) as $table ) {
 				$table = sanitize_text_field( (string) $table );
@@ -476,13 +452,18 @@ class EMCP_Tools_Migrate_Module extends EMCP_Tools_Module {
 					$tables[] = $table;
 				}
 			}
-			$scope['db'] = $tables; // Empty list → engine normalizes to 'none'.
+			return $tables; // Empty list → engine normalizes to 'none'.
 		}
+		return 'all';
+	}
 
+	/** Files part of the submitted sync scope. */
+	private function read_sync_files_part() {
 		$files_mode = isset( $_POST['files_mode'] ) ? sanitize_key( (string) $_POST['files_mode'] ) : 'all';
 		if ( 'none' === $files_mode ) {
-			$scope['files'] = 'none';
-		} elseif ( 'selected' === $files_mode ) {
+			return 'none';
+		}
+		if ( 'selected' === $files_mode ) {
 			$roots = array();
 			foreach ( (array) ( $_POST['file_roots'] ?? array() ) as $root ) {
 				$root = sanitize_key( (string) $root );
@@ -494,10 +475,25 @@ class EMCP_Tools_Migrate_Module extends EMCP_Tools_Module {
 			if ( '' !== $pass_through ) {
 				$roots[] = $pass_through;
 			}
-			$scope['files'] = $roots; // Empty list → engine normalizes to 'none'.
+			return $roots; // Empty list → engine normalizes to 'none'.
 		}
+		return 'all';
+	}
 
-		return $scope;
+	/**
+	 * Human summary of one normalized scope part for the success notice.
+	 *
+	 * @param mixed $part Scope part ('all' | 'none' | array).
+	 * @return string
+	 */
+	private function scope_part_summary( $part ): string {
+		if ( is_array( $part ) ) {
+			return sprintf( /* translators: %d: count. */ __( '%d selected', 'emcp-tools' ), count( $part ) );
+		}
+		if ( 'none' === $part ) {
+			return __( 'none', 'emcp-tools' );
+		}
+		return __( 'all', 'emcp-tools' );
 	}
 
 	/** Discard buffered output so a binary download is never polluted by it. */

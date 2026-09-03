@@ -127,29 +127,54 @@ class EMCP_Tools_Sync_Engine {
 	 * @return string Normalized absolute dir, or ''.
 	 */
 	public static function file_root_path( string $token ): string {
-		$content = self::content_dir();
 		$token   = trim( $token );
-
-		if ( 'uploads' === $token || 'plugins' === $token || 'themes' === $token ) {
-			$root = 'uploads' === $token
-				? wp_upload_dir()['basedir']
-				: ( 'plugins' === $token
-					? ( defined( 'WP_PLUGIN_DIR' ) ? WP_PLUGIN_DIR : $content . '/plugins' )
-					: ( get_theme_root() ? get_theme_root() : $content . '/themes' ) );
-			$abs = wp_normalize_path( $root );
-			return ( is_dir( $abs ) && ! self::is_path_excluded( $abs ) ) ? $abs : '';
+		$curated = self::curated_root( $token );
+		if ( '' !== $curated ) {
+			return $curated;
 		}
+		return self::confined_pass_through( $token );
+	}
 
-		// Pass-through: a path under wp-content. Reject traversal entirely.
-		if ( '' === $token || false !== strpos( $token, '..' ) ) {
+	/**
+	 * Resolve a curated root token (uploads/plugins/themes) to an absolute dir,
+	 * or '' when the token is unknown/missing/excluded.
+	 *
+	 * @param string $token Root token.
+	 * @return string
+	 */
+	private static function curated_root( string $token ): string {
+		if ( ! in_array( $token, array( 'uploads', 'plugins', 'themes' ), true ) ) {
 			return '';
 		}
-		$abs = $token;
+		$content = self::content_dir();
+		if ( 'uploads' === $token ) {
+			$root = wp_upload_dir()['basedir'];
+		} elseif ( 'plugins' === $token ) {
+			$root = defined( 'WP_PLUGIN_DIR' ) ? WP_PLUGIN_DIR : $content . '/plugins';
+		} else {
+			$root = get_theme_root() ? get_theme_root() : $content . '/themes'; // phpcs:ignore WordPress.WP.DiscouragedFunctions -- token root.
+		}
+		$abs = wp_normalize_path( $root );
+		return ( is_dir( $abs ) && ! self::is_path_excluded( $abs ) ) ? $abs : '';
+	}
+
+	/**
+	 * Resolve a wp-content-relative pass-through path to a confined absolute dir,
+	 * or '' when invalid (traversal), outside wp-content, or excluded.
+	 *
+	 * @param string $raw Raw pass-through path.
+	 * @return string
+	 */
+	private static function confined_pass_through( string $raw ): string {
+		$content = self::content_dir();
+		if ( '' === $raw || false !== strpos( $raw, '..' ) ) {
+			return '';
+		}
+		$abs = $raw;
 		if ( 0 !== strpos( $abs, '/' ) ) {
 			$abs = $content . '/' . ltrim( $abs, '/' );
 		}
-		$abs = wp_normalize_path( $abs );
-		$abs = rtrim( $abs, '/' );
+		$abs = rtrim( wp_normalize_path( $abs ), '/' );
 		if ( $abs === $content || 0 !== strpos( $abs, $content . '/' ) ) {
 			return '';
 		}
@@ -241,32 +266,16 @@ class EMCP_Tools_Sync_Engine {
 			return new WP_Error( 'engine_unavailable', __( 'The transfer engine is not available.', 'emcp-tools' ) );
 		}
 
-		$endpoint = '';
-		$secret   = '';
-		$target   = null;
-		if ( ! empty( $opts['target_id'] ) ) {
-			$target = class_exists( 'EMCP_Tools_Migrate_Targets' ) ? EMCP_Tools_Migrate_Targets::get( (int) $opts['target_id'] ) : null;
-			if ( ! $target ) {
-				return new WP_Error( 'target_missing', __( 'Paired target not found.', 'emcp-tools' ) );
-			}
-			$endpoint = (string) $target['endpoint'];
-			$secret   = EMCP_Tools_Migrate_Targets::get_secret( (int) $target['id'] );
-			if ( '' === $secret ) {
-				return new WP_Error( 'target_secret', __( 'The paired target secret could not be decrypted.', 'emcp-tools' ) );
-			}
-		} elseif ( ! empty( $opts['endpoint'] ) && ! empty( $opts['secret'] ) ) {
-			$endpoint = untrailingslashit( (string) $opts['endpoint'] );
-			$secret   = (string) $opts['secret'];
-		} else {
-			return new WP_Error( 'target_required', __( 'A paired target_id (or endpoint + secret) is required.', 'emcp-tools' ) );
+		$dest = self::push_destination( $opts );
+		if ( is_wp_error( $dest ) ) {
+			return $dest;
 		}
-
 		$scope = self::normalize_scope( $opts['scope'] ?? null );
 
 		// Selective (non-full) scopes need a destination connector that restores
 		// only the archived tables/files (>= 1.2.0). Full pushes still work on
 		// older connectors, so only gate when the scope is narrowed.
-		if ( ! self::is_full( $scope ) && ! self::connector_supports_scope_restore( $target, $endpoint, $secret ) ) {
+		if ( ! self::is_full( $scope ) && ! self::connector_supports_scope_restore( $dest['target'], $dest['endpoint'] ) ) {
 			return new WP_Error(
 				'connector_upgrade_required',
 				__( 'This scope needs a destination connector 1.2.0+ (scope-restore). Push a full site, or upgrade the connector on the destination.', 'emcp-tools' )
@@ -280,8 +289,8 @@ class EMCP_Tools_Sync_Engine {
 
 		$result = EMCP_Tools_Migration_Engine::push_archive( array(
 			'path'     => $built['path'],
-			'endpoint' => $endpoint,
-			'secret'   => $secret,
+			'endpoint' => $dest['endpoint'],
+			'secret'   => $dest['secret'],
 			'poll'     => ! empty( $opts['poll'] ),
 		) );
 		if ( is_wp_error( $result ) ) {
@@ -289,9 +298,9 @@ class EMCP_Tools_Sync_Engine {
 		}
 
 		$result['success'] = true;
-		$result['target']  = $target
-			? array( 'id' => (int) $target['id'], 'label' => (string) $target['label'], 'target_url' => (string) $target['target_url'] )
-			: array( 'endpoint' => $endpoint );
+		$result['target']  = $dest['target']
+			? array( 'id' => (int) $dest['target']['id'], 'label' => (string) $dest['target']['label'], 'target_url' => (string) $dest['target']['target_url'] )
+			: array( 'endpoint' => $dest['endpoint'] );
 		$result['scope']   = $scope;
 		return $result;
 	}
@@ -299,6 +308,42 @@ class EMCP_Tools_Sync_Engine {
 	// ---------------------------------------------------------------------
 	// Internals
 	// ---------------------------------------------------------------------
+
+	/**
+	 * Resolve a sync push's destination: a stored paired target (target_id) or a
+	 * raw endpoint + secret passed by the caller (already resolved upstream).
+	 *
+	 * @param array $opts Sync options.
+	 * @return array{endpoint:string,secret:string,target:?array}|\WP_Error
+	 */
+	private static function push_destination( array $opts ) {
+		if ( ! empty( $opts['target_id'] ) ) {
+			$target = class_exists( 'EMCP_Tools_Migrate_Targets' ) ? EMCP_Tools_Migrate_Targets::get( (int) $opts['target_id'] ) : null;
+			if ( ! $target ) {
+				return new WP_Error( 'target_missing', __( 'Paired target not found.', 'emcp-tools' ) );
+			}
+			$secret = EMCP_Tools_Migrate_Targets::get_secret( (int) $target['id'] );
+			if ( '' === $secret ) {
+				return new WP_Error( 'target_secret', __( 'The paired target secret could not be decrypted.', 'emcp-tools' ) );
+			}
+			return array(
+				'endpoint' => (string) $target['endpoint'],
+				'secret'   => $secret,
+				'target'   => $target,
+			);
+		}
+
+		$endpoint = untrailingslashit( (string) ( $opts['endpoint'] ?? '' ) );
+		$secret   = (string) ( $opts['secret'] ?? '' );
+		if ( '' === $endpoint || '' === $secret ) {
+			return new WP_Error( 'target_required', __( 'A paired target_id (or endpoint + secret) is required.', 'emcp-tools' ) );
+		}
+		return array(
+			'endpoint' => $endpoint,
+			'secret'   => $secret,
+			'target'   => null,
+		);
+	}
 
 	/** Resolve a normalized files part to a token => abs-dir map for the packager. */
 	private static function scope_file_roots( $files ) {
@@ -332,10 +377,9 @@ class EMCP_Tools_Sync_Engine {
 	 *
 	 * @param array|null $target   Stored target row (optional).
 	 * @param string     $endpoint Connector REST base.
-	 * @param string     $secret   Shared secret.
 	 * @return bool
 	 */
-	private static function connector_supports_scope_restore( ?array $target, string $endpoint, string $secret ): bool {
+	private static function connector_supports_scope_restore( ?array $target, string $endpoint ): bool {
 		if ( $target && ! empty( $target['connector_version'] ) ) {
 			return version_compare( (string) $target['connector_version'], '1.2.0', '>=' );
 		}

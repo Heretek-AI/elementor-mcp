@@ -182,45 +182,17 @@ class EMCP_Tools_Migrate_Abilities {
 	}
 
 	/**
-	 * Resolve which destination a push targets: a stored paired target (target_id)
-	 * or a raw remote_url + secret_key. Returns endpoint + secret.
+	 * Resolve which destination an action targets (paired target or raw URL +
+	 * secret). Delegates to the shared engine resolver.
 	 *
 	 * @param array $args Tool input.
-	 * @return array{endpoint:string,secret:string,target_url:string}|WP_Error
+	 * @return array{endpoint:string,secret:string,label:string,target_url:string}|WP_Error
 	 */
 	private function resolve_destination( array $args ) {
-		if ( ! empty( $args['target_id'] ) ) {
-			if ( ! class_exists( 'EMCP_Tools_Migrate_Targets' ) ) {
-				return new WP_Error( 'engine_unavailable', __( 'The paired-targets store is not available.', 'emcp-tools' ) );
-			}
-			$target = EMCP_Tools_Migrate_Targets::get( (int) $args['target_id'] );
-			if ( ! $target ) {
-				return new WP_Error( 'target_missing', __( 'Paired target not found.', 'emcp-tools' ) );
-			}
-			$secret = EMCP_Tools_Migrate_Targets::get_secret( (int) $target['id'] );
-			if ( '' === $secret ) {
-				return new WP_Error( 'target_secret', __( 'The paired target secret could not be decrypted.', 'emcp-tools' ) );
-			}
-			return array(
-				'endpoint'   => (string) $target['endpoint'],
-				'secret'     => $secret,
-				'target_url' => (string) $target['target_url'],
-			);
+		if ( ! class_exists( 'EMCP_Tools_Migration_Engine' ) ) {
+			return new WP_Error( 'engine_unavailable', __( 'The migrate engine is not available.', 'emcp-tools' ) );
 		}
-
-		$remote = trim( (string) ( $args['remote_url'] ?? '' ) );
-		if ( '' === $remote || ! wp_http_validate_url( $remote ) ) {
-			return new WP_Error( 'invalid_remote', __( 'A valid http(s) remote_url is required (or use target_id).', 'emcp-tools' ) );
-		}
-		$secret = (string) ( $args['secret_key'] ?? '' );
-		if ( '' === $secret ) {
-			return new WP_Error( 'secret_required', __( 'secret_key is required (must match EMCP_CONNECTOR_SECRET on the destination).', 'emcp-tools' ) );
-		}
-		return array(
-			'endpoint'   => EMCP_Tools_Migration_Engine::endpoint_for_url( $remote ),
-			'secret'     => $secret,
-			'target_url' => untrailingslashit( $remote ),
-		);
+		return EMCP_Tools_Migration_Engine::destination_from_input( $args );
 	}
 
 	/**
@@ -293,25 +265,19 @@ class EMCP_Tools_Migrate_Abilities {
 			return new WP_Error( 'engine_unavailable', __( 'The sync engine is not available.', 'emcp-tools' ) );
 		}
 
-		$opts = array( 'confirm' => ! empty( $args['confirm'] ) );
-		if ( ! empty( $args['target_id'] ) ) {
-			$opts['target_id'] = (int) $args['target_id'];
-		} else {
-			$remote = trim( (string) ( $args['remote_url'] ?? '' ) );
-			if ( '' === $remote || ! wp_http_validate_url( $remote ) ) {
-				return new WP_Error( 'invalid_remote', __( 'A valid http(s) remote_url is required (or use target_id).', 'emcp-tools' ) );
-			}
-			$secret = (string) ( $args['secret_key'] ?? '' );
-			if ( '' === $secret ) {
-				return new WP_Error( 'secret_required', __( 'secret_key is required (must match EMCP_CONNECTOR_SECRET on the destination).', 'emcp-tools' ) );
-			}
-			$opts['endpoint'] = EMCP_Tools_Migration_Engine::endpoint_for_url( $remote );
-			$opts['secret']   = $secret;
+		$dest = $this->resolve_destination( $args );
+		if ( is_wp_error( $dest ) ) {
+			return $dest;
 		}
+		$opts = array(
+			'confirm'  => ! empty( $args['confirm'] ),
+			'endpoint' => $dest['endpoint'],
+			'secret'   => $dest['secret'],
+			'poll'     => true,
+		);
 		if ( isset( $args['scope'] ) && is_array( $args['scope'] ) ) {
 			$opts['scope'] = $args['scope'];
 		}
-		$opts['poll'] = true;
 
 		$result = EMCP_Tools_Sync_Engine::sync_to_target( $opts );
 		if ( is_wp_error( $result ) ) {
@@ -357,28 +323,8 @@ class EMCP_Tools_Migrate_Abilities {
 				if ( $r['partial'] ) {
 					$partial = true;
 				}
-				if ( $ledger && '' !== $r['pk'] && ! empty( $r['before_rows'] ) ) {
-					EMCP_Tools_Change_Recorder::record_db( array(
-						'domain'   => 'database',
-						'action'   => 'search-replace',
-						'target'   => $table,
-						'summary'  => sprintf(
-							/* translators: 1: old URL, 2: new URL, 3: affected row count, 4: table name. */
-							__( 'URL search-replace (%1$s → %2$s) updated %3$d row(s) in %4$s', 'emcp-tools' ),
-							$old,
-							$new,
-							$r['affected'],
-							$table
-						),
-						'rollback' => array(
-							'type'        => 'db-before-image',
-							'op'          => 'update',
-							'table'       => $table,
-							'key_cols'    => array( $r['pk'] ),
-							'before_rows' => $r['before_rows'],
-							'partial'     => ( $r['partial'] || count( $r['before_rows'] ) >= $before_cap ),
-						),
-					) );
+				if ( $ledger ) {
+					$this->record_url_replace( $table, $r, $old, $new );
 				}
 			}
 		}
@@ -390,5 +336,40 @@ class EMCP_Tools_Migrate_Abilities {
 			'per_table'        => $per_table,
 			'partial'          => $partial,
 		);
+	}
+
+	/**
+	 * Record one table's search-replace as a reversible ledger entry.
+	 *
+	 * @param string $table Table name.
+	 * @param array  $r     walk_table() result (affected/pk/before_rows/partial).
+	 * @param string $old   Old URL.
+	 * @param string $new   New URL.
+	 */
+	private function record_url_replace( string $table, array $r, string $old, string $new ): void {
+		if ( '' === (string) $r['pk'] || empty( $r['before_rows'] ) ) {
+			return;
+		}
+		EMCP_Tools_Change_Recorder::record_db( array(
+			'domain'   => 'database',
+			'action'   => 'search-replace',
+			'target'   => $table,
+			'summary'  => sprintf(
+				/* translators: 1: old URL, 2: new URL, 3: affected row count, 4: table name. */
+				__( 'URL search-replace (%1$s → %2$s) updated %3$d row(s) in %4$s', 'emcp-tools' ),
+				$old,
+				$new,
+				$r['affected'],
+				$table
+			),
+			'rollback' => array(
+				'type'        => 'db-before-image',
+				'op'          => 'update',
+				'table'       => $table,
+				'key_cols'    => array( $r['pk'] ),
+				'before_rows' => $r['before_rows'],
+				'partial'     => ( ! empty( $r['partial'] ) || count( $r['before_rows'] ) >= 200 ),
+			),
+		) );
 	}
 }

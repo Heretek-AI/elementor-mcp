@@ -219,7 +219,7 @@ function emcp_connector_pair_exchange_allowed(): bool {
 }
 
 /** POST /pair/issue (HMAC) — issue a single-use code (for scripting). */
-function emcp_connector_handle_pair_issue( WP_REST_Request $request ) {
+function emcp_connector_handle_pair_issue() {
 	$issued = emcp_connector_issue_pair_code();
 	if ( is_wp_error( $issued ) ) {
 		return $issued;
@@ -250,7 +250,7 @@ function emcp_connector_handle_pair_exchange( WP_REST_Request $request ) {
 }
 
 /** GET /verify (HMAC) — prove a stored secret signs on this destination. */
-function emcp_connector_handle_verify( WP_REST_Request $request ) {
+function emcp_connector_handle_verify() {
 	return rest_ensure_response( array(
 		'verified'     => true,
 		'site'         => home_url(),
@@ -907,41 +907,42 @@ function emcp_connector_admin_page(): void {
 			</div>
 		<?php endif; ?>
 		<p><?php echo esc_html( 'Version ' . emcp_connector_version() . '. This site receives .emcp backups pushed from an EMCP Tools source.' ); ?></p>
-		<table class="form-table" role="presentation">
-			<tr>
-				<th scope="row"><?php esc_html_e( 'Secret', 'emcp-connector' ); ?></th>
-				<td>
-					<?php if ( $configured ) : ?>
-						<strong><?php esc_html_e( 'Configured', 'emcp-connector' ); ?></strong>
-						<?php echo $secret_defined ? esc_html__( '(from wp-config.php)', 'emcp-connector' ) : esc_html__( '(stored option)', 'emcp-connector' ); ?>
-					<?php else : ?>
-						<strong style="color:#b32d2e"><?php esc_html_e( 'Not configured', 'emcp-connector' ); ?></strong>
-						<?php esc_html_e( '— pushes are refused until a secret is set.', 'emcp-connector' ); ?>
-					<?php endif; ?>
-					<?php if ( ! $secret_defined ) : ?>
-						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top:6px">
-							<?php wp_nonce_field( 'emcp_connector_admin' ); ?>
-							<input type="hidden" name="action" value="emcp_connector_admin" />
-							<input type="hidden" name="connector_action" value="save_secret" />
-							<input type="password" name="secret" class="regular-text" placeholder="<?php esc_attr_e( 'Shared secret', 'emcp-connector' ); ?>" autocomplete="off" />
-							<?php submit_button( __( 'Save secret', 'emcp-connector' ), 'secondary', 'submit', false ); ?>
-						</form>
-					<?php endif; ?>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"><?php esc_html_e( 'Pair a source', 'emcp-connector' ); ?></th>
-				<td>
-					<p><?php esc_html_e( 'Generate a single-use pairing code (valid 15 minutes) and send it to the source operator out-of-band. The source exchanges it for the shared secret once, over HTTPS.', 'emcp-connector' ); ?></p>
-					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-						<?php wp_nonce_field( 'emcp_connector_admin' ); ?>
-						<input type="hidden" name="action" value="emcp_connector_admin" />
-						<input type="hidden" name="connector_action" value="issue_code" />
-						<?php submit_button( __( 'Generate pairing code', 'emcp-connector' ), 'primary', 'submit', false, $configured ? array() : array( 'disabled' => 'disabled' ) ); ?>
-					</form>
-				</td>
-			</tr>
-		</table>
+
+		<div class="card" style="max-width: 640px;">
+			<h2><?php esc_html_e( 'Secret', 'emcp-connector' ); ?></h2>
+			<?php if ( $configured ) : ?>
+				<p><strong><?php esc_html_e( 'Configured', 'emcp-connector' ); ?></strong>
+					<?php echo $secret_defined ? esc_html__( '(from wp-config.php)', 'emcp-connector' ) : esc_html__( '(stored option)', 'emcp-connector' ); ?>
+				</p>
+			<?php else : ?>
+				<p><strong style="color:#b32d2e"><?php esc_html_e( 'Not configured', 'emcp-connector' ); ?></strong>
+					<?php esc_html_e( '— pushes are refused until a secret is set.', 'emcp-connector' ); ?>
+				</p>
+			<?php endif; ?>
+			<?php if ( ! $secret_defined ) : ?>
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+					<?php wp_nonce_field( 'emcp_connector_admin' ); ?>
+					<input type="hidden" name="action" value="emcp_connector_admin" />
+					<input type="hidden" name="connector_action" value="save_secret" />
+					<p>
+						<label for="emcp_connector_secret"><?php esc_html_e( 'Shared secret', 'emcp-connector' ); ?></label><br>
+						<input type="password" name="secret" id="emcp_connector_secret" class="regular-text" autocomplete="off" />
+					</p>
+					<?php submit_button( __( 'Save secret', 'emcp-connector' ), 'secondary', 'submit', false ); ?>
+				</form>
+			<?php endif; ?>
+		</div>
+
+		<div class="card" style="max-width: 640px;">
+			<h2><?php esc_html_e( 'Pair a source', 'emcp-connector' ); ?></h2>
+			<p><?php esc_html_e( 'Generate a single-use pairing code (valid 15 minutes) and send it to the source operator out-of-band. The source exchanges it for the shared secret once, over HTTPS.', 'emcp-connector' ); ?></p>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<?php wp_nonce_field( 'emcp_connector_admin' ); ?>
+				<input type="hidden" name="action" value="emcp_connector_admin" />
+				<input type="hidden" name="connector_action" value="issue_code" />
+				<?php submit_button( __( 'Generate pairing code', 'emcp-connector' ), 'primary', 'submit', false, $configured ? array() : array( 'disabled' => 'disabled' ) ); ?>
+			</form>
+		</div>
 	</div>
 	<?php
 }

@@ -331,30 +331,47 @@ class EMCP_Tools_Packager {
 		$added     = array();
 
 		foreach ( $roots as $root_name => $root ) {
-			$root = wp_normalize_path( $root );
-			if ( ! is_dir( $root ) ) {
-				continue;
-			}
-			$count = 0;
-			$it    = self::file_iterator( $root, $skip_dirs );
-			foreach ( $it as $file ) {
-				if ( ! $file->isFile() ) {
-					continue;
-				}
-				$zip_name = self::zip_relative_name( wp_normalize_path( $file->getPathname() ), $content_dir );
-				if ( '' === $zip_name ) {
-					continue; // Outside wp-content — never bundled.
-				}
-				if ( ! $zip->addFile( $file->getPathname(), $zip_name ) ) {
-					return false; // Propagate failure so create_archive cannot report a complete bundle.
-				}
-				$count++;
+			$count = self::add_root_files( $zip, (string) $root, $skip_dirs, $content_dir );
+			if ( false === $count ) {
+				return false; // addFile failed — never report a partial bundle as complete.
 			}
 			if ( $count > 0 ) {
-				$added[ $root_name ] = $count;
+				$added[ (string) $root_name ] = $count;
 			}
 		}
 		return $added;
+	}
+
+	/**
+	 * Walk one root into the archive under files/, pruning the skip directories.
+	 *
+	 * @param \ZipArchive $zip         Open archive.
+	 * @param string      $root        Absolute root directory (normalized later).
+	 * @param string[]    $skip_dirs   Directories never descended into.
+	 * @param string      $content_dir Normalized wp-content path.
+	 * @return int|false Files added, or false when an addFile failed.
+	 */
+	private static function add_root_files( ZipArchive $zip, string $root, array $skip_dirs, string $content_dir ) {
+		$root = wp_normalize_path( $root );
+		if ( ! is_dir( $root ) ) {
+			return 0;
+		}
+		$count = 0;
+		$it    = self::file_iterator( $root, $skip_dirs );
+		foreach ( $it as $file ) {
+			if ( ! $file->isFile() ) {
+				continue;
+			}
+			$zip_name = self::zip_relative_name( wp_normalize_path( $file->getPathname() ), $content_dir );
+			if ( '' === $zip_name ) {
+				continue; // Outside wp-content — never bundled.
+			}
+			if ( ! $zip->addFile( $file->getPathname(), $zip_name ) ) {
+				return false; // Propagate failure so create_archive cannot report a complete bundle.
+			}
+			$count++;
+		}
+		return $count;
 	}
 
 	/**

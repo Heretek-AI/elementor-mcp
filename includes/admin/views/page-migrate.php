@@ -318,8 +318,11 @@ $emcp_roots   = class_exists( 'EMCP_Tools_Sync_Engine' ) ? EMCP_Tools_Sync_Engin
 							</select>
 							<details style="margin-top:6px"><summary class="description"><?php esc_html_e( 'Advanced: raw URL + shared secret (no pairing)', 'emcp-tools' ); ?></summary>
 								<p>
-									<input type="url" name="remote_url" class="regular-text" placeholder="https://live.example.com">
-									<input type="password" name="secret_key" class="regular-text" placeholder="<?php esc_attr_e( 'Shared secret', 'emcp-tools' ); ?>" autocomplete="off">
+									<label for="emcp_push_remote_url"><?php esc_html_e( 'Destination URL:', 'emcp-tools' ); ?></label><br>
+									<input type="url" name="remote_url" id="emcp_push_remote_url" class="regular-text" placeholder="https://live.example.com">
+									<br>
+									<label for="emcp_push_secret_key"><?php esc_html_e( 'Shared secret:', 'emcp-tools' ); ?></label><br>
+									<input type="password" name="secret_key" id="emcp_push_secret_key" class="regular-text" placeholder="<?php esc_attr_e( 'Shared secret', 'emcp-tools' ); ?>" autocomplete="off">
 								</p>
 							</details>
 						</p>
@@ -330,7 +333,8 @@ $emcp_roots   = class_exists( 'EMCP_Tools_Sync_Engine' ) ? EMCP_Tools_Sync_Engin
 							<br>
 							<?php if ( ! empty( $emcp_backups ) ) : ?>
 								<label><input type="radio" name="archive_source" value="existing"> <?php esc_html_e( 'Use an existing archive:', 'emcp-tools' ); ?></label>
-								<select name="archive">
+								<label for="emcp_push_archive_select" class="screen-reader-text"><?php esc_html_e( 'Choose an archive', 'emcp-tools' ); ?></label>
+								<select name="archive" id="emcp_push_archive_select">
 									<?php foreach ( $emcp_backups as $emcp_b ) : ?>
 										<option value="<?php echo esc_attr( $emcp_b['filename'] ); ?>"><?php echo esc_html( $emcp_b['filename'] . ' (' . $emcp_b['size'] . ')' ); ?></option>
 									<?php endforeach; ?>

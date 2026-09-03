@@ -34,6 +34,52 @@ class EMCP_Tools_Migration_Engine {
 	}
 
 	/**
+	 * Resolve which destination an action targets: a stored paired target
+	 * (target_id) or a raw remote_url + secret_key. Single resolver shared by the
+	 * MCP abilities and the admin module so both use identical validation.
+	 *
+	 * @param array $input { target_id?:int, remote_url?:string, secret_key?:string }.
+	 * @return array{endpoint:string,secret:string,label:string,target_url:string}|\WP_Error
+	 */
+	public static function destination_from_input( array $input ) {
+		if ( ! empty( $input['target_id'] ) ) {
+			if ( ! class_exists( 'EMCP_Tools_Migrate_Targets' ) ) {
+				return new WP_Error( 'engine_unavailable', __( 'The paired-targets store is not available.', 'emcp-tools' ) );
+			}
+			$target = EMCP_Tools_Migrate_Targets::get( (int) $input['target_id'] );
+			if ( ! $target ) {
+				return new WP_Error( 'target_missing', __( 'Paired target not found.', 'emcp-tools' ) );
+			}
+			$secret = EMCP_Tools_Migrate_Targets::get_secret( (int) $target['id'] );
+			if ( '' === $secret ) {
+				return new WP_Error( 'target_secret', __( 'The paired target secret could not be decrypted.', 'emcp-tools' ) );
+			}
+			return array(
+				'endpoint'   => (string) $target['endpoint'],
+				'secret'     => $secret,
+				'label'      => (string) $target['label'],
+				'target_url' => (string) $target['target_url'],
+			);
+		}
+
+		$remote = trim( (string) ( $input['remote_url'] ?? '' ) );
+		if ( '' === $remote || ! wp_http_validate_url( $remote ) ) {
+			return new WP_Error( 'invalid_remote', __( 'A valid http(s) remote_url is required (or use target_id).', 'emcp-tools' ) );
+		}
+		$secret = (string) ( $input['secret_key'] ?? '' );
+		if ( '' === $secret ) {
+			return new WP_Error( 'secret_required', __( 'secret_key is required (must match EMCP_CONNECTOR_SECRET on the destination).', 'emcp-tools' ) );
+		}
+		$url = untrailingslashit( $remote );
+		return array(
+			'endpoint'   => self::endpoint_for_url( $remote ),
+			'secret'     => $secret,
+			'label'      => $url,
+			'target_url' => $url,
+		);
+	}
+
+	/**
 	 * Fresh transfer id for a push.
 	 *
 	 * @return string

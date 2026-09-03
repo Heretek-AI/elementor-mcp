@@ -1,5 +1,11 @@
 # Pro-only paths. Present in the private emcp-pro submodule (pro/), absent from
 # the free plugin + free zip. Consumed by build + verify scripts.
+#
+# NOTE (Heretek fork): the Pro overlay is merged into includes/ and gated by the
+# `.emcp-pro` marker, so these paths are the "unlocked" tier's file inventory.
+# Entries that never made it into this tree (editor-window.js / editor-*.js /
+# editor.css, ai-chat-panel*.php, migrate.js/css, emcp-prompts-v1.zip, tools/)
+# have been dropped so the list reflects what actually ships.
 includes/abilities/class-seo-abilities.php
 includes/abilities/class-a11y-abilities.php
 includes/abilities/class-skill-abilities.php
@@ -36,18 +42,10 @@ includes/admin/class-pro-ajax.php
 includes/admin/class-pro-skills.php
 includes/admin/class-pro-brand-kits.php
 includes/admin/views/page-ai-chat.php
-includes/admin/views/ai-chat-panel.php
-includes/admin/views/ai-chat-panel-editor.php
 includes/admin/views/page-skills.php
 assets/js/ai-chat.js
-assets/js/editor-window.js
-assets/js/editor-elementor.js
-assets/js/editor-gutenberg.js
 assets/css/ai-chat.css
-assets/css/editor.css
-assets/emcp-prompts-v1.zip
 tests
-tools
 includes/abilities/forms/class-wpforms-integration.php
 includes/abilities/forms/class-gravityforms-integration.php
 includes/abilities/forms/class-fluentforms-integration.php
@@ -77,9 +75,6 @@ includes/abilities/class-betheme-integration.php
 # Backup & Migrate module (Pro) — Phase 1 + Phase 2 (connector + migration)
 includes/modules/class-migrate-module.php
 includes/admin/views/page-migrate.php
-includes/admin/views/migrate
 includes/migrate
 includes/abilities/class-migrate-abilities.php
-assets/js/migrate.js
-assets/css/migrate.css
 connector

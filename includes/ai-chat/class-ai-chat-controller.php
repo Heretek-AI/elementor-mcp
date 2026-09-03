@@ -15,6 +15,12 @@ class EMCP_Tools_AI_Chat_Controller {
 	}
 
 	public static function register_routes(): void {
+		// True kill switch: the module owns the chat surface, so an inactive AI
+		// Chat module exposes no /emcp/v1/chat route (checked here at
+		// rest_api_init time, after the module registry has booted).
+		if ( ! class_exists( 'EMCP_Tools_AI_Chat_Module' ) || ! EMCP_Tools_AI_Chat_Module::is_enabled() ) {
+			return;
+		}
 		register_rest_route(
 			'emcp/v1',
 			'/chat',

@@ -11,7 +11,11 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 class EMCP_Tools_AI_Chat_Module extends EMCP_Tools_Module {
 
 	public function id(): string {
-		return 'ai_chat';
+		// Canonical id is 'ai-chat' (matches the admin tab + module_tab_visible
+		// lookup). 'ai_chat' was used by the first seeded installs; is_enabled()
+		// below still honours it so the module toggle keeps working across the
+		// rename without flipping anyone's choice.
+		return 'ai-chat';
 	}
 
 	public function title(): string {
@@ -27,8 +31,10 @@ class EMCP_Tools_AI_Chat_Module extends EMCP_Tools_Module {
 	}
 
 	public function default_active(): bool {
-		// Opt-in per user configuration.
-		return false;
+		// On by default (matches the documented Pro default). The module is a
+		// true kill switch now: disabling it stops the REST route and the editor
+		// FAB. Admins who prefer privacy-by-default can turn it off on Modules.
+		return true;
 	}
 
 	public function is_available(): bool {
@@ -37,11 +43,13 @@ class EMCP_Tools_AI_Chat_Module extends EMCP_Tools_Module {
 
 	public static function is_enabled(): bool {
 		$active = (array) get_option( self::OPTION_ACTIVE, array() );
-		return in_array( 'ai_chat', $active, true );
+		return in_array( 'ai-chat', $active, true ) || in_array( 'ai_chat', $active, true );
 	}
 
 	public function register(): void {
-		// Frontend editor scripts are auto-wired when active.
+		// The REST route is gated on is_enabled() inside the controller's
+		// rest_api_init hook; the editor bridges gate their own enqueues. A
+		// disabled module therefore exposes no chat surface.
 	}
 
 	public function render_settings(): void {

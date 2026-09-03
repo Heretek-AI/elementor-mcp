@@ -59,7 +59,7 @@ While the upstream free edition offers foundational builder endpoints, critical 
 | **Form Engines (8)** | ❌ Paid | ✅ **Included** | WPForms, Gravity Forms, Fluent, Ninja, Formidable, MetForm, SureForms, Forminator |
 | **SEO Suites (6)** | ❌ Paid | ✅ **Included** | Yoast SEO, Rank Math, AIOSEO, SEOPress, The SEO Framework, SureRank |
 | **Themes & Addons** | ❌ Paid | ✅ **Included** | GeneratePress, GenerateBlocks, Blocksy, BeTheme, Essential Addons, Premium, UAE |
-| **WooCommerce Logistics** | ❌ Paid | ✅ **Included** | ~120 store operations: products, orders, coupons, reviews, categories, inventory |
+| **WooCommerce Logistics** | ❌ Paid | ✅ **Included** | `woo-read`/`woo-write`: products, orders, customers, product CRUD + order updates (catalog widgets via `add-pro-widget`) |
 | **STC Archives (Migrate)** | ❌ Paid | ✅ **Included** | Portable `.emcp` site packages, database export/import, and deep URL search/replace |
 | **Sanctified Visuals & Blueprints** | 5 Prompts | **Full Library** | 50 Brand Kits, 60 Industry Landing Page Prompts, and Premium Templates |
 
@@ -159,8 +159,10 @@ In your workspace root, create or edit `.cursor/mcp.json`:
 When an integrated plugin is active on your WordPress site, its corresponding MCP machine rites automatically awaken:
 
 ### 1. E-Commerce (WooCommerce)
-- **`emcp-tools/woo-read`**: Query products, variations, orders, customers, reviews, coupons, tax rates, shipping zones, payment gateways, and system reports.
-- **`emcp-tools/woo-write`**: Create and update products, bulk adjust stock/prices, fulfill orders, issue coupon codes, manage refunds, and configure store settings.
+Two dispatcher tools register only when WooCommerce is active:
+- **`emcp-tools/woo-read`**: `list-products`, `get-product`, `list-orders`, `get-order`, `list-customers`, `system-status`.
+- **`emcp-tools/woo-write`**: `create-product`, `update-product`, `delete-product`, `update-order`.
+Coupons, reviews, tax rates, shipping zones, and payment-gateway management are not yet exposed; WooCommerce widgets are placed through `add-pro-widget` (catalog tier `woo`).
 
 ### 2. Form Engines (8 Supported)
 Inspect schemas, review field arrangements, and pull submissions:
@@ -173,7 +175,7 @@ Inspect schemas, review field arrangements, and pull submissions:
 - **SureForms** (`emcp-tools/sureforms-read`)
 - **Forminator** (`emcp-tools/forminator-read`)
 
-### 3. SEO Suites (6 Supported)
+### 3. SEO Suites (7 Supported: Slim SEO free + 6 Pro)
 Full read & write control over meta titles, descriptions, OpenGraph/Twitter social cards, focus keywords, robots indexing, and canonical tags:
 - **Yoast SEO** (`yoast-read`, `yoast-write`)
 - **Rank Math SEO** (`rankmath-read`, `rankmath-write`)
@@ -181,13 +183,14 @@ Full read & write control over meta titles, descriptions, OpenGraph/Twitter soci
 - **SEOPress** (`seopress-read`, `seopress-write`)
 - **The SEO Framework** (`seoframework-read`, `seoframework-write`)
 - **SureRank** (`surerank-read`, `surerank-write`)
+- **Slim SEO** (`slimseo-read`, `slimseo-write`, free tier)
 
 ### 4. Themes & Custom Builders
 - **GeneratePress**: Customizer colors, typography, layout presets, and elements (`generatepress-read`, `generatepress-write`).
-- **GenerateBlocks**: Discovery, block patterns, and layout schemas (`generateblocks-catalog`).
+- **GenerateBlocks**: Block catalog discovery + block defaults (`generateblocks-read`, `generateblocks-write`).
 - **Blocksy**: Blocks catalog, extensions, and header/footer builder integration.
 - **BeTheme & BeBuilder**: Read/write BeTheme options and construct BeBuilder content trees.
-- **Elementor Addon Packs**: Essential Addons (`ea-read`), Premium Addons (`pa-read`), and Ultimate Addons for Elementor (`uae-read`).
+- **Elementor Addon Packs**: Essential Addons (`essential-addons-read`), Premium Addons (`premium-addons-read`), and Ultimate Addons for Elementor (`uae-read`, `uae-write`).
 
 ---
 
@@ -204,10 +207,11 @@ Construct production-ready custom Elementor widgets:
 - Validated controls, responsive typography, icon selectors, and repeater structures.
 - Isolated sandbox verification prior to live deployment.
 
-### STC Archives (Backup, Sync & Migration)
-- **`create-backup`**: Packages database tables, theme settings, and active plugins into a portable `.emcp` Standard Template Construct archive.
-- **`migrate-site`**: Headless migration with serialized URL search-and-replace for domain switching.
-- **Connector Plugin**: Lightweight bridge (`connector/emcp-connector.php`) for push/pull synchronization across environments.
+### STC Archives (Backup, Restore & Migration)
+- **`create-backup` / `list-backups`**: Build a portable `.emcp` archive (full database dump + optional `include_files` bundle of uploads/plugins/themes) and list existing archives. Non-destructive, on by default.
+- **Restore (admin-only)**: The Backup & Migrate tab verifies an archive's manifest hash, imports the database, rewrites the source URL to this site (serialized-safe, incl. `_elementor_data`), and places bundled files. Download + delete also live there.
+- **`migrate-site`**: Push this site to a remote **EMCP Connector** (`connector/emcp-connector.php`, installed standalone on the destination) as HMAC-signed 2 MB packets; the connector restores it and reports a job id. Destructive on the destination — requires `confirm:true`. Disabled by default.
+- **`sync-to-live`**: Run a serialized-safe URL search-and-replace across the whole database (options, posts, postmeta incl. `_elementor_data`, comments, term/usermeta, other prefixed tables). Requires `confirm:true`. Disabled by default.
 
 ---
 

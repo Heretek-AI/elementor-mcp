@@ -2346,6 +2346,31 @@ class EMCP_Tools_Admin {
 	}
 
 	/**
+	 * Check whether the current screen belongs to EMCP Tools.
+	 *
+	 * Robust against differing parent-slug hookname constructions across WP versions.
+	 *
+	 * @since 3.14.3
+	 * @param string $hook Optional admin page hook name.
+	 * @return bool
+	 */
+	public function is_emcp_screen( string $hook = '' ): bool {
+		if ( ! empty( $hook ) && in_array( $hook, $this->hook_suffixes, true ) ) {
+			return true;
+		}
+		// Check URL page query param.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( isset( $_GET['page'] ) && 0 === strpos( sanitize_key( wp_unslash( $_GET['page'] ) ), self::PAGE_SLUG ) ) {
+			return true;
+		}
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		if ( $screen && ( in_array( $screen->id, $this->hook_suffixes, true ) || 0 === strpos( (string) $screen->id, self::PAGE_SLUG ) ) ) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
 	 * Append dark theme canvas body classes on EMCP admin screens.
 	 *
 	 * @since 3.2.0
@@ -2353,8 +2378,7 @@ class EMCP_Tools_Admin {
 	 * @return string
 	 */
 	public function filter_admin_body_class( string $classes ): string {
-		$screen = get_current_screen();
-		if ( $screen && in_array( $screen->id, $this->hook_suffixes, true ) ) {
+		if ( $this->is_emcp_screen() ) {
 			$classes .= ' emcp-admin-page emcp-theme-dark ';
 		}
 		return $classes;
@@ -2368,7 +2392,7 @@ class EMCP_Tools_Admin {
 	 * @param string $hook The current admin page hook.
 	 */
 	public function enqueue_assets( string $hook ): void {
-		if ( ! in_array( $hook, $this->hook_suffixes, true ) ) {
+		if ( ! $this->is_emcp_screen( $hook ) ) {
 			return;
 		}
 
@@ -2384,10 +2408,9 @@ class EMCP_Tools_Admin {
 			add_action( 'admin_notices', array( $this, 'notice_missing_js_asset' ) );
 		}
 
-		// Use filemtime in dev (when WP_DEBUG is on) so iterating on CSS/JS doesn't get stuck
-		// behind a cached file under the same plugin version. Falls back to EMCP_TOOLS_VERSION.
-		$css_ver = ( defined( 'WP_DEBUG' ) && WP_DEBUG && file_exists( $css_path ) ) ? filemtime( $css_path ) : EMCP_TOOLS_VERSION;
-		$js_ver  = ( defined( 'WP_DEBUG' ) && WP_DEBUG && file_exists( $js_path ) ) ? filemtime( $js_path ) : EMCP_TOOLS_VERSION;
+		// Use filemtime whenever available so CSS/JS changes bust LiteSpeed & browser cache immediately.
+		$css_ver = file_exists( $css_path ) ? (string) filemtime( $css_path ) : EMCP_TOOLS_VERSION;
+		$js_ver  = file_exists( $js_path ) ? (string) filemtime( $js_path ) : EMCP_TOOLS_VERSION;
 
 		if ( file_exists( $css_path ) ) {
 			wp_enqueue_style(

@@ -23,13 +23,14 @@ $emcp_upsell_url     = function_exists( 'emcp_tools_upgrade_url' ) ? emcp_tools_
 
 <style>
 	.emcp-pro-upsell { max-width: 640px; margin: 24px 0; padding: 40px 32px; text-align: center;
-		background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px; }
+		background: var(--mcp-white, #111116); border: 1px solid var(--mcp-gray-200, #1f1f27); border-radius: 10px; box-shadow: 0 4px 14px rgba(0,0,0,.4); }
 	.emcp-pro-upsell__badge { display: inline-block; margin-bottom: 16px; padding: 4px 12px;
 		font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
-		color: #4f46e5; background: #eef0fe; border-radius: 999px; }
-	.emcp-pro-upsell h2 { margin: 0 0 10px; font-size: 22px; color: #1f2330; }
-	.emcp-pro-upsell p { margin: 0 auto 24px; max-width: 480px; color: #6b7280; font-size: 14px; line-height: 1.6; }
-	.emcp-pro-upsell .button-hero { background: #4f46e5; border-color: #4f46e5; }
+		color: var(--mcp-primary); background: rgba(220, 38, 38, 0.15); border: 1px solid rgba(220, 38, 38, 0.35); border-radius: 999px; }
+	.emcp-pro-upsell h2 { margin: 0 0 10px; font-size: 22px; color: #ffffff; font-family: var(--mcp-font-heading); }
+	.emcp-pro-upsell p { margin: 0 auto 24px; max-width: 480px; color: var(--mcp-gray-500); font-size: 14px; line-height: 1.6; }
+	.emcp-pro-upsell .button-hero { background: var(--mcp-primary); border-color: var(--mcp-primary); color: #fff; font-weight: 600; }
+	.emcp-pro-upsell .button-hero:hover { background: var(--mcp-primary-hover); border-color: var(--mcp-primary-hover); }
 </style>
 
 <div class="emcp-pro-upsell">

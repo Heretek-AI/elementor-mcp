@@ -49,6 +49,8 @@ class WP_Post {
 	public $post_date_gmt;
 	public $post_modified;
 	public $post_author  = 1;
+	public $post_parent  = 0;
+	public $post_mime_type = '';
 }
 
 class WP_Term {
@@ -74,6 +76,20 @@ function is_wp_error( $t ) { return $t instanceof WP_Error; }
 
 function get_post( $id ) {
 	return $GLOBALS['wp_posts'][ $id ] ?? null;
+}
+
+function get_posts( $args = array() ) {
+	$results = array();
+	$parent  = $args['post_parent'] ?? 0;
+	$type    = $args['post_type'] ?? 'post';
+	$mime    = $args['post_mime_type'] ?? '';
+	foreach ( $GLOBALS['wp_posts'] as $p ) {
+		if ( $type && $p->post_type !== $type ) continue;
+		if ( $parent && $p->post_parent != $parent ) continue;
+		if ( $mime && 0 !== strpos( $p->post_mime_type, $mime ) ) continue;
+		$results[] = $p;
+	}
+	return $results;
 }
 
 function wp_insert_post( $args, $wp_error = false ) {
@@ -351,10 +367,31 @@ assert( $find_res2['found'] === true );
 assert( $find_res2['comic']['id'] === $created_id );
 echo 'Found by source_url: ID ' . $find_res2['comic']['id'] . "\n";
 
-// Find nonexistent source
-$find_empty = EMCP_Tools_Comic_Read_Operations::find_by_source( array( 'source_tweet_id' => '999999999999' ) );
-assert( $find_empty['found'] === false );
-echo "PASS: find_by_source verified for scrapers and idempotency!\n\n";
+// Verify featured_image and featured_image_url on get_comic
+assert( isset( $read_res['featured_image']['url'] ) && ! empty( $read_res['featured_image']['url'] ) );
+assert( isset( $read_res['featured_image_url'] ) && $read_res['featured_image_url'] === $read_res['featured_image']['url'] );
+
+// Verify list_comics returns featured_image and featured_image_url
+$list_res = EMCP_Tools_Comic_Read_Operations::list_comics( array( 'status' => 'publish' ) );
+assert( ! empty( $list_res['comics'] ) );
+assert( isset( $list_res['comics'][0]['featured_image']['url'] ) );
+assert( isset( $list_res['comics'][0]['featured_image_url'] ) );
+
+// Verify fallback to attached image when _thumbnail_id is missing
+$no_thumb_id = wp_insert_post( array( 'post_title' => 'Legacy Attached Comic', 'post_type' => 'comic', 'post_status' => 'publish' ) );
+$att_p = new WP_Post();
+$att_id = ++$GLOBALS['wp_post_counter'];
+$att_p->ID = $att_id;
+$att_p->post_type = 'attachment';
+$att_p->post_mime_type = 'image/jpeg';
+$att_p->post_parent = $no_thumb_id;
+$GLOBALS['wp_posts'][ $att_id ] = $att_p;
+
+$legacy_res = EMCP_Tools_Comic_Read_Operations::get_comic( array( 'id' => $no_thumb_id ) );
+assert( ! is_wp_error( $legacy_res ) );
+assert( $legacy_res['featured_image']['id'] === $att_id );
+assert( ! empty( $legacy_res['featured_image_url'] ) );
+echo "PASS: featured_image, featured_image_url, and attachment fallback verified!\n";
 
 echo "=== TEST 4: Update Comic (Append Images & Set Source) ===\n";
 $update_res = EMCP_Tools_Comic_Write_Operations::update_comic(

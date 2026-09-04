@@ -39,20 +39,15 @@ class EMCP_Tools_Comic_Read_Operations {
 	}
 
 	/**
-	 * Get full details of a single comic post.
+	 * Resolves the featured image for a comic post.
 	 *
-	 * @param array $args Arguments: { id?: int, slug?: string }
-	 * @return array|\WP_Error
+	 * Returns the full-resolution image URL, attachment ID, dimensions, and alt text.
+	 * If no post thumbnail is explicitly set, falls back to the comic's first image attachment.
+	 *
+	 * @param int $post_id Comic post ID.
+	 * @return array { id: int, url: string, width: ?int, height: ?int, alt: string }
 	 */
-	public static function get_comic( array $args ) {
-		$post = self::resolve_comic_post( $args );
-		if ( is_wp_error( $post ) ) {
-			return $post;
-		}
-
-		$post_id = $post->ID;
-
-		// Featured media (Page 1)
+	public static function resolve_featured_image( int $post_id ): array {
 		$featured_id  = (int) get_post_thumbnail_id( $post_id );
 		$featured_url = '';
 		$featured_w   = null;
@@ -68,6 +63,64 @@ class EMCP_Tools_Comic_Read_Operations {
 			}
 			$featured_alt = (string) get_post_meta( $featured_id, '_wp_attachment_image_alt', true );
 		}
+
+		// Fallback: If no post thumbnail is set, search for the first attached image
+		if ( empty( $featured_url ) && function_exists( 'get_posts' ) ) {
+			$attachments = get_posts(
+				array(
+					'post_type'      => 'attachment',
+					'post_parent'    => $post_id,
+					'post_mime_type' => 'image',
+					'posts_per_page' => 1,
+					'order'          => 'ASC',
+					'orderby'        => 'menu_order ID',
+				)
+			);
+			if ( ! empty( $attachments ) ) {
+				$att         = reset( $attachments );
+				$featured_id = (int) ( $att->ID ?? 0 );
+				if ( $featured_id > 0 && function_exists( 'wp_get_attachment_image_src' ) ) {
+					$src = wp_get_attachment_image_src( $featured_id, 'full' );
+					if ( is_array( $src ) && ! empty( $src[0] ) ) {
+						$featured_url = $src[0];
+						$featured_w   = (int) $src[1];
+						$featured_h   = (int) $src[2];
+					}
+					$featured_alt = (string) get_post_meta( $featured_id, '_wp_attachment_image_alt', true );
+				}
+			}
+		}
+
+		return array(
+			'id'     => $featured_id,
+			'url'    => $featured_url,
+			'width'  => $featured_w,
+			'height' => $featured_h,
+			'alt'    => $featured_alt,
+		);
+	}
+
+	/**
+	 * Get full details of a single comic post.
+	 *
+	 * @param array $args Arguments: { id?: int, slug?: string }
+	 * @return array|\WP_Error
+	 */
+	public static function get_comic( array $args ) {
+		$post = self::resolve_comic_post( $args );
+		if ( is_wp_error( $post ) ) {
+			return $post;
+		}
+
+		$post_id = $post->ID;
+
+		// Featured media (Page 1) with fallback to attachments
+		$featured_media = self::resolve_featured_image( $post_id );
+		$featured_id    = $featured_media['id'];
+		$featured_url   = $featured_media['url'];
+		$featured_w     = $featured_media['width'];
+		$featured_h     = $featured_media['height'];
+		$featured_alt   = $featured_media['alt'];
 
 		// Multi-image field (Pages 2..N)
 		$html_below = (string) get_post_meta( $post_id, 'comic-html-below', true );
@@ -133,13 +186,21 @@ class EMCP_Tools_Comic_Read_Operations {
 			),
 			'content'           => $post->post_content,
 			'excerpt'           => $post->post_excerpt,
-			'featured_media'    => array(
+			'featured_media'     => array(
 				'id'     => $featured_id,
 				'url'    => $featured_url,
 				'width'  => $featured_w,
 				'height' => $featured_h,
 				'alt'    => $featured_alt,
 			),
+			'featured_image'     => array(
+				'id'     => $featured_id,
+				'url'    => $featured_url,
+				'width'  => $featured_w,
+				'height' => $featured_h,
+				'alt'    => $featured_alt,
+			),
+			'featured_image_url' => $featured_url,
 			'comic_html_below'  => $html_below,
 			'additional_images' => $additional_images,
 			'all_images'        => $all_images,
@@ -234,31 +295,39 @@ class EMCP_Tools_Comic_Read_Operations {
 
 		foreach ( $query->posts as $p ) {
 			$p_id         = $p->ID;
-			$thumb_id     = (int) get_post_thumbnail_id( $p_id );
-			$thumb_url    = '';
+			$featured     = self::resolve_featured_image( $p_id );
+			$featured_url = $featured['url'];
+
+			$thumb_id  = $featured['id'];
+			$thumb_url = '';
 			if ( $thumb_id > 0 && function_exists( 'wp_get_attachment_image_src' ) ) {
 				$src = wp_get_attachment_image_src( $thumb_id, 'medium' );
 				if ( is_array( $src ) && ! empty( $src[0] ) ) {
 					$thumb_url = $src[0];
 				}
 			}
+			if ( empty( $thumb_url ) ) {
+				$thumb_url = $featured_url;
+			}
 
 			$html_below = (string) get_post_meta( $p_id, 'comic-html-below', true );
 			$add_count  = count( EMCP_Tools_Comic_Html_Helper::parse_html_below( $html_below ) );
-			$total_pgs  = ( ! empty( $thumb_url ) ? 1 : 0 ) + $add_count;
+			$total_pgs  = ( ! empty( $featured_url ) ? 1 : 0 ) + $add_count;
 
 			$comics[] = array(
-				'id'              => $p_id,
-				'slug'            => $p->post_name,
-				'title'           => get_the_title( $p_id ),
-				'url'             => get_permalink( $p_id ),
-				'date'            => $p->post_date,
-				'status'          => $p->post_status,
-				'thumbnail_url'   => $thumb_url,
-				'total_pages'     => $total_pgs,
-				'source_tweet_id' => (string) get_post_meta( $p_id, 'source_tweet_id', true ),
-				'source_url'      => (string) get_post_meta( $p_id, 'source_url', true ),
-				'chapters'        => self::get_term_summaries( $p_id, 'chapters' ),
+				'id'                 => $p_id,
+				'slug'               => $p->post_name,
+				'title'              => get_the_title( $p_id ),
+				'url'                => get_permalink( $p_id ),
+				'date'               => $p->post_date,
+				'status'             => $p->post_status,
+				'thumbnail_url'      => $thumb_url,
+				'featured_image'     => $featured,
+				'featured_image_url' => $featured_url,
+				'total_pages'        => $total_pgs,
+				'source_tweet_id'    => (string) get_post_meta( $p_id, 'source_tweet_id', true ),
+				'source_url'         => (string) get_post_meta( $p_id, 'source_url', true ),
+				'chapters'           => self::get_term_summaries( $p_id, 'chapters' ),
 			);
 		}
 

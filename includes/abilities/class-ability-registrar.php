@@ -282,6 +282,13 @@ class EMCP_Tools_Ability_Registrar {
 			$this->ability_names = array_merge( $this->ability_names, $comic_easel->get_ability_names() );
 		}
 
+		// Ads & Monetization abilities (WP Quads, dynamic ads.txt, ExoClick).
+		if ( class_exists( 'EMCP_Tools_Ads_Integration' ) && EMCP_Tools_Ads_Integration::is_active() ) {
+			$ads_integration = new EMCP_Tools_Ads_Integration();
+			$ads_integration->register();
+			$this->ability_names = array_merge( $this->ability_names, $ads_integration->get_ability_names() );
+		}
+
 		// Forms-tab integrations. CF7 is free; the five entry-storing plugins are
 		// Pro. Each registers only when its plugin is active (is_available()).
 		$form_integrations = array();

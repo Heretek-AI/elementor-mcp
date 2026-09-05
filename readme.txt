@@ -1,4 +1,4 @@
-=== MCP Tools for Elementor & WordPress (Pro) ===
+=== MCP Tools for Elementor & WordPress ===
 Contributors: Heretek-AI, mianshahzadraza
 Tags: elementor, mcp, ai, gutenberg, claude
 Requires at least: 6.9
@@ -176,6 +176,11 @@ On shared LiteSpeed hosting (e.g. Hostinger) this is usually the host caching/bu
 2. Connection configuration page with copy-paste configs.
 
 == Changelog ==
+
+= 3.16.1 =
+* Added: Native Ad Monetization & ExoClick MCP engine (emcp-tools/ads-read and ads-write) with automated zone provisioning, WP Quads dual-write synchronization, ads.txt validation, and cache invalidation.
+* Changed: Standardized all administrative navigation, dashboard cards, views, and documentation to official professional WordPress and AI terminology.
+* Fixed: AI Chat settings card layout resets to prevent form table vertical stretching under admin forms.
 
 = 3.16.0 =
 Backup, Restore & Migrate become real: honest .emcp archives, a working restore path, a site-wide serialized-safe URL search-replace, and a genuine HMAC connector for migrate-site push.
@@ -777,3 +782,9 @@ The first major release of the rebranded EMCP Tools, a step beyond Elementor int
 * 1 composite build-page tool.
 * Admin settings page with tool toggles and connection info.
 * Node.js HTTP proxy for remote connections.
+
+== Upgrade Notice ==
+
+= 3.16.1 =
+Adds full Ad Monetization tools, professional interface terminology, and layout stability fixes.
+

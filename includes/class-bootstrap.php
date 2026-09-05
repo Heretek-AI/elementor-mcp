@@ -173,7 +173,9 @@ class EMCP_Tools_Bootstrap {
 		require_once EMCP_TOOLS_DIR . 'includes/redirects/class-redirect-handler.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-content-mirror.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-admin-bar.php';
-		require_once EMCP_TOOLS_DIR . 'includes/class-github-updater.php';
+		if ( file_exists( EMCP_TOOLS_DIR . 'includes/class-github-updater.php' ) && ! defined( 'EMCP_WPORG_BUILD' ) ) {
+			require_once EMCP_TOOLS_DIR . 'includes/class-github-updater.php';
+		}
 		require_once EMCP_TOOLS_DIR . 'includes/class-notifications.php';
 		require_once EMCP_TOOLS_DIR . 'includes/class-nav-menu-shortcode.php';
 		// Editor-side auto-repair for AI-inserted static-save blocks (Kadence).
@@ -494,9 +496,10 @@ class EMCP_Tools_Bootstrap {
 		// self-gates on capability + is_admin_bar_showing()).
 		( new EMCP_Tools_Admin_Bar() )->init();
 
-		// Free-tier updates from GitHub releases (self-disables on premium builds,
-		// where Freemius owns updates).
-		( new EMCP_Tools_GitHub_Updater() )->init();
+		// Free-tier updates from GitHub releases (self-disables on WordPress.org builds).
+		if ( class_exists( 'EMCP_Tools_GitHub_Updater' ) && ! defined( 'EMCP_WPORG_BUILD' ) ) {
+			( new EMCP_Tools_GitHub_Updater() )->init();
+		}
 	}
 
 	/**

@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name:       MCP Tools for Elementor & WordPress (Pro)
+ * Plugin Name:       MCP Tools for Elementor & WordPress
  * Plugin URI:        https://github.com/Heretek-AI/heretek-control-core
  * Description:       Professional Model Context Protocol (MCP) server connecting WordPress, Elementor & Gutenberg to AI assistants (Claude, Cursor, ChatGPT, Antigravity).
  * Version:           3.16.1
@@ -176,99 +176,108 @@ require_once EMCP_TOOLS_DIR . 'includes/class-mcp-adapter-bootstrap.php';
 EMCP_Tools_Adapter_Bootstrap::preload_bundled_namespace();
 
 if ( ! function_exists( 'emcp_tools_fs' ) ) {
-	// Create a helper function for easy SDK access.
-	function emcp_tools_fs() {
-		global $emcp_tools_fs;
+	if ( file_exists( dirname( __FILE__ ) . '/includes/vendors/fremius/start.php' ) && ! defined( 'EMCP_WPORG_BUILD' ) ) {
+		// Create a helper function for easy SDK access.
+		function emcp_tools_fs() {
+			global $emcp_tools_fs;
 
-		if ( ! isset( $emcp_tools_fs ) ) {
-			// Activate multisite network integration.
-			if ( ! defined( 'WP_FS__PRODUCT_30577_MULTISITE' ) ) {
-				define( 'WP_FS__PRODUCT_30577_MULTISITE', true );
+			if ( ! isset( $emcp_tools_fs ) ) {
+				// Activate multisite network integration.
+				if ( ! defined( 'WP_FS__PRODUCT_30577_MULTISITE' ) ) {
+					define( 'WP_FS__PRODUCT_30577_MULTISITE', true );
+				}
+
+				// Include Freemius SDK.
+				require_once dirname( __FILE__ ) . '/includes/vendors/fremius/start.php';
+
+				$emcp_tools_is_premium = file_exists( dirname( __FILE__ ) . '/.emcp-pro' );
+
+				$emcp_tools_fs = fs_dynamic_init( array(
+					'id'                  => '30577',
+					'slug'                => 'emcp-tools',
+					'premium_slug'        => 'emcp-pro',
+					'type'                => 'plugin',
+					'public_key'          => 'pk_2b2a026d5c27655581635abcd4556',
+					'is_premium'          => $emcp_tools_is_premium,
+					'premium_suffix'      => 'Pro',
+					'has_premium_version' => false,
+					'has_addons'          => false,
+					'has_paid_plans'      => false,
+					'is_org_compliant'    => false,
+					'has_affiliation'     => false,
+					'menu'                => array(
+						'slug'           => 'emcp-tools',
+						'support'        => false,
+					),
+				) );
 			}
 
-			// Include Freemius SDK.
-			require_once dirname( __FILE__ ) . '/includes/vendors/fremius/start.php';
-
-			// The premium build ships a `.emcp-pro` marker file at the plugin
-			// root; the free build does not. Freemius needs is_premium=true on
-			// the premium build so it shows the LICENSE-ACTIVATION flow (gated
-			// on is_premium()) instead of the free connect/opt-in screen. With
-			// it hardcoded false, the premium zip behaved like the free version
-			// and never offered license activation.
-			$emcp_tools_is_premium = file_exists( dirname( __FILE__ ) . '/.emcp-pro' );
-
-			$emcp_tools_fs = fs_dynamic_init( array(
-				'id'                  => '30577',
-				'slug'                => 'emcp-tools',
-				'premium_slug'        => 'emcp-pro',
-				'type'                => 'plugin',
-				'public_key'          => 'pk_2b2a026d5c27655581635abcd4556',
-				'is_premium'          => $emcp_tools_is_premium,
-				'premium_suffix'      => 'Pro',
-				'has_premium_version' => false,
-				'has_addons'          => false,
-				'has_paid_plans'      => false,
-				'is_org_compliant'    => false,
-				'has_affiliation'     => false,
-				'menu'                => array(
-					'slug'           => 'emcp-tools',
-					'support'        => false,
-				),
-			) );
+			return $emcp_tools_fs;
 		}
 
-		return $emcp_tools_fs;
-	}
+		// Init Freemius.
+		emcp_tools_fs();
+		// Signal that SDK was initiated.
+		do_action( 'emcp_tools_fs_loaded' );
 
-	// Init Freemius.
-	emcp_tools_fs();
-	// Signal that SDK was initiated.
-	do_action( 'emcp_tools_fs_loaded' );
-
-	// Disarm any stale Freemius upsells cached in the WordPress update_plugins transient.
-	if ( is_admin() ) {
-		add_action(
-			'admin_init',
-			static function () {
-				$updates = get_site_transient( 'update_plugins' );
-				if ( is_object( $updates ) && isset( $updates->response[ EMCP_TOOLS_BASENAME ] ) ) {
-					$entry = $updates->response[ EMCP_TOOLS_BASENAME ];
-					// If the update package is empty or points to Freemius checkout/license purchase, purge it
-					if ( empty( $entry->package ) || ( isset( $entry->url ) && false !== strpos( $entry->url, 'freemius' ) ) ) {
-						unset( $updates->response[ EMCP_TOOLS_BASENAME ] );
-						set_site_transient( 'update_plugins', $updates );
+		// Disarm any stale Freemius upsells cached in the WordPress update_plugins transient.
+		if ( is_admin() ) {
+			add_action(
+				'admin_init',
+				static function () {
+					$updates = get_site_transient( 'update_plugins' );
+					if ( is_object( $updates ) && isset( $updates->response[ EMCP_TOOLS_BASENAME ] ) ) {
+						$entry = $updates->response[ EMCP_TOOLS_BASENAME ];
+						if ( empty( $entry->package ) || ( isset( $entry->url ) && false !== strpos( $entry->url, 'freemius' ) ) ) {
+							unset( $updates->response[ EMCP_TOOLS_BASENAME ] );
+							set_site_transient( 'update_plugins', $updates );
+						}
 					}
-				}
-			},
-			5
-		);
-	}
+				},
+				5
+			);
+		}
 
-	// Trim the Freemius-injected submenu items we surface elsewhere: Contact Us
-	// (Help & Support lives in the plugin header), Affiliation (shown in the
-	// header next to Changelog), and Pricing for licensed Pro users (free users
-	// keep the upgrade link). Freemius keeps the underlying pages reachable by
-	// URL, so the header links still work.
-	emcp_tools_fs()->add_filter(
-		'is_submenu_visible',
-		function ( $is_visible, $menu_id ) {
-			if ( 'contact' === $menu_id || 'affiliation' === $menu_id ) {
-				return false;
+		emcp_tools_fs()->add_filter(
+			'is_submenu_visible',
+			function ( $is_visible, $menu_id ) {
+				if ( 'contact' === $menu_id || 'affiliation' === $menu_id ) {
+					return false;
+				}
+				if ( 'pricing' === $menu_id && emcp_tools_fs()->can_use_premium_code() ) {
+					return false;
+				}
+				return $is_visible;
+			},
+			10,
+			2
+		);
+	} else {
+		// Zero-dependency unlocked stub for official WordPress.org distribution.
+		function emcp_tools_fs() {
+			static $emcp_fs_stub = null;
+			if ( null === $emcp_fs_stub ) {
+				$emcp_fs_stub = new class {
+					public function can_use_premium_code(): bool { return true; }
+					public function is_premium(): bool { return true; }
+					public function is_plan(): bool { return true; }
+					public function has_features(): bool { return true; }
+					public function add_filter( $hook, $callback, $priority = 10, $accepted_args = 1 ): void {}
+					public function add_action( $hook, $callback, $priority = 10, $accepted_args = 1 ): void {}
+					public function _get_license() { return (object) array( 'secret_key' => 'unlocked' ); }
+					public function get_upgrade_url(): string { return 'https://github.com/Heretek-AI/heretek-control-core'; }
+				};
 			}
-			if ( 'pricing' === $menu_id && emcp_tools_fs()->can_use_premium_code() ) {
-				return false;
-			}
-			return $is_visible;
-		},
-		10,
-		2
-	);
+			return $emcp_fs_stub;
+		}
+
+		do_action( 'emcp_tools_fs_loaded' );
+	}
 }
 
-// Uninstall cleanup runs via Freemius's after_uninstall action (uninstall.php
-// was removed in v1.6.1 — Freemius rejects builds containing it).
+// Uninstall cleanup runs via Freemius's after_uninstall action or WordPress uninstaller.
 require_once EMCP_TOOLS_DIR . 'includes/class-uninstaller.php';
-if ( function_exists( 'emcp_tools_fs' ) ) {
+if ( function_exists( 'emcp_tools_fs' ) && method_exists( emcp_tools_fs(), 'add_action' ) ) {
 	emcp_tools_fs()->add_action( 'after_uninstall', array( 'EMCP_Tools_Uninstaller', 'run' ) );
 }
 

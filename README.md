@@ -1,6 +1,6 @@
 <h1 align="center">
   <img src="assets/img/icon-sm.png" width="80" alt="Heretek Control Core logo"><br>
-  MCP Tools for Elementor & WordPress (Pro)
+  MCP Tools for Elementor & WordPress
 </h1>
 
 <p align="center">

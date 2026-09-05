@@ -3,8 +3,9 @@
 # build-wporg-zip.sh
 # Packages a 100% compliant release ZIP for the WordPress.org Plugin Directory.
 #
-# Excludes development artifacts, git metadata, tests, third-party updaters,
-# and legacy commercial SDKs per WordPress.org Guidelines 1, 5, 8, and 17.
+# Excludes development artifacts, git metadata, tests, shell scripts,
+# third-party updaters, and legacy commercial SDKs per WordPress.org
+# Guidelines 1, 4, 5, 8, and 17.
 # ==============================================================================
 
 set -euo pipefail
@@ -36,10 +37,12 @@ echo "=== [3/5] Staging WordPress.org Production Files ==="
 rm -rf "${DIST_DIR}"
 mkdir -p "${STAGE_DIR}"
 
-# Copy all production files to staging
+# Copy production files to staging, excluding non-runtime artifacts
 rsync -a --delete \
+  --exclude='.*' \
   --exclude='.git*' \
   --exclude='.github' \
+  --exclude='.claude' \
   --exclude='.agents' \
   --exclude='review' \
   --exclude='tests' \
@@ -48,12 +51,40 @@ rsync -a --delete \
   --exclude='assets-wporg' \
   --exclude='sonar-project.properties' \
   --exclude='CLAUDE.md' \
+  --exclude='CONTRIBUTING.md' \
+  --exclude='composer.json' \
+  --exclude='composer.lock' \
+  --exclude='phpunit.xml*' \
+  --exclude='pro-manifest.txt' \
+  --exclude='mitm_mcp_traffic.db' \
   --exclude='.emcp-pro' \
+  --exclude='pro' \
+  --exclude='*.sh' \
+  --exclude='*.bash' \
   --exclude='.DS_Store' \
   --exclude='Thumbs.db' \
   --exclude='includes/class-github-updater.php' \
   --exclude='includes/vendors/fremius' \
   "${ROOT_DIR}/" "${STAGE_DIR}/"
+
+# Deep clean any remaining non-plugin / developer artifacts inside packages
+find "${STAGE_DIR}" -name ".*" -exec rm -rf {} + 2>/dev/null || true
+find "${STAGE_DIR}" -type f \( \
+  -name "*.sh" -o \
+  -name "*.bash" -o \
+  -name "*.db" -o \
+  -name "*.sqlite" -o \
+  -name "*.lock" -o \
+  -name "*.dist" -o \
+  -name "*.example" -o \
+  -name "*.editorconfig" -o \
+  -name "*.nvmrc" -o \
+  -name "*.prettier*" -o \
+  -name "setup_tools.sh" \
+\) -delete
+
+# Remove empty directories if any
+find "${STAGE_DIR}" -type d -empty -delete
 
 echo "✓ Staged files to ${STAGE_DIR}"
 
@@ -81,25 +112,37 @@ echo "Verifying guideline compliance inside zip..."
 unzip -l "${ZIP_PATH}" | grep -q "${PLUGIN_SLUG}/emcp-tools.php" || { echo "ERROR: Main plugin file missing!"; exit 1; }
 unzip -l "${ZIP_PATH}" | grep -q "${PLUGIN_SLUG}/readme.txt" || { echo "ERROR: readme.txt missing!"; exit 1; }
 
-# Check 2: No GitHub updater (Guideline 8)
+# Check 2: No shell scripts allowed in WordPress plugins (setup_tools.sh, etc.)
+if unzip -l "${ZIP_PATH}" | grep -E "\.(sh|bash)$"; then
+  echo "ERROR: Shell script found in archive (disallowed by WordPress.org)!"
+  exit 1
+fi
+
+# Check 3: No GitHub updater (Guideline 8)
 if unzip -l "${ZIP_PATH}" | grep -q "class-github-updater.php"; then
   echo "ERROR: class-github-updater.php found in archive (violates Guideline 8)!"
   exit 1
 fi
 
-# Check 3: No Freemius SDK (Guideline 5)
+# Check 4: No Freemius SDK (Guideline 5)
 if unzip -l "${ZIP_PATH}" | grep -q "vendors/fremius"; then
   echo "ERROR: Freemius SDK found in archive (violates Guideline 5)!"
   exit 1
 fi
 
-# Check 4: No git metadata
-if unzip -l "${ZIP_PATH}" | grep -q "\.git"; then
-  echo "ERROR: Git metadata found in archive!"
+# Check 5: No hidden/dot files
+if unzip -l "${ZIP_PATH}" | grep -E "${PLUGIN_SLUG}/\."; then
+  echo "ERROR: Hidden/dotfiles found in archive!"
   exit 1
 fi
 
-echo "✓ Guideline compliance checks PASSED!"
+# Check 6: No dev database or config files
+if unzip -l "${ZIP_PATH}" | grep -E "\.(db|sqlite|lock|dist|example)$"; then
+  echo "ERROR: Unexpected file types (.db, .lock, .dist, .example) found in archive!"
+  exit 1
+fi
+
+echo "✓ Guideline compliance checks PASSED! Zero shell scripts or unexpected files."
 echo ""
 echo "=========================================================================="
 echo " SUCCESS: ${ZIP_PATH} is ready for submission to:"

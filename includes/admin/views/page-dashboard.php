@@ -365,7 +365,7 @@ $emcp_features = array(
 						<?php
 						printf(
 							/* translators: %s: installed version number */
-							esc_html__( 'Elementor MCP Tools v%s', 'emcp-tools' ),
+							esc_html__( 'Heretek Control Core v%s', 'emcp-tools' ),
 							esc_html( $emcp_ver['current'] )
 						);
 						?>

@@ -592,7 +592,7 @@ class EMCP_Tools_Bootstrap {
 						'<div class="notice notice-error"><p>%s</p></div>',
 						sprintf(
 							/* translators: %s: comma-separated list of missing dependencies */
-							esc_html__( 'MCP Tools for Elementor requires the following to be installed and active: %s', 'emcp-tools' ),
+							esc_html__( 'Heretek Control Core requires the following to be installed and active: %s', 'emcp-tools' ),
 							'<strong>' . esc_html( $list ) . '</strong>'
 						)
 					);

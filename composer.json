@@ -1,6 +1,6 @@
 {
-    "name": "heretek-ai/elementor-mcp",
-    "description": "Unlocked MCP Tools for Elementor & WordPress by Heretek AI",
+    "name": "heretek-ai/heretek-control-core",
+    "description": "Heretek Control Core — Autonomous AI Control Platform by Heretek AI",
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
     "require": {

@@ -1991,8 +1991,8 @@ class EMCP_Tools_Admin {
 	 */
 	public function add_settings_page(): void {
 		$this->hook_suffixes[] = add_menu_page(
-			__( 'Elementor MCP Tools — Control Center', 'emcp-tools' ),
-			__( 'Elementor MCP', 'emcp-tools' ),
+			__( 'Heretek Control Core — Control Center', 'emcp-tools' ),
+			__( 'Heretek Core', 'emcp-tools' ),
 			'manage_options',
 			self::PAGE_SLUG,
 			array( $this, 'render_page' ),
@@ -3712,7 +3712,7 @@ class EMCP_Tools_Admin {
 
 		?>
 		<div class="wrap elementor-mcp-admin">
-			<h1><?php esc_html_e( 'EMCP Tools', 'emcp-tools' ); ?></h1>
+			<h1><?php esc_html_e( 'Heretek Control Core', 'emcp-tools' ); ?></h1>
 
 			<?php
 			// Success notice after a Settings API save (options.php redirects back
@@ -3767,8 +3767,8 @@ class EMCP_Tools_Admin {
 			<div class="emcp-appbar">
 				<div class="emcp-appbar-brand">
 					<img class="emcp-appbar-logo" src="<?php echo esc_url( EMCP_TOOLS_URL . 'assets/img/icon-sm.png' ); ?>" alt="" />
-					<span class="emcp-appbar-title emcp-appbar-title--full"><?php esc_html_e( 'ELEMENTOR MCP TOOLS', 'emcp-tools' ); ?></span>
-					<span class="emcp-appbar-title emcp-appbar-title--short"><?php esc_html_e( 'ELEMENTOR MCP', 'emcp-tools' ); ?></span>
+					<span class="emcp-appbar-title emcp-appbar-title--full"><?php esc_html_e( 'HERETEK CONTROL CORE', 'emcp-tools' ); ?></span>
+					<span class="emcp-appbar-title emcp-appbar-title--short"><?php esc_html_e( 'HERETEK CORE', 'emcp-tools' ); ?></span>
 					<span class="emcp-appbar-version">v<?php echo esc_html( EMCP_TOOLS_VERSION ); ?></span>
 				</div>
 				<div class="emcp-appbar-actions">
@@ -3867,7 +3867,7 @@ class EMCP_Tools_Admin {
 			<!-- Tab nav -->
 						<div class="emcp-appnav-wrap">
 				<button type="button" class="emcp-appnav-arrow emcp-appnav-arrow--prev" aria-label="<?php esc_attr_e( 'Scroll tabs left', 'emcp-tools' ); ?>" hidden><span class="dashicons dashicons-arrow-left-alt2" aria-hidden="true"></span></button>
-<nav class="emcp-appnav" aria-label="<?php esc_attr_e( 'EMCP Tools sections', 'emcp-tools' ); ?>">
+<nav class="emcp-appnav" aria-label="<?php esc_attr_e( 'Heretek Control Core sections', 'emcp-tools' ); ?>">
 				<?php
 				foreach ( $this->get_submenus() as $emcp_slug => $emcp_label ) :
 					$emcp_tab_id = ( self::PAGE_SLUG === $emcp_slug ) ? 'dashboard' : substr( $emcp_slug, strlen( self::PAGE_SLUG . '-' ) );

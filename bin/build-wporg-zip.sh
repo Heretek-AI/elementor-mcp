@@ -10,7 +10,7 @@
 
 set -euo pipefail
 
-PLUGIN_SLUG="mcp-tools-for-elementor"
+PLUGIN_SLUG="heretek-control-core"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 DIST_DIR="${ROOT_DIR}/dist"
@@ -109,7 +109,7 @@ echo "Total files: ${FILE_COUNT}"
 echo "Verifying guideline compliance inside zip..."
 
 # Check 1: Plugin headers exist
-unzip -l "${ZIP_PATH}" | grep -q "${PLUGIN_SLUG}/emcp-tools.php" || { echo "ERROR: Main plugin file missing!"; exit 1; }
+unzip -l "${ZIP_PATH}" | grep -q "${PLUGIN_SLUG}/heretek-control-core.php" || { echo "ERROR: Main plugin file missing!"; exit 1; }
 unzip -l "${ZIP_PATH}" | grep -q "${PLUGIN_SLUG}/readme.txt" || { echo "ERROR: readme.txt missing!"; exit 1; }
 
 # Check 2: No shell scripts allowed in WordPress plugins (setup_tools.sh, etc.)

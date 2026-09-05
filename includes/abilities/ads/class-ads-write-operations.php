@@ -697,7 +697,7 @@ class EMCP_Tools_Ads_Write_Operations {
 			'name'              => $name,
 			'idsite'            => absint( $site_id ),
 			'idsub_type_format' => absint( $format_id ),
-			'description'       => 'Created by Elementor MCP',
+			'description'       => 'Created by Heretek Control Core',
 		);
 
 		$res = wp_remote_post(

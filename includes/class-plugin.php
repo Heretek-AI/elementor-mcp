@@ -261,8 +261,8 @@ class EMCP_Tools_Plugin {
 		wp_register_ability_category(
 			'emcp-tools',
 			array(
-				'label'       => __( 'MCP Tools for Elementor', 'emcp-tools' ),
-				'description' => __( 'Tools for reading and manipulating Elementor page designs via MCP.', 'emcp-tools' ),
+				'label'       => __( 'Heretek Control Core', 'emcp-tools' ),
+				'description' => __( 'Tools for site management, content, and page builders via MCP.', 'emcp-tools' ),
 			)
 		);
 	}
@@ -344,7 +344,7 @@ class EMCP_Tools_Plugin {
 			'emcp-tools-server',                                   // server_id
 			'mcp',                                                    // route_namespace
 			'emcp-tools-server',                                   // route
-			__( 'MCP Tools for Elementor Server', 'emcp-tools' ),            // server_name
+			__( 'Heretek Control Core Server', 'emcp-tools' ),            // server_name
 			EMCP_Tools_Site_Context::compose_instructions( EMCP_Tools_Site_Context::default_base() . "\n\n" . EMCP_Tools_Site_Context::environment_summary() ), // description (base + env + site context)
 			'v' . EMCP_TOOLS_VERSION,                              // version
 			array( \WP\MCP\Transport\HttpTransport::class ),          // transports

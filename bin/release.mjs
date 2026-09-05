@@ -54,26 +54,41 @@ export function isValidVersion(version) {
 }
 
 /**
- * Reads the current version from emcp-tools.php.
+ * Locates the canonical main plugin file.
+ *
+ * @param {string} rootDir
+ * @returns {string} Path to the plugin file
+ */
+export function getPluginFile(rootDir = ROOT_DIR) {
+  const candidates = [
+    path.join(rootDir, 'heretek-control-core.php'),
+    path.join(rootDir, 'emcp-tools.php')
+  ];
+  const found = candidates.find((f) => fs.existsSync(f));
+  if (!found) {
+    throw new Error(`Plugin file not found. Checked: ${candidates.join(', ')}`);
+  }
+  return found;
+}
+
+/**
+ * Reads the current version from the main plugin file.
  *
  * @param {string} rootDir Root directory of the repository
  * @returns {string} Current version string
  */
 export function getCurrentVersion(rootDir = ROOT_DIR) {
-  const pluginFile = path.join(rootDir, 'emcp-tools.php');
-  if (!fs.existsSync(pluginFile)) {
-    throw new Error(`Plugin file not found: ${pluginFile}`);
-  }
+  const pluginFile = getPluginFile(rootDir);
   const content = fs.readFileSync(pluginFile, 'utf8');
   const match = content.match(/define\(\s*['"]EMCP_TOOLS_VERSION['"]\s*,\s*['"]([^'"]+)['"]\s*\);/);
   if (!match) {
-    throw new Error('EMCP_TOOLS_VERSION constant not found in emcp-tools.php');
+    throw new Error(`EMCP_TOOLS_VERSION constant not found in ${path.basename(pluginFile)}`);
   }
   return match[1];
 }
 
 /**
- * Updates version references in emcp-tools.php and readme.txt.
+ * Updates version references in the plugin file and readme.txt.
  *
  * @param {string} rootDir Root directory of the repository
  * @param {string} newVersion Target version string
@@ -87,27 +102,40 @@ export function updateVersionFiles(rootDir = ROOT_DIR, newVersion, dryRun = fals
 
   const filesUpdated = [];
 
-  // 1. Update emcp-tools.php
-  const pluginFile = path.join(rootDir, 'emcp-tools.php');
-  if (fs.existsSync(pluginFile)) {
+  // 1. Update plugin bootstrap files
+  const pluginFiles = [
+    path.join(rootDir, 'heretek-control-core.php'),
+    path.join(rootDir, 'emcp-tools.php')
+  ].filter((f) => fs.existsSync(f));
+
+  for (const pluginFile of pluginFiles) {
     let content = fs.readFileSync(pluginFile, 'utf8');
+    let changed = false;
 
     // Update constant define( 'EMCP_TOOLS_VERSION', 'X.Y.Z' );
-    content = content.replace(
-      /(define\(\s*['"]EMCP_TOOLS_VERSION['"]\s*,\s*['"])[^'"]+(['"]\s*\);)/,
-      `$1${newVersion}$2`
-    );
+    if (content.includes('EMCP_TOOLS_VERSION')) {
+      content = content.replace(
+        /(define\(\s*['"]EMCP_TOOLS_VERSION['"]\s*,\s*['"])[^'"]+(['"]\s*\);)/,
+        `$1${newVersion}$2`
+      );
+      changed = true;
+    }
 
     // Update docblock header * Version: X.Y.Z
-    content = content.replace(
-      /(\*\s*Version:\s*)([0-9A-Za-z.-]+)/,
-      `$1${newVersion}`
-    );
-
-    if (!dryRun) {
-      fs.writeFileSync(pluginFile, content, 'utf8');
+    if (/(\*\s*Version:\s*)([0-9A-Za-z.-]+)/.test(content)) {
+      content = content.replace(
+        /(\*\s*Version:\s*)([0-9A-Za-z.-]+)/,
+        `$1${newVersion}`
+      );
+      changed = true;
     }
-    filesUpdated.push(pluginFile);
+
+    if (changed) {
+      if (!dryRun) {
+        fs.writeFileSync(pluginFile, content, 'utf8');
+      }
+      filesUpdated.push(pluginFile);
+    }
   }
 
   // 2. Update readme.txt

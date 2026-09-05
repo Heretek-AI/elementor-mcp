@@ -1,10 +1,10 @@
 <h1 align="center">
   <img src="assets/img/icon-sm.png" width="80" alt="Heretek Control Core logo"><br>
-  MCP Tools for Elementor & WordPress
+  Heretek Control Core
 </h1>
 
 <p align="center">
-  <strong>The Enterprise-Grade Model Context Protocol (MCP) Server for WordPress, Elementor &amp; Gutenberg</strong><br>
+  <strong>Autonomous Model Context Protocol (MCP) Platform for Web &amp; Content Engineering</strong><br>
   <em>Maintained by <a href="https://github.com/Heretek-AI">Heretek AI</a> · 100% Open Source · All 269+ Pro Abilities Unlocked</em>
 </p>
 

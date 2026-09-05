@@ -1,6 +1,6 @@
-=== MCP Tools for Elementor & WordPress ===
+=== Heretek Control Core ===
 Contributors: Heretek-AI, mianshahzadraza
-Tags: elementor, mcp, ai, gutenberg, claude
+Tags: mcp, ai, automation, elementor, gutenberg
 Requires at least: 6.9
 Tested up to: 7.1
 Stable tag: 3.16.1
@@ -8,11 +8,11 @@ Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Professional Model Context Protocol (MCP) server bridging WordPress, Elementor & Gutenberg to AI assistants (Claude, Cursor, ChatGPT, Antigravity) with 269+ enterprise abilities.
+Autonomous Model Context Protocol (MCP) server connecting site builders, themes, and content management to AI assistants (Claude, Cursor, ChatGPT, Antigravity) with 269+ enterprise abilities.
 
 == Description ==
 
-MCP Tools for Elementor bridges the gap between AI tools and Elementor page design. It extends the official WordPress MCP Adapter to expose a focused set of MCP (Model Context Protocol) tools that let AI agents like Claude, Cursor, and other MCP-compatible clients create and manipulate Elementor page designs programmatically.
+Heretek Control Core connects your site to AI assistants and agents via the Model Context Protocol (MCP). It extends the official WordPress MCP Adapter to expose a comprehensive set of MCP tools that let AI agents like Claude, Cursor, and other MCP-compatible clients manage site content, configure settings, and manipulate page designs programmatically.
 
 As of v3.0.0 the 62 per-widget tools were folded into a catalog-backed model, so the active tool surface is much smaller while every widget stays reachable, and the toolset takes its first steps beyond Elementor with general WordPress content management, curated site-settings control, full plugin and theme management, media attachment management, safe user management, filesystem access, and database inspection over MCP. The v3.0.0 beyond-Elementor surface adds 8 WordPress Content tools + 3 surfaced WordPress core abilities + 2 WordPress Settings tools + 13 Plugins & Themes tools + 3 Media Library tools + 4 Users tools + 1 Performance Analyzer tool + 1 Security & Malware Scanner tool + 6 Filesystem tools + 6 Database tools. Tool counts scale with your environment (registered counts, verified on Elementor 4.1.4): around 107 tools on a free Elementor install, ~121 with the Elementor 4.0+ atomic elements, ~117 with Elementor Pro, and ~131 with Pro + Elementor 4.0+ (WooCommerce widgets are reached through add-pro-widget; the Pro build also registers a woo-read/woo-write dispatcher pair over products, orders, and customers). When Advanced Custom Fields (free or PRO) is active, 2 ACF tools register on top of any of those counts: `acf-read` and `acf-write`, two dispatchers that expose 15 ACF operations (8 read, 7 write; the Custom Post Type and taxonomy operations need ACF 6.1+). Each dispatcher is a single toggle under Tools → Plugins → ACF, listing the operations it covers; `acf-read` is on by default and `acf-write` ships off. About 39 other tools ship disabled-by-default (SEO & Accessibility, Widget Builder, PHP Snippets, the 9 Plugins & Themes write tools, delete-media, the 2 Users write tools, the 3 Filesystem write tools, and the 3 Database write tools), so the typical active surface is smaller.
 
@@ -68,9 +68,9 @@ As of v3.0.0 the 62 per-widget tools were folded into a catalog-backed model, so
 
 == Installation ==
 
-1. Upload the `emcp-tools` folder to `/wp-content/plugins/`.
+1. Upload the `heretek-control-core` folder to `/wp-content/plugins/`.
 2. Activate the plugin through the 'Plugins' menu in WordPress. The MCP Adapter is bundled. No separate install is required (WordPress 6.9+ already includes the Abilities API).
-3. Open the new **EMCP Tools** top-level menu, go to the **Connection** tab, and confirm **Activate Abilities API for EMCP** is enabled (on by default) to expose the MCP server.
+3. Open the new **Heretek Core** top-level menu, go to the **Connection** tab, and confirm **Activate Abilities API for EMCP** is enabled (on by default) to expose the MCP server.
 4. (Optional) Install and activate [Elementor](https://wordpress.org/plugins/elementor/) (version 3.20+) to enable the Elementor tool family (page design, widgets, layout, templates, brand kits, and more). All beyond-Elementor tools are fully functional without it.
 
 = WP-CLI Connection (Local) =

@@ -45,11 +45,11 @@ $approved_items = EMCP_Tools_Memory_Store::query(
 
 <div class="elementor-mcp-memory">
 	<h2>
-		<?php esc_html_e( 'Engram Memory // Project Directives', 'emcp-tools' ); ?>
-		<span class="elementor-mcp-badge elementor-mcp-badge--pro">ARCH-HERETEK UNLOCKED</span>
+		<?php esc_html_e( 'Project Memory // Directives', 'emcp-tools' ); ?>
+		<span class="elementor-mcp-badge elementor-mcp-badge--pro">PRO UNLOCKED</span>
 	</h2>
 	<p class="description">
-		<?php esc_html_e( 'Machine spirits record and propose directives for the Cogitator Core via the remember tool. Approved directives are automatically channeled into future Noosphere sessions.', 'emcp-tools' ); ?>
+		<?php esc_html_e( 'AI agents record and propose project directives via the remember tool. Approved directives are automatically injected as persistent context into future AI sessions.', 'emcp-tools' ); ?>
 	</p>
 
 	<!-- Pending Proposals -->

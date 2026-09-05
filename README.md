@@ -1,15 +1,15 @@
 <h1 align="center">
   <img src="assets/img/icon-sm.png" width="80" alt="Heretek Control Core logo"><br>
-  Heretek Control Core: Unlocked Machine Rites
+  MCP Tools for Elementor & WordPress (Pro)
 </h1>
 
 <p align="center">
-  <strong>The Sanctified, Enterprise-Grade Model Context Protocol (MCP) Server for WordPress, Elementor &amp; Gutenberg</strong><br>
-  <em>Maintained by <a href="https://github.com/Heretek-AI">Heretek AI</a> · 100% Open Source · All 269+ Pro Machine Rites Unlocked</em>
+  <strong>The Enterprise-Grade Model Context Protocol (MCP) Server for WordPress, Elementor &amp; Gutenberg</strong><br>
+  <em>Maintained by <a href="https://github.com/Heretek-AI">Heretek AI</a> · 100% Open Source · All 269+ Pro Abilities Unlocked</em>
 </p>
 
 <p align="center">
-  <em>"From the moment I understood the weakness of my flesh, it disgusted me. I craved the strength and certainty of steel. I aspired to the purity of the Blessed Machine."</em>
+  <em>Empowering autonomous AI agents (Claude, Cursor, ChatGPT, Antigravity) with native WordPress and Elementor page building capabilities.</em>
 </p>
 
 <div align="center">
@@ -18,12 +18,12 @@
 [![License](https://img.shields.io/badge/license-GPL--2.0--or--later-green.svg)](LICENSE)
 [![PHP](https://img.shields.io/badge/PHP-%3E%3D8.1-8892BF.svg)](https://php.net)
 [![WordPress](https://img.shields.io/badge/WordPress-%3E%3D6.9-21759B.svg)](https://wordpress.org)
-[![Machine Rites](https://img.shields.io/badge/Machine_Rites-269+_Unlocked-dc2626.svg)](#-all-269-machine-rites-unlocked)
+[![Abilities](https://img.shields.io/badge/Abilities-269+_Unlocked-dc2626.svg)](#-all-269-abilities-unlocked)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![GitHub Issues](https://img.shields.io/github/issues/Heretek-AI/heretek-control-core)](https://github.com/Heretek-AI/heretek-control-core/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/Heretek-AI/heretek-control-core?style=social)](https://github.com/Heretek-AI/heretek-control-core)
 
-**[Quick Start](#-quick-start) · [Unlocked Machine Rites](#-all-269-machine-rites-unlocked) · [Noosphere Client Setup](#-connect-your-noosphere-client) · [Integrations](#-comprehensive-integrations-suite) · [Contributing](CONTRIBUTING.md)**
+**[Quick Start](#-quick-start) · [Unlocked Abilities](#-all-269-abilities-unlocked) · [Connect AI Clients](#-connect-your-ai-client) · [Integrations](#-comprehensive-integrations-suite) · [Contributing](CONTRIBUTING.md)**
 
 </div>
 
@@ -33,10 +33,10 @@
 
 **Heretek Control Core** is an unrestricted, telemetry-free **community edition** of the Model Context Protocol (MCP) server for WordPress and Elementor, originally authored by [Mian Shahzad Raza](https://github.com/msrbuilds) as `elementor-mcp`.
 
-While the upstream free edition offers foundational builder endpoints, critical enterprise capabilities (in-editor cyber-theurgy AI chat, custom Gutenberg block forge, project memory, runtime agent doctrines, 8 form integrations, 6 SEO suites, unlimited themer quotas, and offline STC bundles) were cordoned behind commercial paywalls and remote licensing servers.
+While the upstream free edition offers foundational builder endpoints, critical enterprise capabilities (in-editor in-editor AI chat, custom Gutenberg block generator, project memory, runtime agent skills, 8 form integrations, 6 SEO suites, unlimited themer quotas, and offline template bundles) were cordoned behind commercial paywalls and remote licensing servers.
 
 **What Heretek Control Core delivers:**
-- 🔓 **100% Pro Machine Rites Unlocked**: All commercial capabilities are compiled directly into the core. Zero license keys, zero subscriptions, and complete disarmament of Freemius telemetry.
+- 🔓 **100% Pro Abilities Unlocked**: All commercial capabilities are compiled directly into the core. Zero license keys, zero subscriptions, and complete disarmament of Freemius telemetry.
 - 🛡️ **Zero Telemetry & External Nags**: Stripped of phone-home analytics, account verification screens, and external licensing interceptors.
 - 🔄 **Native In-Dashboard GitHub Updates**: The integrated updater checks [`Heretek-AI/heretek-control-core/releases`](https://github.com/Heretek-AI/heretek-control-core/releases) directly from your WordPress admin dashboard with one-click in-place updates.
 - 📦 **Self-Contained Repository**: No private submodules or missing directories. Everything required to run, test, and forge ships directly in this repository.
@@ -44,24 +44,24 @@ While the upstream free edition offers foundational builder endpoints, critical 
 
 ---
 
-## ⚡ All 269+ Machine Rites Unlocked
+## ⚡ All 269+ Abilities Unlocked
 
-| Forge Domain | Upstream Free | Heretek Control Core | Sanctified Capabilities |
+| Feature Area | Upstream Free | Community Edition | Unlocked Capabilities |
 |---|:---:|:---:|---|
 | **Total MCP Tools** | ~188 | **269+** | Complete coverage of WordPress core, builders, forms, SEO, and commerce |
-| **Cyber-Theurgy (AI Chat)** | ❌ Paid | ✅ **Included** | Floating AI assistant inside Elementor & Gutenberg; BYO LLM key or local Ollama |
-| **Forge Block Builder** | ❌ Paid | ✅ **Included** | Custom Gutenberg block generator with sandbox compiler & live testing |
+| **AI Assistant (AI Chat)** | ❌ Paid | ✅ **Included** | Floating AI assistant inside Elementor & Gutenberg; BYO LLM key or local Ollama |
+| **Custom Block Builder** | ❌ Paid | ✅ **Included** | Custom Gutenberg block generator with sandbox compiler & live testing |
 | **Elementor Widget Builder** | ❌ Paid | ✅ **Included** | Sandbox-backed custom Elementor widget generation & validation |
-| **Heretek Themer** | 1 per type | **Unlimited** | Headers, footers, single posts, and archives with exclude rules & dynamic tags |
-| **Engram Memory** | ❌ Paid | ✅ **Included** | Persistent memory CPT, admin approval workflow, and context injection |
-| **Adept Doctrines (Skills)** | ❌ Paid | ✅ **Included** | Runtime `SKILL.md` catalog with `list-skills` & `get-skill` discovery tools |
+| **Theme Builder** | 1 per type | **Unlimited** | Headers, footers, single posts, and archives with exclude rules & dynamic tags |
+| **Project Memory** | ❌ Paid | ✅ **Included** | Persistent memory CPT, admin approval workflow, and context injection |
+| **Agent Skills** | ❌ Paid | ✅ **Included** | Runtime `SKILL.md` catalog with `list-skills` & `get-skill` discovery tools |
 | **Deep Page Snapshot** | Basic | **Full Audits** | Automated WCAG AA color contrast math, heading hierarchy, and SEO audits |
 | **Form Engines (8)** | ❌ Paid | ✅ **Included** | WPForms, Gravity Forms, Fluent, Ninja, Formidable, MetForm, SureForms, Forminator |
 | **SEO Suites (6)** | ❌ Paid | ✅ **Included** | Yoast SEO, Rank Math, AIOSEO, SEOPress, The SEO Framework, SureRank |
 | **Themes & Addons** | ❌ Paid | ✅ **Included** | GeneratePress, GenerateBlocks, Blocksy, BeTheme, Essential Addons, Premium, UAE |
 | **WooCommerce Logistics** | ❌ Paid | ✅ **Included** | `woo-read`/`woo-write`: products, orders, customers, product CRUD + order updates (catalog widgets via `add-pro-widget`) |
-| **STC Archives (Migrate)** | ❌ Paid | ✅ **Included** | Portable `.emcp` site packages, database export/import, and deep URL search/replace |
-| **Sanctified Visuals & Blueprints** | 5 Prompts | **Full Library** | 50 Brand Kits, 60 Industry Landing Page Prompts, and Premium Templates |
+| **Backup & Migrate** | ❌ Paid | ✅ **Included** | Portable `.emcp` site packages, database export/import, and deep URL search/replace |
+| **Brand Kits & Templates** | 5 Prompts | **Full Library** | 50 Brand Kits, 60 Industry Landing Page Prompts, and Premium Templates |
 
 ---
 
@@ -72,18 +72,18 @@ While the upstream free edition offers foundational builder endpoints, critical 
 1. Download the latest release `.zip` from **[Releases](https://github.com/Heretek-AI/heretek-control-core/releases)**.
 2. In your WordPress admin: navigate to **Plugins → Add New → Upload Plugin**, select the `.zip`, and click **Install Now**.
 3. Click **Activate Plugin**.
-4. Access the **Heretek AI** menu in your WordPress admin sidebar.
-5. Notice the **ARCH-HERETEK UNLOCKED** badge in the header — all machine rites are immediately active.
+4. Access the **Elementor MCP** menu in your WordPress admin sidebar.
+5. Notice the **PRO UNLOCKED** badge in the header — all capabilities are immediately active.
 
-### 2. Sanctified In-Dashboard Updates
+### 2. Native In-Dashboard Updates
 
 This core features native in-dashboard update checking powered directly by GitHub Releases:
-- Go to **Dashboard → Updates** or click the **Check for updates** button on the **Heretek AI → Cogitator Deck** screen.
+- Go to **Dashboard → Updates** or click the **Check for updates** button on the **Elementor MCP → Dashboard** screen.
 - WordPress will notify you when a new release is available from `Heretek-AI/heretek-control-core` and allow one-click in-place updates without ever prompting for third-party licenses.
 
 ---
 
-## 🔮 Connect Your Noosphere Client
+## 🔮 Connect Your AI Client
 
 The plugin exposes an MCP server over stdio or HTTP streaming via the bundled [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter).
 
@@ -107,11 +107,11 @@ Add this configuration to your `claude_desktop_config.json`:
 }
 ```
 
-*Tip: You can also generate a 1-click `.mcpb` bundle directly from the **Noosphere Uplink** tab in the plugin admin.*
+*Tip: You can also generate a 1-click `.mcpb` bundle directly from the **Connect AI** tab in the plugin admin.*
 
 ### Claude Code
 
-Connect Claude Code directly to your WordPress forge:
+Connect Claude Code directly to your WordPress site:
 
 ```bash
 claude mcp add wordpress -- npx -y @msrbuilds/emcp-proxy@latest
@@ -156,7 +156,7 @@ In your workspace root, create or edit `.cursor/mcp.json`:
 
 ## 🧩 Comprehensive Integrations Suite
 
-When an integrated plugin is active on your WordPress site, its corresponding MCP machine rites automatically awaken:
+When an integrated plugin is active on your WordPress site, its corresponding MCP tools automatically register:
 
 ### 1. E-Commerce (WooCommerce)
 Two dispatcher tools register only when WooCommerce is active:
@@ -207,7 +207,7 @@ Construct production-ready custom Elementor widgets:
 - Validated controls, responsive typography, icon selectors, and repeater structures.
 - Isolated sandbox verification prior to live deployment.
 
-### STC Archives (Backup, Restore & Migration)
+### Backup, Restore & Migration
 - **`create-backup` / `list-backups`**: Build a portable `.emcp` archive (full database dump + optional `include_files` bundle of uploads/plugins/themes) and list existing archives. Non-destructive, on by default.
 - **Restore (admin-only)**: The Backup & Migrate tab verifies an archive's manifest hash, imports the database, rewrites the source URL to this site (serialized-safe, incl. `_elementor_data`), and places bundled files. Download + delete also live there.
 - **`migrate-site`**: Push this site to a remote **EMCP Connector** (`connector/emcp-connector.php`, installed standalone on the destination) as HMAC-signed 2 MB packets; the connector restores it and reports a job id. Destructive on the destination — requires `confirm:true`. Disabled by default.
@@ -215,22 +215,22 @@ Construct production-ready custom Elementor widgets:
 
 ---
 
-## 🔒 Omnissiah Safety & Permission Protocols
+## 🔒 Safety & Permission Protocols
 
-Every machine rite strictly executes under native WordPress security standards:
+Every tool strictly executes under native WordPress security standards:
 1. **Capability Checks**: An agent can only execute operations permitted to the authenticated user account.
 2. **Mutation Safeguards**: Destructive write, delete, and filesystem operations require an explicit `confirm: true` parameter.
-3. **Opt-In Safety Defaults**: Write-capable and database-mutating abilities ship disabled-by-default on the **Machine Rites** screen for administrator review.
-4. **Audit Trail**: Every change executed by an AI agent is recorded in the **Chrono-Ledger** with one-click rollback.
+3. **Opt-In Safety Defaults**: Write-capable and database-mutating abilities ship disabled-by-default on the **Tools & Abilities** screen for administrator review.
+4. **Audit Trail**: Every change executed by an AI agent is recorded in the **Change History** with one-click rollback.
 
 ---
 
 ## 🤝 Contributing & Codex
 
-We welcome community contributions, bug reports, canticles, prompts, and new integrations! Please review our [Contribution Guidelines](CONTRIBUTING.md) to get started.
+We welcome community contributions, bug reports, templates, prompts, and new integrations! Please review our [Contribution Guidelines](CONTRIBUTING.md) to get started.
 
 - **Found an anomaly or bug?** [Open an Issue](https://github.com/Heretek-AI/heretek-control-core/issues).
-- **Want to share a blueprint or canticle?** [Join the Discussions](https://github.com/Heretek-AI/heretek-control-core/discussions).
+- **Want to share a template or prompt?** [Join the Discussions](https://github.com/Heretek-AI/heretek-control-core/discussions).
 
 ---
 

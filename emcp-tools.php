@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name:       Heretek Control Core: Unlocked Machine Rites
+ * Plugin Name:       MCP Tools for Elementor & WordPress (Pro)
  * Plugin URI:        https://github.com/Heretek-AI/heretek-control-core
- * Description:       Forbidden cyber-theurgy protocols bridging WordPress, Elementor & Gutenberg to AI Machine Spirits via the Model Context Protocol. All 269 abilities sanctified & unlocked by Heretek AI.
+ * Description:       Professional Model Context Protocol (MCP) server connecting WordPress, Elementor & Gutenberg to AI assistants (Claude, Cursor, ChatGPT, Antigravity).
  * Version:           3.16.1
  * Requires at least: 6.9
  * Tested up to:      7.1

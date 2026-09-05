@@ -1,6 +1,6 @@
-=== Heretek Control Core: Unlocked Machine Rites ===
+=== MCP Tools for Elementor & WordPress (Pro) ===
 Contributors: Heretek-AI, mianshahzadraza
-Tags: heretek, mechanicus, elementor, mcp, ai, omnissiah
+Tags: elementor, mcp, ai, gutenberg, claude
 Requires at least: 6.9
 Tested up to: 7.1
 Stable tag: 3.16.1
@@ -8,7 +8,7 @@ Requires PHP: 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Forbidden cyber-theurgy protocols bridging WordPress, Elementor & Gutenberg to AI Machine Spirits via the Model Context Protocol. All 269 abilities sanctified & unlocked by Heretek AI.
+Professional Model Context Protocol (MCP) server bridging WordPress, Elementor & Gutenberg to AI assistants (Claude, Cursor, ChatGPT, Antigravity) with 269+ enterprise abilities.
 
 == Description ==
 
@@ -183,7 +183,7 @@ Backup, Restore & Migrate become real: honest .emcp archives, a working restore 
 * Added: restore verifies database.sql against the manifest sha256, imports it (skipping session transaction-control directives), rewrites the source URL to this site — serialized-safe and JSON-aware, so `_elementor_data` and length-prefixed options migrate correctly — and places any bundled files back under wp-content (traversal-guarded; never wp-config.php).
 * Added: `create-backup` now bundles a full database dump (bounded, row-streamed) plus optional site files (`include_files`); archives carry a richer manifest (format version, URL, php/wp/db, DB hash + row stats, file count).
 * Added: `migrate-site` is no longer a stub. It pushes this site to a standalone **EMCP Connector** (`connector/emcp-connector.php`, downloadable from the Backup & Migrate tab) as HMAC-SHA256-signed 2 MB packets over the connector REST API; the connector verifies the whole archive and restores it. Requires `confirm:true`. `direction: "pull"` is not implemented and returns a clear error.
-* Added: `sync-to-live` is a real site-wide serialized-safe URL search-and-replace across options, posts, postmeta (incl. `_elementor_data`), comments, term/usermeta, and other prefixed tables — recorded in the Chrono-Ledger for History rollback.
+* Added: `sync-to-live` is a real site-wide serialized-safe URL search-and-replace across options, posts, postmeta (incl. `_elementor_data`), comments, term/usermeta, and other prefixed tables — recorded in Change History for one-click rollback.
 * Fixed: three never-registered "sync" tools (list-syncable-changes, sync-content-item, discard-sync-change) removed from the Tools grid and catalog.
 * Fixed: the AI Chat module id is now `ai-chat` (matching the admin), its REST route only registers while the module is active (a true kill switch), and it defaults on per the documented Pro behavior.
 * Docs: corrected over-claims in README/readme (WooCommerce op list, addon slug aliases, atomic-tool wording, tool counts).

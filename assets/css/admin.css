@@ -4470,13 +4470,23 @@ body.emcp-modal-open { overflow: hidden; }
 /* ---------------------------------------------------------------------------
    History tab — AI-safe change ledger (flat, no gradients)
    --------------------------------------------------------------------------- */
+.elementor-mcp-admin .emcp-history {
+	background: transparent !important;
+	border: 0;
+	padding: 0;
+	margin: 0;
+	min-height: 0 !important;
+	height: auto !important;
+	max-height: none;
+	display: block;
+}
 .emcp-history__head {
 	display: flex;
 	align-items: flex-start;
 	justify-content: space-between;
 	gap: 16px;
 	flex-wrap: wrap;
-	margin: 8px 0 16px;
+	margin: 0 0 16px;
 }
 .emcp-history__title { margin: 0 0 4px; }
 .emcp-history__intro { margin: 0; color: #50575e; max-width: 640px; }
@@ -4534,6 +4544,9 @@ body.emcp-modal-open { overflow: hidden; }
 	border: 1px dashed #c3c4c7;
 	border-radius: 6px;
 	color: #787c82;
+	min-height: 0;
+	height: auto;
+	max-height: none;
 }
 .emcp-history__empty .dashicons { font-size: 32px; width: 32px; height: 32px; opacity: .5; }
 .emcp-history__note { color: #787c82; font-size: 12px; margin-top: 10px; }
@@ -5200,7 +5213,8 @@ body:has(.elementor-mcp-admin) #wpfooter a:hover {
  * column-stretching ancestors, and ask the wrap to behave like inline-flow
  * rather than a flex item when it ends up as one. */
 .elementor-mcp-admin form,
-.elementor-mcp-admin .elementor-mcp-ai-chat > form {
+.elementor-mcp-admin .elementor-mcp-ai-chat > form,
+.elementor-mcp-admin .emcp-history {
 	min-height: 0 !important;
 	height: auto !important;
 	max-height: none;
@@ -5285,8 +5299,13 @@ body:has(.elementor-mcp-admin) .postbox .inside {
  * WordPress Tables — Dark Steel Widefat / List Tables
  * ========================================================================= */
 
+/* WordPress core table.widefat (common.css / list-tables.css) sets
+ * `border-collapse: collapse; width: 100%; clear: both;` which combined
+ * with a stretching ancestor lets the table and rows inflate to fill the shell.
+ * Force table, rows, and cells to hug content height and never stretch vertically. */
 .elementor-mcp-admin table.widefat,
 .elementor-mcp-admin .wp-list-table,
+.elementor-mcp-admin .emcp-history__table,
 body.emcp-admin-page table.widefat,
 body.emcp-admin-page .wp-list-table,
 body:has(.elementor-mcp-admin) table.widefat,
@@ -5297,6 +5316,31 @@ body:has(.elementor-mcp-admin) .wp-list-table {
 	overflow: hidden;
 	color: #dedee6 !important;
 	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+	height: auto !important;
+	min-height: 0 !important;
+	max-height: none;
+	clear: none;
+}
+
+.elementor-mcp-admin table.widefat tr,
+.elementor-mcp-admin table.widefat th,
+.elementor-mcp-admin table.widefat td,
+.elementor-mcp-admin .wp-list-table tr,
+.elementor-mcp-admin .wp-list-table th,
+.elementor-mcp-admin .wp-list-table td,
+.elementor-mcp-admin .emcp-history__table tr,
+.elementor-mcp-admin .emcp-history__table th,
+.elementor-mcp-admin .emcp-history__table td,
+body.emcp-admin-page table.widefat tr,
+body.emcp-admin-page table.widefat th,
+body.emcp-admin-page table.widefat td,
+body:has(.elementor-mcp-admin) table.widefat tr,
+body:has(.elementor-mcp-admin) table.widefat th,
+body:has(.elementor-mcp-admin) table.widefat td {
+	height: auto;
+	min-height: 0;
+	max-height: none;
+	box-sizing: border-box;
 }
 
 .elementor-mcp-admin table.widefat thead th,
